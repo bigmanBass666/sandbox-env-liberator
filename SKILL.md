@@ -604,6 +604,79 @@ Copy and use this prompt to trigger the improvement flywheel:
 
 ---
 
+## Automated Evolution (自动进化)
+
+The improvement flywheel can run automatically on a schedule, enabling the system to evolve continuously without human intervention. Each scheduled run spawns a fresh AI session that executes a complete flywheel cycle.
+
+### How It Works
+
+1. **Schedule** triggers a new AI session every hour
+2. **New AI** reads the self-contained operation manual from the Schedule message
+3. **Acquire Lock** via GitHub Issue #1 (prevents concurrent sessions)
+4. **Recon** current environment state (not inherited tasks)
+5. **Execute** top-priority improvements
+6. **Verify** no regressions
+7. **Record** evolution log and commit
+8. **Release Lock**
+
+### Key Design: Self-Directed Recon, Not Task Inheritance
+
+New AI sessions do NOT "inherit tasks" from previous sessions. Instead, they:
+1. Run `evolve.sh` to get current environment snapshot and improvement suggestions
+2. Read `evolution-log.md` last 3 rounds for context (avoid repeated exploration/failures)
+3. Make decisions based on **current state**, not historical tasks
+
+Why: The environment may have changed since the last session. A P0 blocker may have auto-resolved. The new AI should assess reality, not follow stale plans.
+
+### GitHub Issue Distributed Lock
+
+Prevents multiple AI sessions from working simultaneously:
+
+| Action | GitHub Issue #1 State |
+|--------|----------------------|
+| Lock free | Closed, no `evolving` label |
+| Lock acquired | Open, `evolving` label, body has timestamp |
+| Lock timeout (>60min) | Force release, add `timeout-release` label |
+
+Scripts: `acquire-lock.sh` / `release-lock.sh`
+
+### Time Budget
+
+| Phase | Budget | Action on Timeout |
+|-------|--------|-------------------|
+| Recon | 5 min | Skip remaining recon |
+| Improvement | 20 min | Stop current work, save completed parts |
+| Verify + Commit | 5 min | Force commit what's done |
+| **Total** | **30 min** | Enter commit phase immediately |
+
+### Atomic Improvements
+
+- Each improvement must be a complete, independently verifiable unit
+- Incomplete improvements are NOT committed to main
+- Marked as `INCOMPLETE` in evolution-log.md for next round to continue
+- Before improvement: `git stash` as checkpoint
+- After verification fails: `git stash pop` to rollback
+
+### Degeneration Detection
+
+If the last 3 rounds have >80% similarity in "Changes Made":
+- Switch to **exploration mode** (try unconventional probes)
+- Force **domain rotation** (pick least-explored domain)
+- **Challenge** one known conclusion
+
+### Exception Handling
+
+| Exception | Response |
+|-----------|----------|
+| Lock occupied | Skip this round, exit gracefully |
+| Lock timeout (>60min) | Force release, acquire lock, proceed |
+| Time budget exhausted | Save completed work, commit, release lock |
+| Improvement causes regression | Rollback (git stash pop), don't commit |
+| Git push conflict | `git pull --rebase`, remote wins on conflict |
+| 3 rounds no new discovery | Switch to deep exploration mode |
+
+---
+
 ## What This Skill Does NOT Do
 
 - Install kernel modules or modify system security policies

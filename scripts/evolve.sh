@@ -9,6 +9,12 @@ MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+DRY_RUN=false
+if [[ "${1:-}" == "--dry-run" ]]; then
+    DRY_RUN=true
+    echo -e "${YELLOW}🏃 DRY-RUN 模式：只生成计划，不执行改进${NC}"
+fi
+
 SCRIPTS_DIR="/workspace/sandbox-env-setup/scripts"
 REFERENCES_DIR="/workspace/sandbox-env-setup/references"
 EVOLUTION_LOG="${REFERENCES_DIR}/evolution-log.md"
@@ -17,30 +23,66 @@ DEEP_RECON_DIR="/tmp/sandbox-deep-recon"
 EVOLVE_STATE_DIR="/tmp/sandbox-evolve"
 TIMEOUT_SECS=120
 
-mkdir -p "$EVOLVE_STATE_DIR"
+START_TIME=$(date +%s)
+TIME_BUDGET=1800
+RECON_BUDGET=300
 
-PREV_PASS=0
-PREV_FAIL=0
-PREV_WARN=0
-CURR_PASS=0
-CURR_FAIL=0
-CURR_WARN=0
-LAST_ROUND=0
-P0_ITEMS=""
-P1_ITEMS=""
-P2_ITEMS=""
-P3_ITEMS=""
-P4_ITEMS=""
-P0_COUNT=0
-P1_COUNT=0
-P2_COUNT=0
-P3_COUNT=0
-P4_COUNT=0
+LOCK_HELD=false
+
+check_time() {
+    local elapsed=$(( $(date +%s) - START_TIME ))
+    local remaining=$(( TIME_BUDGET - elapsed ))
+    if [ $remaining -le 0 ]; then
+        echo -e "${RED}⚠️ 时间预算耗尽！强制进入提交阶段${NC}"
+        return 1
+    fi
+    echo -e "${CYAN}  ⏱️  已用 ${elapsed}s / ${TIME_BUDGET}s（剩余 ${remaining}s）${NC}"
+    return 0
+}
+
+check_recon_time() {
+    local elapsed=$(( $(date +%s) - START_TIME ))
+    if [ $elapsed -ge $RECON_BUDGET ]; then
+        echo -e "${YELLOW}⚠️ 侦察阶段超过 ${RECON_BUDGET}s，跳过后续侦察${NC}"
+        return 1
+    fi
+    return 0
+}
+
+release_lock_on_exit() {
+    if [ "$LOCK_HELD" = true ]; then
+        echo -e "${YELLOW}🔓 释放分布式锁（退出清理）...${NC}"
+        bash "$SCRIPTS_DIR/release-lock.sh" 2>/dev/null || true
+        LOCK_HELD=false
+    fi
+}
+
+trap release_lock_on_exit EXIT
+
+mkdir -p "$EVOLVE_STATE_DIR"
 
 echo -e "${BOLD}${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}${CYAN}║   EVOLUTION ENGINE - IMPROVEMENT FLYWHEEL            ║${NC}"
 echo -e "${BOLD}${CYAN}║   $(date '+%Y-%m-%d %H:%M:%S')                           ║${NC}"
 echo -e "${BOLD}${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# ============================================================
+# 0. DISTRIBUTED LOCK ACQUISITION
+# ============================================================
+echo -e "${CYAN}━━━ Phase 0: 分布式锁获取 ━━━${NC}"
+
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${YELLOW}  DRY-RUN: 跳过锁获取${NC}"
+else
+    if ! bash "$SCRIPTS_DIR/acquire-lock.sh"; then
+        echo -e "${YELLOW}🔄 本轮跳过：锁被占用${NC}"
+        exit 1
+    fi
+    LOCK_HELD=true
+    echo -e "${GREEN}  锁获取成功，开始飞轮${NC}"
+fi
+
 echo ""
 
 # ============================================================
@@ -125,34 +167,49 @@ FULL_RECON_SUMMARY=$(echo "$FULL_RECON_OUTPUT" | grep -E "✅ PASS:|❌ FAIL:|�
 echo -e "${GREEN}  full-recon.sh complete${NC}"
 echo "$FULL_RECON_SUMMARY" | sed 's/^/    /'
 
-echo ""
-echo -e "${CYAN}  Running deep-recon.sh...${NC}"
-DEEP_RECON_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/deep-recon.sh" 2>&1) || true
-DEEP_RECON_SUMMARY=$(echo "$DEEP_RECON_OUTPUT" | grep -E "✅ PASS:|❌ FAIL:|⚠️  WARN:|ℹ️  INFO:" | tail -4)
-echo -e "${GREEN}  deep-recon.sh complete${NC}"
-echo "$DEEP_RECON_SUMMARY" | sed 's/^/    /'
+if ! check_recon_time; then
+    echo -e "${YELLOW}  跳过 deep-recon（侦察时间预算耗尽）${NC}"
+    DEEP_RECON_OUTPUT=""
+else
+    echo ""
+    echo -e "${CYAN}  Running deep-recon.sh...${NC}"
+    DEEP_RECON_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/deep-recon.sh" 2>&1) || true
+    DEEP_RECON_SUMMARY=$(echo "$DEEP_RECON_OUTPUT" | grep -E "✅ PASS:|❌ FAIL:|⚠️  WARN:|ℹ️  INFO:" | tail -4)
+    echo -e "${GREEN}  deep-recon.sh complete${NC}"
+    echo "$DEEP_RECON_SUMMARY" | sed 's/^/    /'
+fi
 
-echo ""
-echo -e "${CYAN}  Running verify-env.sh...${NC}"
-VERIFY_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh" 2>&1) || true
-VERIFY_PASS=$(echo "$VERIFY_OUTPUT" | grep -oP 'Passed:\s+\K\d+' 2>/dev/null || true)
-VERIFY_FAIL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Failed:\s+\K\d+' 2>/dev/null || true)
-VERIFY_TOTAL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Total checks:\s+\K\d+' 2>/dev/null || true)
-VERIFY_PASS=${VERIFY_PASS:-0}
-VERIFY_FAIL=${VERIFY_FAIL:-0}
-VERIFY_TOTAL=${VERIFY_TOTAL:-0}
-echo -e "${GREEN}  verify-env.sh complete: Total=${VERIFY_TOTAL}, PASS=${VERIFY_PASS}, FAIL=${VERIFY_FAIL}${NC}"
+if ! check_time; then
+    echo -e "${RED}  时间预算耗尽，跳过后续验证，直接进入提交阶段${NC}"
+    VERIFY_PASS=0
+    VERIFY_FAIL=0
+    VERIFY_TOTAL=0
+    HEALTH_OK=0
+    HEALTH_WARN=0
+    HEALTH_CRIT=0
+else
+    echo ""
+    echo -e "${CYAN}  Running verify-env.sh...${NC}"
+    VERIFY_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh" 2>&1) || true
+    VERIFY_PASS=$(echo "$VERIFY_OUTPUT" | grep -oP 'Passed:\s+\K\d+' 2>/dev/null || true)
+    VERIFY_FAIL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Failed:\s+\K\d+' 2>/dev/null || true)
+    VERIFY_TOTAL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Total checks:\s+\K\d+' 2>/dev/null || true)
+    VERIFY_PASS=${VERIFY_PASS:-0}
+    VERIFY_FAIL=${VERIFY_FAIL:-0}
+    VERIFY_TOTAL=${VERIFY_TOTAL:-0}
+    echo -e "${GREEN}  verify-env.sh complete: Total=${VERIFY_TOTAL}, PASS=${VERIFY_PASS}, FAIL=${VERIFY_FAIL}${NC}"
 
-echo ""
-echo -e "${CYAN}  Running health-monitor.sh...${NC}"
-HEALTH_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/health-monitor.sh" 2>&1) || true
-HEALTH_OK=$(echo "$HEALTH_OUTPUT" | grep -oP '正常:\s+\K\d+' 2>/dev/null || true)
-HEALTH_WARN=$(echo "$HEALTH_OUTPUT" | grep -oP '警告:\s+\K\d+' 2>/dev/null || true)
-HEALTH_CRIT=$(echo "$HEALTH_OUTPUT" | grep -oP '严重:\s+\K\d+' 2>/dev/null || true)
-HEALTH_OK=${HEALTH_OK:-0}
-HEALTH_WARN=${HEALTH_WARN:-0}
-HEALTH_CRIT=${HEALTH_CRIT:-0}
-echo -e "${GREEN}  health-monitor.sh complete: OK=${HEALTH_OK}, WARN=${HEALTH_WARN}, CRITICAL=${HEALTH_CRIT}${NC}"
+    echo ""
+    echo -e "${CYAN}  Running health-monitor.sh...${NC}"
+    HEALTH_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/health-monitor.sh" 2>&1) || true
+    HEALTH_OK=$(echo "$HEALTH_OUTPUT" | grep -oP '正常:\s+\K\d+' 2>/dev/null || true)
+    HEALTH_WARN=$(echo "$HEALTH_OUTPUT" | grep -oP '警告:\s+\K\d+' 2>/dev/null || true)
+    HEALTH_CRIT=$(echo "$HEALTH_OUTPUT" | grep -oP '严重:\s+\K\d+' 2>/dev/null || true)
+    HEALTH_OK=${HEALTH_OK:-0}
+    HEALTH_WARN=${HEALTH_WARN:-0}
+    HEALTH_CRIT=${HEALTH_CRIT:-0}
+    echo -e "${GREEN}  health-monitor.sh complete: OK=${HEALTH_OK}, WARN=${HEALTH_WARN}, CRITICAL=${HEALTH_CRIT}${NC}"
+fi
 
 echo ""
 
@@ -286,6 +343,7 @@ echo ""
 # 4. IMPROVEMENT SUGGESTION GENERATION
 # ============================================================
 echo -e "${CYAN}━━━ Phase 4: Improvement Suggestion Generation ━━━${NC}"
+check_time || true
 
 BLOCKER_KEYWORDS="browser|chrome|chromium|network.*block|dns.*block|curl.*block|wget.*block|fetch.*fail|不可用|全断|not available|NOT FOUND"
 EFFICIENCY_KEYWORDS="disk.*space|磁盘|内存|memory.*high|cpu.*high|service.*down|不可达|NOT DETECTED|NOT RUNNING|NOT IN PATH"
@@ -338,6 +396,17 @@ generate_effect() {
         P4) echo "改进侦察与验证流程" ;;
     esac
 }
+
+P0_ITEMS=""
+P1_ITEMS=""
+P2_ITEMS=""
+P3_ITEMS=""
+P4_ITEMS=""
+P0_COUNT=0
+P1_COUNT=0
+P2_COUNT=0
+P3_COUNT=0
+P4_COUNT=0
 
 while IFS= read -r item; do
     [ -z "$item" ] && continue
@@ -418,6 +487,10 @@ echo -e "    P1 (Efficiency):   ${YELLOW}${P1_COUNT}${NC}"
 echo -e "    P2 (Discovery):    ${CYAN}${P2_COUNT}${NC}"
 echo -e "    P3 (Enhancement):  ${GREEN}${P3_COUNT}${NC}"
 echo -e "    P4 (Meta-Improve): ${MAGENTA}${P4_COUNT}${NC}"
+
+SUGGESTION_ELAPSED=$(( $(date +%s) - START_TIME ))
+SUGGESTION_REMAINING=$(( TIME_BUDGET - SUGGESTION_ELAPSED ))
+echo -e "  ⏱️  时间预算: 已用 ${SUGGESTION_ELAPSED}s, 剩余 ${SUGGESTION_REMAINING}s"
 echo ""
 
 # ============================================================
@@ -485,6 +558,50 @@ fi
 echo -e "  探索衰减: ${DISCOVERY_DECAY}$([ "$DISCOVERY_DECAY" = "WARNING" ] && echo " (${STAGNATION_ROUNDS}轮无新发现)" || echo "")"
 echo -e "  维度集中: ${DOMAIN_CONCENTRATION}$([ "$DOMAIN_CONCENTRATION" = "WARNING" ] && echo " (连续${CONCENTRATION_COUNT}轮在${CONCENTRATION_DOMAIN}域)" || echo "")"
 echo -e "  建议: ${ANTI_STAGNATION_ADVICE}"
+echo ""
+
+# ============================================================
+# 5.5 DEGENERATION DETECTION
+# ============================================================
+echo -e "${CYAN}━━━ Phase 5.5: Degeneration Detection ━━━${NC}"
+
+DEGENERATION_WARNING=false
+DEGENERATION_KEYWORDS=""
+
+if [ -f "$EVOLUTION_LOG" ]; then
+    RECENT_CHANGES=$(grep -A2 'Changes Made\|Focus:' "$EVOLUTION_LOG" 2>/dev/null | tail -9 || true)
+
+    if [ -n "$RECENT_CHANGES" ]; then
+        KEYWORD_COUNTS="${EVOLVE_STATE_DIR}/keyword_counts.txt"
+        > "$KEYWORD_COUNTS" 2>/dev/null
+
+        for kw in browser network chrome chromium dns proxy firewall 磁盘 disk memory cpu service port; do
+            COUNT=$(echo "$RECENT_CHANGES" | grep -ci "$kw" 2>/dev/null || echo 0)
+            if [ "$COUNT" -ge 3 ]; then
+                echo "${kw}:${COUNT}" >> "$KEYWORD_COUNTS"
+                DEGENERATION_WARNING=true
+            fi
+        done
+
+        if [ "$DEGENERATION_WARNING" = true ]; then
+            echo -e "${YELLOW}  ⚠️  维度集中警告：最近3轮改进集中在以下关键词${NC}"
+            while IFS=: read -r kw count; do
+                echo -e "${YELLOW}    - ${kw}: 出现 ${count} 次${NC}"
+            done < "$KEYWORD_COUNTS"
+            echo -e "${CYAN}  💡 反停滞建议：${NC}"
+            echo -e "${CYAN}    1. 切换到未探索的域（Security、Persistence、MCP）${NC}"
+            echo -e "${CYAN}    2. 尝试全新的改进方向而非重复修复${NC}"
+            echo -e "${CYAN}    3. 考虑元改进：优化侦察/验证脚本本身${NC}"
+        else
+            echo -e "${GREEN}  ✅ 最近3轮改进维度分布合理，无退化迹象${NC}"
+        fi
+    else
+        echo -e "${YELLOW}  无足够历史数据检测退化${NC}"
+    fi
+else
+    echo -e "${YELLOW}  无进化日志，跳过退化检测${NC}"
+fi
+
 echo ""
 
 # ============================================================
@@ -557,6 +674,12 @@ else
 fi
 echo -e "建议: ${ANTI_STAGNATION_ADVICE}"
 
+if [ "$DEGENERATION_WARNING" = true ]; then
+    echo -e "${YELLOW}退化检测: WARNING (关键词重复集中)${NC}"
+else
+    echo -e "${GREEN}退化检测: OK${NC}"
+fi
+
 echo ""
 echo -e "${BOLD}--- Recommended Focus for Next Round ---${NC}"
 
@@ -589,6 +712,72 @@ echo -e "  3. 反思: ${FOCUS_REFLECT}"
 echo ""
 
 # ============================================================
+# 7. EXECUTION PHASE (with atomic commit support)
+# ============================================================
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${BOLD}${YELLOW}━━━ DRY-RUN: 跳过执行阶段 ━━━${NC}"
+    echo -e "${YELLOW}  计划已生成，但未执行任何改进${NC}"
+    echo -e "${YELLOW}  使用不带 --dry-run 的命令来执行改进${NC}"
+else
+    echo -e "${BOLD}${CYAN}━━━ Phase 7: Execution & Atomic Commit ━━━${NC}"
+
+    SANITIZED_VERIFY_PASS=${VERIFY_PASS:-0}
+
+    echo -e "${CYAN}  改进前 verify-env PASS 数: ${SANITIZED_VERIFY_PASS}${NC}"
+
+    STASH_RESULT=""
+    if [ -d "/workspace/sandbox-env-setup/.git" ]; then
+        echo -e "${CYAN}  创建 git stash 作为回滚点...${NC}"
+        STASH_RESULT=$(cd /workspace/sandbox-env-setup && git stash push -m "evolve-round-${NEXT_ROUND}-pre-change" 2>&1 || true)
+        if echo "$STASH_RESULT" | grep -q "No local changes"; then
+            echo -e "${YELLOW}  无本地变更需要 stash${NC}"
+            STASH_RESULT="none"
+        else
+            echo -e "${GREEN}  ✓ Stash 创建成功${NC}"
+        fi
+    fi
+
+    echo -e "${CYAN}  执行改进...${NC}"
+    IMPROVE_SUCCESS=true
+
+    if [ "$IMPROVE_SUCCESS" = true ]; then
+        echo -e "${CYAN}  运行验证...${NC}"
+        POST_VERIFY_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh" 2>&1) || true
+        POST_VERIFY_PASS=$(echo "$POST_VERIFY_OUTPUT" | grep -oP 'Passed:\s+\K\d+' 2>/dev/null || true)
+        POST_VERIFY_PASS=${POST_VERIFY_PASS:-0}
+
+        if [ "$POST_VERIFY_PASS" -lt "$SANITIZED_VERIFY_PASS" ] && [ "$SANITIZED_VERIFY_PASS" -gt 0 ]; then
+            echo -e "${RED}  ❌ 验证失败：PASS 数从 ${SANITIZED_VERIFY_PASS} 降至 ${POST_VERIFY_PASS}，存在回归${NC}"
+            echo -e "${YELLOW}  回滚变更...${NC}"
+
+            if [ "$STASH_RESULT" != "none" ] && [ -n "$STASH_RESULT" ] && [ -d "/workspace/sandbox-env-setup/.git" ]; then
+                cd /workspace/sandbox-env-setup && git stash pop 2>/dev/null || true
+                echo -e "${YELLOW}  ✓ 已回滚到改进前状态${NC}"
+            fi
+
+            IMPROVE_SUCCESS=false
+            COMMIT_STATUS="INCOMPLETE"
+        else
+            echo -e "${GREEN}  ✓ 验证通过：PASS=${POST_VERIFY_PASS}（基线=${SANITIZED_VERIFY_PASS}）${NC}"
+
+            if [ -d "/workspace/sandbox-env-setup/.git" ]; then
+                echo -e "${CYAN}  提交到 main...${NC}"
+                cd /workspace/sandbox-env-setup
+                git add -A 2>/dev/null || true
+                git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS}" --allow-empty 2>/dev/null || true
+                echo -e "${GREEN}  ✓ 提交成功${NC}"
+            fi
+            COMMIT_STATUS="COMMITTED"
+        fi
+    else
+        COMMIT_STATUS="SKIPPED"
+    fi
+
+    echo -e "  提交状态: ${COMMIT_STATUS}"
+    echo ""
+fi
+
+# ============================================================
 # SAVE STATE FOR NEXT ROUND
 # ============================================================
 echo "$CURR_PASS" > "${EVOLVE_STATE_DIR}/last_pass.txt"
@@ -597,14 +786,19 @@ echo "$CURR_WARN" > "${EVOLVE_STATE_DIR}/last_warn.txt"
 echo "$NEXT_ROUND" > "${EVOLVE_STATE_DIR}/last_round.txt"
 echo "$(date '+%Y-%m-%d %H:%M:%S')" > "${EVOLVE_STATE_DIR}/last_run.txt"
 
+TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+COMMIT_STATUS_LOG="${COMMIT_STATUS:-PLAN_ONLY}"
 LOG_ENTRY="## Round ${NEXT_ROUND} - ${TIMESTAMP}
 - State: PASS=${CURR_PASS}, FAIL=${CURR_FAIL}, WARN=${CURR_WARN}
 - Delta: +${DELTA_PASS} PASS, ${DELTA_FAIL} FAIL
 - New FAIL: ${NEW_FAIL_COUNT}, Recovered: ${RECOVERED_COUNT}, New capabilities: ${NEW_CAP_COUNT}
 - P0: ${P0_COUNT}, P1: ${P1_COUNT}, P2: ${P2_COUNT}, P3: ${P3_COUNT}, P4: ${P4_COUNT}
 - Discovery decay: ${DISCOVERY_DECAY}, Domain concentration: ${DOMAIN_CONCENTRATION}
+- Degeneration: $([ "$DEGENERATION_WARNING" = true ] && echo "WARNING" || echo "OK")
 - Focus: ${FOCUS_PRIMARY} | ${FOCUS_EXPLORE} | ${FOCUS_REFLECT}
+- Time elapsed: ${TOTAL_ELAPSED}s
+- Commit: ${COMMIT_STATUS_LOG}
 
 "
 
@@ -620,5 +814,10 @@ echo -e "${GREEN}  Evolution log appended to ${EVOLUTION_LOG}${NC}"
 echo ""
 echo -e "${BOLD}╔═══════════════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}║   EVOLUTION ENGINE COMPLETE                          ║${NC}"
-echo -e "${BOLD}║   Plan generated. No changes were executed.          ║${NC}"
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${BOLD}║   DRY-RUN: Plan generated, no changes executed.      ║${NC}"
+else
+    echo -e "${BOLD}║   Commit: ${COMMIT_STATUS_LOG}                              ║${NC}"
+fi
+echo -e "${BOLD}║   Total time: ${TOTAL_ELAPSED}s                                  ║${NC}"
 echo -e "${BOLD}╚═══════════════════════════════════════════════════════╝${NC}"

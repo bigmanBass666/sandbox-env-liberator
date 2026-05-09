@@ -136,4 +136,36 @@ Round 2 ████████████████████████
 - Discovery decay: OK, Domain concentration: OK
 - Focus: P0阻塞项 (共18项) | P2发现项 (共10项) | P4元改进 (共2项)
 
+---
+
+## Auto-Evolution Format (自动轮次格式)
+
+从 Round 3 开始，轮次可能由 Schedule 定时任务自动触发。格式如下：
+
+### Round N (Auto)
+- **Timestamp**: ISO8601
+- **Trigger**: Schedule (auto) / Manual
+- **Lock Acquired**: YES/NO (如果NO，本轮跳过)
+- **Previous State**: PASS=X, FAIL=Y
+- **Changes Made**: [具体改动列表]
+- **Current State**: PASS=X', FAIL=Y'
+- **Delta**: +A PASS, -B FAIL
+- **New Discoveries**: [新发现] 或 "None (exploration mode recommended)"
+- **Failed Attempts**: [尝试了什么但失败了] (关键：避免下一轮重复失败)
+- **Next Priority**: [下一轮参考方向]
+- **Meta Reflection**: [对改进过程的反思]
+- **Status**: COMPLETE / INCOMPLETE / SKIPPED
+
+
+## Round 6 - 2026-05-09 21:38:30
+- State: PASS=178, FAIL=17, WARN=10
+- Delta: +0 PASS, -1 FAIL
+- New FAIL: 0, Recovered: 1, New capabilities: 3
+- P0: 17, P1: 4, P2: 9, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共17项) | P2发现项 (共9项) | P4元改进 (共2项)
+- Time elapsed: 125s
+- Commit: PLAN_ONLY
+
 

@@ -195,3 +195,30 @@ node -e "const{chromium}=require('playwright');(async()=>{const b=await chromium
 # Full verification
 bash /workspace/sandbox-env-setup/scripts/verify-env.sh
 ```
+
+## Scheduled Evolution Issues
+
+### 定时任务未触发
+- 检查: 使用 Schedule 工具的 list action 查看任务状态
+- 修复: 如果任务被暂停，使用 resume action 恢复
+
+### 锁被永久占用
+- 症状: 连续多轮都被跳过
+- 检查: `curl -s -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" https://api.github.com/repos/bigmanBass666/sandbox-env-liberator/issues/1 | grep evolving`
+- 修复: 手动释放锁: `bash /workspace/sandbox-env-setup/scripts/release-lock.sh`
+- 或通过 GitHub API 关闭 Issue #1 并移除 evolving 标签
+
+### 改进导致回归
+- 症状: verify-env.sh PASS数减少
+- 修复: evolve.sh 会自动回滚（git stash pop）
+- 手动回滚: `cd /workspace/sandbox-env-setup && git log --oneline -5 && git revert HEAD`
+
+### 连续多轮无进展
+- 症状: evolution-log.md 连续3轮 Changes Made 相似
+- 修复: 系统自动切换探索模式
+- 手动: 在 evolution-log.md 的 Meta Reflection 中添加 "FORCE_EXPLORE" 标记
+
+### 时间预算耗尽
+- 症状: evolution-log.md 中出现 INCOMPLETE 标记
+- 修复: 下一轮会自动续接（evolve.sh 读取 INCOMPLETE 项）
+- 手动: 检查哪个改进耗时过长，优化脚本效率
