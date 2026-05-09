@@ -506,6 +506,104 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 
 ---
 
+## Meta-Improvement Protocol (元改进协议)
+
+This section defines how the system improves itself. When triggered by the meta-prompt, the AI follows this protocol to execute a complete improvement flywheel cycle.
+
+### The Flywheel
+
+侦察(Recon) → 假设(Hypothesize) → 实验(Experiment) → 整合(Integrate) → 反思(Reflect)
+
+Each cycle MUST:
+1. Produce incremental progress (not repeat work)
+2. Leave memory (Memory MCP + evolution-log.md)
+3. Expand boundaries (discover ≥1 unknown capability/limitation)
+4. Improve the improvement process itself (meta-improvement)
+
+### Priority Matrix
+
+| Priority | Category | Action |
+|----------|----------|--------|
+| P0 | Blocker | FAIL items that prevent basic work → Fix immediately |
+| P1 | Efficiency | WARN items that severely degrade work → Fix before exploring |
+| P2 | Discovery | ❓ Unknown items worth exploring → Explore 1 per round |
+| P3 | Enhancement | ✅ Items that can be optimized → Optional |
+| P4 | Meta | Improve the improvement process itself → Reflect every round |
+
+### Recon Protocol (侦察协议)
+
+How to systematically discover the unknown:
+1. Run full-recon.sh + deep-recon.sh to get current snapshot
+2. Compare with previous snapshot (from evolution-log.md)
+3. Identify anomalies: unexpected FAIL, new services, changed permissions
+4. For each ❓ item, design a targeted probe
+5. Look for patterns: if one domain has many FAILs, investigate root cause
+
+### Hypothesis Protocol (假设协议)
+
+How to form verifiable improvement hypotheses:
+1. For each P0/P1 item, state: "If I fix X, then Y should change from FAIL to PASS"
+2. For each P2 item, state: "If I probe Z, I expect to discover [capability/limitation]"
+3. Each hypothesis MUST be falsifiable — there must be a clear pass/fail test
+4. Maximum 3 hypotheses per round (focus over breadth)
+
+### Experiment Protocol (实验协议)
+
+How to safely implement and verify improvements:
+1. Before changing anything, record current state (verify-env.sh output)
+2. Make changes incrementally — one hypothesis at a time
+3. After each change, run verify-env.sh to check for regressions
+4. If a change causes regression, revert immediately
+5. Never modify running system services without testing first
+
+### Integration Protocol (整合协议)
+
+How to persist improvements as knowledge:
+1. Code changes → commit to scripts/ with descriptive messages
+2. New discoveries → update references/ (capability-matrix, troubleshooting, etc.)
+3. Process improvements → update this Meta-Improvement Protocol section
+4. State → update Memory MCP entities and evolution-log.md
+5. All changes → Git commit + push to GitHub
+
+### Reflection Protocol (反思协议)
+
+How to evaluate and optimize the improvement process:
+1. Measure: How many PASS gained? FAIL reduced? New capabilities discovered?
+2. Efficiency: How much effort per improvement? Is there a faster path?
+3. Coverage: Which domains were explored? Which were neglected?
+4. Anti-stagnation: Apply checks (see below)
+5. Next round: What should be the focus? What was missed?
+
+### Anti-Stagnation Mechanisms
+
+| Trigger | Response |
+|---------|----------|
+| 3 rounds with no new discoveries (P2=0) | Switch to deep exploration mode: try unconventional probes, test edge cases |
+| 3 rounds in same domain | Force domain rotation: pick the least-explored domain |
+| Every 5 rounds | Challenge one "known" conclusion: re-verify a PASS item |
+| Every round | Try ≥1 previously untested operation (new port, new API, new tool) |
+
+### The Meta-Prompt
+
+Copy and use this prompt to trigger the improvement flywheel:
+
+> /evolve sandbox-env-setup
+>
+> Execute improvement flywheel for sandbox-env-setup:
+> 1. Read evolution state from Memory MCP (SandboxEvolutionState) and evolution-log.md
+> 2. Recon: run full-recon.sh + deep-recon.sh, compare with previous snapshot
+> 3. Prioritize: P0(blockers) > P1(efficiency) > P2(discovery) > P3(enhancement) > P4(meta)
+> 4. Hypothesize: form ≤3 verifiable improvement hypotheses from top priority items
+> 5. Experiment: implement improvements, verify with verify-env.sh, check for regressions
+> 6. Integrate: persist changes to scripts/, references/, Memory MCP, evolution-log.md
+> 7. Reflect: measure delta, evaluate efficiency, check anti-stagnation triggers
+> 8. Record: update evolution-log.md with full round context
+> 9. Commit: git add -A && git commit && git push
+>
+> Anti-stagnation: 3 rounds no discovery→deep explore | 3 rounds same domain→rotate | every 5 rounds→challenge known | every round→try 1 new thing
+
+---
+
 ## What This Skill Does NOT Do
 
 - Install kernel modules or modify system security policies
