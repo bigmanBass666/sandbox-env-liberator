@@ -24,7 +24,7 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | pip install | ✅ | Via proxy |
 | Direct TCP outbound | ❌ | Timeout on all tested ports |
 | IPv6 | ✅ | Resolution works |
-| WebSocket | ❓ | Not tested |
+| WebSocket | ✅ | 端口40005, Node.js原生WebSocket可用 |
 
 ## Domain 2: File System & Permissions
 
@@ -138,6 +138,54 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | mise tool versions | ✅ | Multiple runtimes managed |
 | Environment variables | ⚠️ | Persist in shell profiles only |
 | /tmp persistence | ❓ | May be cleared between sessions |
+
+## Domain 9: 平台内部服务
+
+| Capability | Status | Notes |
+|-----------|--------|-------|
+| VNC服务 | ✅ | 端口5900, RFB 003.008 |
+| CDP端点 | ✅ | 端口8088, /v1/cdp |
+| WebSocket | ✅ | 端口40005 |
+| HTTP代理 | ✅ | 端口18080/18081（可能需认证） |
+| 预览代理 | ✅ | 端口16000 |
+| 健康检查 | ✅ | 端口13080/19090 /health |
+| Supervisor | ✅ | /app/supervisord.conf |
+| Kubernetes | ✅ | KUBERNETES_SERVICE_HOST存在 |
+| Node.js预加载 | ✅ | /app/mcp_proxy_bootstrap/preload.cjs |
+
+### 完整端口映射表
+
+| 端口 | 服务 | 状态 |
+|------|------|------|
+| 80 | HTTP (agent-tool-host) | ✅ |
+| 5900 | VNC (RFB 003.008) | ✅ |
+| 8088 | CDP端点 | ✅ |
+| 8999 | agent-tool-host | ✅ |
+| 9090-9092 | 监控指标 | ✅ |
+| 9222 | Chrome DevTools | ✅ |
+| 10249 | HTTP API | ✅ |
+| 13080 | HTTP API + /health | ✅ |
+| 16000 | 预览代理 | ✅ |
+| 18080 | HTTP代理（出站） | ✅ |
+| 18081 | HTTPS代理（出站） | ✅ |
+| 19090 | HTTP API + /health | ✅ |
+| 19091 | agent-tool-host | ✅ |
+| 40005 | WebSocket | ✅ |
+| 51008 | 未知二进制协议 | ❓ |
+
+## Domain 10: 安全与隔离
+
+| Capability | Status | Notes |
+|-----------|--------|-------|
+| seccomp | ✅ | 过滤模式 (Seccomp: 2) |
+| AppArmor | ⚠️ | unconfined |
+| Capabilities | ⚠️ | 有限 (0xa80425fb) |
+| 容器运行时 | ✅ | Docker + Kubernetes |
+| Node.js能力 | ✅ | 28模块全可用, WebCrypto, 52加密算法, worker_threads, 原生WebSocket |
+
+Capabilities详情:
+- 有: CHOWN, DAC_OVERRIDE, FOWNER, FSETID, KILL, SETGID, SETUID, SETPCAP, NET_BIND_SERVICE, NET_RAW, SYS_CHROOT, MKNOD, AUDIT_WRITE, SETFCAP
+- 无: SYS_ADMIN, NET_ADMIN, SYS_RESOURCE, SYS_PTRACE(完全)
 
 ## Priority Bottlenecks
 

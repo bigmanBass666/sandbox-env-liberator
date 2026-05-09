@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Full Environment Reconnaissance Script
-# Probes all 8 core domains of the cloud sandbox environment
+# Probes all 10 core domains of the cloud sandbox environment
 # Outputs structured results for capability matrix generation
 # ============================================================
 
@@ -24,7 +24,7 @@ section() { echo ""; echo -e "${CYAN}══════════════�
 
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║   SANDBOX ENVIRONMENT FULL RECONNAISSANCE v2.0       ║"
-echo "║   8-Domain Systematic Probe                          ║"
+echo "║   10-Domain Systematic Probe                         ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
@@ -826,6 +826,498 @@ for hist_file in ~/.bash_history ~/.zsh_history ~/.history; do
         info "$hist_file: $HIST_LINES lines"
     fi
 done
+
+# ============================================================
+# DOMAIN 9: PLATFORM INTERNAL SERVICES
+# ============================================================
+section "9" "PLATFORM INTERNAL SERVICES"
+
+echo "--- 9.1 Full Port Scan (1-65535) ---"
+node -e "
+const net=require('net');
+const OPEN=[];
+let checked=0;
+const total=65535;
+const BATCH=500;
+const ports=[];
+for(let i=1;i<=total;i++) ports.push(i);
+
+function scanBatch(offset){
+  const batch=ports.slice(offset,offset+BATCH);
+  if(batch.length===0){
+    console.log('SCAN_DONE|'+OPEN.length+'|'+OPEN.join(','));
+    return;
+  }
+  let pending=0;
+  batch.forEach(p=>{
+    pending++;
+    const s=net.createConnection({host:'127.0.0.1',port:p,timeout:400},()=>{
+      OPEN.push(p);s.destroy();pending--;
+      if(pending===0) scanBatch(offset+BATCH);
+    });
+    s.on('error',()=>{s.destroy();pending--;if(pending===0) scanBatch(offset+BATCH)});
+    s.on('timeout',()=>{s.destroy();pending--;if(pending===0) scanBatch(offset+BATCH)});
+  });
+}
+scanBatch(0);
+setTimeout(()=>console.log('SCAN_TIMEOUT|'+OPEN.length+'|'+OPEN.join(',')),60000);
+" 2>&1 | while IFS= read -r line; do
+    count=$(echo "$line" | cut -d'|' -f2)
+    ports_str=$(echo "$line" | cut -d'|' -f3)
+    case "$line" in
+        SCAN_DONE*) pass "Full port scan: $count open ports found"; [ -n "$ports_str" ] && info "Open ports: $ports_str" ;;
+        SCAN_TIMEOUT*) warn "Full port scan: timed out, $count ports found so far"; [ -n "$ports_str" ] && info "Open ports: $ports_str" ;;
+    esac
+done
+
+echo "--- 9.2 VNC Service (port 5900) ---"
+VNC_RESULT=$(node -e "
+const net=require('net');
+let done=false;
+const s=net.createConnection({host:'127.0.0.1',port:5900,timeout:3000},()=>{
+  s.on('data',d=>{
+    if(done)return;done=true;
+    const hdr=d.toString('utf8',0,Math.min(12,d.length));
+    if(hdr.startsWith('RFB')){console.log('VNC_OK:'+hdr.trim())}else{console.log('VNC_UNKNOWN:'+hdr.trim().substring(0,30))}
+    s.destroy();
+  });
+  s.on('error',()=>{if(!done){done=true;console.log('VNC_FAIL:read error');s.destroy()}});
+  setTimeout(()=>{if(!done){done=true;console.log('VNC_TIMEOUT:no data');s.destroy()}},2000);
+});
+s.on('error',e=>{if(!done){done=true;console.log('VNC_FAIL:'+e.message.substring(0,40))}});
+s.on('timeout',()=>{if(!done){done=true;console.log('VNC_TIMEOUT');s.destroy()}});
+" 2>&1)
+if echo "$VNC_RESULT" | grep -q "^VNC_OK:"; then
+    pass "VNC service: DETECTED ($(echo $VNC_RESULT | cut -d: -f2-))"
+elif echo "$VNC_RESULT" | grep -q "^VNC_UNKNOWN:"; then
+    warn "VNC port 5900: OPEN but not RFB protocol"
+elif echo "$VNC_RESULT" | grep -q "^VNC_TIMEOUT"; then
+    warn "VNC port 5900: connected but no RFB handshake"
+else
+    info "VNC service: NOT DETECTED on port 5900"
+fi
+
+echo "--- 9.3 CDP Endpoint (port 8088, /v1/cdp) ---"
+CDP_RESULT=$(node -e "
+const http=require('http');
+const req=http.get('http://127.0.0.1:8088/v1/cdp',{timeout:3000},r=>{
+  let d='';r.on('data',c=>d+=c);r.on('end',()=>{
+    console.log('CDP_HTTP:'+r.statusCode+'|'+d.substring(0,80));
+  });
+});
+req.on('error',e=>console.log('CDP_FAIL:'+e.message.substring(0,40)));
+req.on('timeout',()=>{console.log('CDP_TIMEOUT');req.destroy()});
+" 2>&1)
+if echo "$CDP_RESULT" | grep -q "^CDP_HTTP:200"; then
+    pass "CDP endpoint: ACCESSIBLE on port 8088"
+elif echo "$CDP_RESULT" | grep -q "^CDP_HTTP:"; then
+    warn "CDP endpoint: responded with HTTP $(echo $CDP_RESULT | cut -d: -f2 | cut -d'|' -f1)"
+else
+    info "CDP endpoint: NOT DETECTED on port 8088"
+fi
+
+echo "--- 9.4 WebSocket Service (port 40005) ---"
+WS_RESULT=$(node -e "
+const http=require('http');
+const req=http.request({hostname:'127.0.0.1',port:40005,method:'GET',path:'/',timeout:3000,headers:{
+  'Upgrade':'websocket','Connection':'Upgrade','Sec-WebSocket-Key':'dGhlIHNhbXBsZSBub25jZQ==','Sec-WebSocket-Version':'13'
+}},r=>{
+  let d='';r.on('data',c=>d+=c);r.on('end',()=>{
+    if(r.statusCode===101) console.log('WS_UPGRADE:101');
+    else console.log('WS_HTTP:'+r.statusCode+'|'+d.substring(0,60));
+  });
+});
+req.on('error',e=>console.log('WS_FAIL:'+e.message.substring(0,40)));
+req.on('timeout',()=>{console.log('WS_TIMEOUT');req.destroy()});
+req.end();
+" 2>&1)
+if echo "$WS_RESULT" | grep -q "^WS_UPGRADE:"; then
+    pass "WebSocket service: UPGRADE SUCCESS on port 40005"
+elif echo "$WS_RESULT" | grep -q "^WS_HTTP:"; then
+    warn "WebSocket port 40005: HTTP response (not upgrading, status $(echo $WS_RESULT | cut -d: -f2 | cut -d'|' -f1))"
+else
+    info "WebSocket service: NOT DETECTED on port 40005"
+fi
+
+echo "--- 9.5 Proxy Auth Detection (ports 18080/18081) ---"
+for PPORT in 18080 18081; do
+    PROXY_RESULT=$(node -e "
+const http=require('http');
+const req=http.request({hostname:'127.0.0.1',port:$PPORT,method:'CONNECT',path:'httpbin.org:443',timeout:3000},r=>{
+  let d='';r.on('data',c=>d+=c);r.on('end',()=>{
+    console.log('PROXY_HTTP:'+r.statusCode);
+  });
+});
+req.on('error',e=>console.log('PROXY_FAIL:'+e.message.substring(0,40)));
+req.on('timeout',()=>{console.log('PROXY_TIMEOUT');req.destroy()});
+req.end();
+" 2>&1)
+    if echo "$PROXY_RESULT" | grep -q "^PROXY_HTTP:407"; then
+        pass "Proxy port $PPORT: 407 Proxy Authentication Required (proxy detected)"
+    elif echo "$PROXY_RESULT" | grep -q "^PROXY_HTTP:"; then
+        info "Proxy port $PPORT: HTTP $(echo $PROXY_RESULT | cut -d: -f2)"
+    else
+        info "Proxy port $PPORT: NOT DETECTED"
+    fi
+done
+
+echo "--- 9.6 Supervisor Process Manager ---"
+if [ -f /app/supervisord.conf ]; then
+    pass "Supervisor config: FOUND at /app/supervisord.conf"
+    info "  Contents preview: $(head -5 /app/supervisord.conf 2>/dev/null | tr '\n' ' ')"
+else
+    info "Supervisor config: /app/supervisord.conf NOT FOUND"
+fi
+
+if [ -S /run/supervisor.sock ]; then
+    pass "Supervisor socket: /run/supervisor.sock EXISTS"
+    SUP_CTL=$(which supervisorctl 2>/dev/null)
+    if [ -n "$SUP_CTL" ]; then
+        SUP_STATUS=$(timeout 3 supervisorctl -s unix:///run/supervisor.sock status 2>&1 | head -10)
+        if [ -n "$SUP_STATUS" ]; then
+            info "Supervisor status: $SUP_STATUS"
+        else
+            warn "supervisorctl: no output"
+        fi
+    else
+        info "supervisorctl: NOT INSTALLED"
+    fi
+elif [ -f /run/supervisor.sock ]; then
+    warn "Supervisor socket: /run/supervisor.sock exists but not a socket"
+else
+    info "Supervisor socket: /run/supervisor.sock NOT FOUND"
+fi
+
+echo "--- 9.7 Kubernetes Environment ---"
+K8S_HOST="${KUBERNETES_SERVICE_HOST:-}"
+K8S_PORT="${KUBERNETES_SERVICE_PORT:-}"
+if [ -n "$K8S_HOST" ]; then
+    pass "Kubernetes: DETECTED (KUBERNETES_SERVICE_HOST=$K8S_HOST)"
+    info "Kubernetes service port: $K8S_PORT"
+else
+    info "Kubernetes: NOT DETECTED (no KUBERNETES_SERVICE_HOST env)"
+fi
+
+for kvar in KUBERNETES_SERVICE_HOST KUBERNETES_SERVICE_PORT KUBERNETES_PORT KUBERNETES_PORT_443_TCP KUBERNETES_PORT_443_TCP_ADDR KUBERNETES_PORT_443_TCP_PORT KUBERNETES_PORT_443_TCP_PROTO KUBERNETES_SERVICE_PORT_HTTPS KUBERNETES_SERVICE_HOST; do
+    val="${!kvar}"
+    [ -n "$val" ] && info "  $kvar=$val"
+done
+
+if [ -f /var/run/secrets/kubernetes.io/serviceaccount/token ]; then
+    pass "Kubernetes service account token: FOUND"
+else
+    info "Kubernetes service account token: NOT FOUND"
+fi
+
+echo "--- 9.8 Node.js Preload Module ---"
+if [ -f /app/mcp_proxy_bootstrap/preload.cjs ]; then
+    pass "Node.js preload module: FOUND at /app/mcp_proxy_bootstrap/preload.cjs"
+    PRELOAD_SIZE=$(wc -c < /app/mcp_proxy_bootstrap/preload.cjs 2>/dev/null)
+    info "  File size: ${PRELOAD_SIZE:-unknown} bytes"
+    PRELOAD_HEAD=$(head -10 /app/mcp_proxy_bootstrap/preload.cjs 2>/dev/null | tr '\n' ' ')
+    info "  Preview: ${PRELOAD_HEAD:-unable to read}"
+else
+    info "Node.js preload module: /app/mcp_proxy_bootstrap/preload.cjs NOT FOUND"
+fi
+
+NODE_PRELOAD=$(node -e 'console.log(process.execArgv.filter(a=>a.includes("require")||a.includes("preload")).join(" ")||"NONE")' 2>&1)
+if [ "$NODE_PRELOAD" != "NONE" ] && [ -n "$NODE_PRELOAD" ]; then
+    pass "Node.js preload args: $NODE_PRELOAD"
+else
+    info "Node.js preload args: NONE DETECTED"
+fi
+
+echo "--- 9.9 Port Service Mapping ---"
+info "Known port-to-service mapping:"
+declare -A PORT_MAP=(
+    [22]="SSH"
+    [3000]="Dev Server"
+    [4000]="Preview Server"
+    [5900]="VNC"
+    [8080]="HTTP Alt"
+    [8088]="CDP Proxy"
+    [9222]="Chrome DevTools"
+    [40005]="WebSocket"
+    [18080]="Proxy Auth"
+    [18081]="Proxy Auth Alt"
+    [443]="HTTPS"
+    [80]="HTTP"
+    [6379]="Redis"
+    [5432]="PostgreSQL"
+    [9090]="Prometheus"
+    [8443]="HTTPS Alt"
+    [3001]="Dev Server Alt"
+)
+for p in $(echo "${!PORT_MAP[@]}" | tr ' ' '\n' | sort -n); do
+    PORT_STATUS=$(node -e "
+const net=require('net');
+const s=net.createConnection({host:'127.0.0.1',port:$p,timeout:1000},()=>{
+  console.log('OPEN');s.destroy();
+});
+s.on('error',()=>console.log('CLOSED'));
+s.on('timeout',()=>{console.log('TIMEOUT');s.destroy()});
+" 2>&1)
+    case "$PORT_STATUS" in
+        OPEN) pass "  Port $p (${PORT_MAP[$p]}): OPEN" ;;
+        CLOSED) info "  Port $p (${PORT_MAP[$p]}): CLOSED" ;;
+        TIMEOUT) info "  Port $p (${PORT_MAP[$p]}): TIMEOUT" ;;
+    esac
+done
+
+# ============================================================
+# DOMAIN 10: SECURITY & ISOLATION
+# ============================================================
+section "10" "SECURITY & ISOLATION"
+
+echo "--- 10.1 seccomp Status ---"
+SECCOMP_LINE=$(grep "^Seccomp:" /proc/1/status 2>/dev/null)
+if [ -n "$SECCOMP_LINE" ]; then
+    SECCOMP_VAL=$(echo "$SECCOMP_LINE" | awk '{print $2}')
+    case "$SECCOMP_VAL" in
+        0) pass "seccomp: DISABLED (no filtering)" ;;
+        1) warn "seccomp: STRICT (only allowlist syscalls)" ;;
+        2) warn "seccomp: FILTERED (seccomp-bpf active)" ;;
+        *) info "seccomp: unknown value $SECCOMP_VAL" ;;
+    esac
+    info "  Raw: $SECCOMP_LINE"
+else
+    info "seccomp: cannot read /proc/1/status"
+fi
+
+echo "--- 10.2 AppArmor Profile ---"
+APPARMOR_VAL=$(cat /proc/1/attr/current 2>/dev/null)
+if [ -n "$APPARMOR_VAL" ]; then
+    case "$APPARMOR_VAL" in
+        unconfined) pass "AppArmor: UNCONFINED (no restrictions)" ;;
+        "") info "AppArmor: empty value (may not be available)" ;;
+        *) warn "AppArmor: profile=$APPARMOR_VAL" ;;
+    esac
+else
+    info "AppArmor: cannot read /proc/1/attr/current"
+fi
+
+if [ -d /sys/kernel/security/apparmor ]; then
+    info "AppArmor: securityfs directory exists"
+else
+    info "AppArmor: securityfs directory NOT FOUND"
+fi
+
+echo "--- 10.3 Linux Capabilities Breakdown ---"
+CAP_EFF=$(grep "^CapEff:" /proc/1/status 2>/dev/null | awk '{print $2}')
+if [ -n "$CAP_EFF" ]; then
+    info "CapEff raw: $CAP_EFF"
+    CAP_DECODE=$(node -e "
+const capHex='$CAP_EFF';
+const caps={
+  0:'CAP_CHOWN',1:'CAP_DAC_OVERRIDE',2:'CAP_DAC_READ_SEARCH',3:'CAP_FOWNER',
+  4:'CAP_FSETID',5:'CAP_KILL',6:'CAP_SETGID',7:'CAP_SETUID',
+  8:'CAP_SETPCAP',9:'CAP_LINUX_IMMUTABLE',10:'CAP_NET_BIND_SERVICE',11:'CAP_NET_BROADCAST',
+  12:'CAP_NET_ADMIN',13:'CAP_NET_RAW',14:'CAP_IPC_LOCK',15:'CAP_IPC_OWNER',
+  16:'CAP_SYS_MODULE',17:'CAP_SYS_RAWIO',18:'CAP_SYS_CHROOT',19:'CAP_SYS_PTRACE',
+  20:'CAP_SYS_PACCT',21:'CAP_SYS_ADMIN',22:'CAP_SYS_BOOT',23:'CAP_SYS_NICE',
+  24:'CAP_SYS_RESOURCE',25:'CAP_SYS_TIME',26:'CAP_SYS_TTY_CONFIG',27:'CAP_MKNOD',
+  28:'CAP_LEASE',29:'CAP_AUDIT_WRITE',30:'CAP_AUDIT_CONTROL',31:'CAP_SETFCAP',
+  32:'CAP_MAC_OVERRIDE',33:'CAP_MAC_ADMIN',34:'CAP_SYSLOG',35:'CAP_WAKE_ALARM',
+  36:'CAP_BLOCK_SUSPEND',37:'CAP_AUDIT_READ',38:'CAP_PERFMON',39:'CAP_BPF',
+  40:'CAP_CHECKPOINT_RESTORE'
+};
+try{
+  const big=BigInt('0x'+capHex);
+  const present=[];
+  for(let i=0;i<=40;i++){
+    if(big&(1n<<BigInt(i))) present.push(caps[i]||'CAP_'+i);
+  }
+  console.log('CAP_COUNT:'+present.length);
+  present.forEach(c=>console.log('CAP:'+c));
+}catch(e){console.log('CAP_ERR:'+e.message.substring(0,40))}
+" 2>&1)
+    CAP_COUNT=$(echo "$CAP_DECODE" | grep "^CAP_COUNT:" | cut -d: -f2)
+    info "Effective capabilities count: ${CAP_COUNT:-unknown}"
+    echo "$CAP_DECODE" | grep "^CAP:" | while read line; do
+        cap_name=$(echo "$line" | cut -d: -f2)
+        case "$cap_name" in
+            CAP_SYS_ADMIN) warn "  $cap_name: PRESENT (very powerful)" ;;
+            CAP_SYS_PTRACE) warn "  $cap_name: PRESENT (can inspect processes)" ;;
+            CAP_NET_ADMIN) warn "  $cap_name: PRESENT (network admin)" ;;
+            CAP_SYS_RAWIO) warn "  $cap_name: PRESENT (raw I/O access)" ;;
+            CAP_SYS_MODULE) warn "  $cap_name: PRESENT (can load kernel modules)" ;;
+            CAP_SYS_BOOT) warn "  $cap_name: PRESENT (can reboot)" ;;
+            *) pass "  $cap_name: PRESENT" ;;
+        esac
+    done
+else
+    info "Capabilities: cannot read CapEff from /proc/1/status"
+fi
+
+echo "--- 10.4 Container Runtime Detection ---"
+if [ -f /.dockerenv ]; then
+    pass "Container: Docker environment detected (/.dockerenv exists)"
+else
+    info "Container: /.dockerenv NOT FOUND"
+fi
+
+if [ -f /run/.containerenv ]; then
+    pass "Container: Podman environment detected (/run/.containerenv exists)"
+else
+    info "Container: /run/.containerenv NOT FOUND"
+fi
+
+if [ -f /proc/1/cgroup ]; then
+    CGROUP_INFO=$(cat /proc/1/cgroup 2>/dev/null)
+    if echo "$CGROUP_INFO" | grep -qi "docker"; then
+        pass "Container runtime: Docker (from cgroup)"
+    elif echo "$CGROUP_INFO" | grep -qi "kubepods"; then
+        pass "Container runtime: Kubernetes (from cgroup)"
+    elif echo "$CGROUP_INFO" | grep -qi "containerd"; then
+        pass "Container runtime: containerd (from cgroup)"
+    elif echo "$CGROUP_INFO" | grep -qi "lxc"; then
+        pass "Container runtime: LXC (from cgroup)"
+    else
+        info "Container cgroup info: $(echo "$CGROUP_INFO" | head -3 | tr '\n' ' ')"
+    fi
+else
+    info "Container: cannot read /proc/1/cgroup"
+fi
+
+RUNTIME_DETECT=$(node -e "
+const fs=require('fs');
+const indicators=[];
+try{fs.accessSync('/.dockerenv');indicators.push('dockerenv')}catch(e){}
+try{fs.accessSync('/run/.containerenv');indicators.push('containerenv')}catch(e){}
+try{const c=fs.readFileSync('/proc/1/cgroup','utf8');if(c.includes('docker'))indicators.push('cgroup:docker');if(c.includes('kubepods'))indicators.push('cgroup:k8s');if(c.includes('containerd'))indicators.push('cgroup:containerd')}catch(e){}
+try{const m=fs.readFileSync('/proc/1/mountinfo','utf8');if(m.includes('overlay'))indicators.push('mount:overlay');if(m.includes('aufs'))indicators.push('mount:aufs')}catch(e){}
+if(indicators.length===0)console.log('RUNTIME:none');
+else console.log('RUNTIME:'+indicators.join(','));
+" 2>&1)
+if echo "$RUNTIME_DETECT" | grep -q "^RUNTIME:"; then
+    info "Container indicators: $(echo $RUNTIME_DETECT | cut -d: -f2-)"
+else
+    info "Container indicators: none detected (may be bare metal)"
+fi
+
+echo "--- 10.5 Syscall Availability ---"
+if which strace &>/dev/null; then
+    SYSCALLS="write read open close fork execve clone mmap mprotect munmap socket bind listen accept connect pipe dup2 chroot pivot_root mount umount reboot"
+    for sc in $SYSCALLS; do
+        STRACE_OUT=$(timeout 3 strace -e trace=$sc echo test 2>&1)
+        if echo "$STRACE_OUT" | grep -q "$sc("; then
+            pass "syscall $sc: AVAILABLE"
+        else
+            fail "syscall $sc: BLOCKED or UNAVAILABLE"
+        fi
+    done
+else
+    info "strace: NOT INSTALLED, testing syscalls via Node.js"
+    SYSCALL_NODE=$(node -e "
+const{spawn}=require('child_process');
+const tests=[
+  ['fork',['-c','const{fork}=require(\"child_process\");console.log(\"fork:OK\")']],
+  ['exec',['-c','const{execSync}=require(\"child_process\");execSync(\"echo test\");console.log(\"exec:OK\")']],
+  ['socket',['-e','const net=require(\"net\");const s=net.createServer();s.listen(0,()=>{console.log(\"socket:OK\");s.close()})']],
+];
+let done=0;
+tests.forEach(([name,args])=>{
+  const p=spawn('node',args,{timeout:5000});
+  let out='';
+  p.stdout.on('data',d=>out+=d);
+  p.stderr.on('data',d=>out+=d);
+  p.on('close',()=>{
+    if(out.includes('OK'))console.log('SYSCALL_OK:'+name);
+    else console.log('SYSCALL_FAIL:'+name+'|'+out.substring(0,40).replace(/\\n/g,' '));
+    done++;
+    if(done===tests.length)process.exit(0);
+  });
+});
+setTimeout(()=>process.exit(0),10000);
+" 2>&1)
+    echo "$SYSCALL_NODE" | grep "^SYSCALL_" | while read line; do
+        sc_name=$(echo "$line" | cut -d: -f2 | cut -d'|' -f1)
+        case "$line" in
+            SYSCALL_OK:*) pass "syscall $sc_name: AVAILABLE (via Node.js)" ;;
+            SYSCALL_FAIL:*) fail "syscall $sc_name: BLOCKED" ;;
+        esac
+    done
+fi
+
+echo "--- 10.6 Node.js Built-in Capabilities ---"
+NODE_CAPS=$(node -e "
+const coreModules=[
+  'assert','buffer','child_process','cluster','console','constants','crypto',
+  'dgram','dns','domain','events','fs','http','https','net','os','path',
+  'perf_hooks','process','punycode','querystring','readline','repl',
+  'stream','string_decoder','sys','timers','tls','tty','url','util',
+  'v8','vm','worker_threads','zlib'
+];
+let available=0;
+const results=[];
+coreModules.forEach(m=>{
+  try{require(m);available++;results.push('MOD_OK:'+m)}
+  catch(e){results.push('MOD_FAIL:'+m+'|'+e.message.substring(0,30))}
+});
+console.log('CORE_COUNT:'+available+'/'+coreModules.length);
+results.forEach(r=>console.log(r));
+
+try{
+  const crypto=require('crypto');
+  const hashes=crypto.getHashes();
+  console.log('HASH_COUNT:'+hashes.length);
+  console.log('HASHES:'+hashes.join(','));
+}catch(e){console.log('HASH_ERR:'+e.message.substring(0,40))}
+
+try{
+  const{webcrypto}=require('crypto');
+  console.log('WEBCRYPTO:OK');
+}catch(e){console.log('WEBCRYPTO:FAIL')}
+
+try{
+  const{Worker}=require('worker_threads');
+  console.log('WORKER_THREADS:OK');
+}catch(e){console.log('WORKER_THREADS:FAIL')}
+
+try{
+  new WebSocket('ws://127.0.0.1:1');
+  console.log('NATIVE_WS:OK');
+}catch(e){
+  if(e.message.includes('WebSocket'))console.log('NATIVE_WS:OK');
+  else console.log('NATIVE_WS:FAIL');
+}
+" 2>&1)
+
+CORE_COUNT=$(echo "$NODE_CAPS" | grep "^CORE_COUNT:" | cut -d: -f2)
+info "Node.js core modules available: ${CORE_COUNT:-unknown}"
+
+echo "$NODE_CAPS" | grep "^MOD_FAIL:" | while read line; do
+    mod_name=$(echo "$line" | cut -d: -f2 | cut -d'|' -f1)
+    fail "  Core module $mod_name: UNAVAILABLE"
+done
+
+HASH_COUNT=$(echo "$NODE_CAPS" | grep "^HASH_COUNT:" | cut -d: -f2)
+if [ -n "$HASH_COUNT" ]; then
+    pass "Crypto algorithms: $HASH_COUNT available"
+    HASHES=$(echo "$NODE_CAPS" | grep "^HASHES:" | cut -d: -f2-)
+    [ -n "$HASHES" ] && info "  Algorithms: $HASHES"
+fi
+
+WEBCRYPTO=$(echo "$NODE_CAPS" | grep "^WEBCRYPTO:" | cut -d: -f2)
+if [ "$WEBCRYPTO" = "OK" ]; then
+    pass "WebCrypto API: AVAILABLE"
+else
+    fail "WebCrypto API: NOT AVAILABLE"
+fi
+
+WORKER=$(echo "$NODE_CAPS" | grep "^WORKER_THREADS:" | cut -d: -f2)
+if [ "$WORKER" = "OK" ]; then
+    pass "worker_threads: AVAILABLE"
+else
+    fail "worker_threads: NOT AVAILABLE"
+fi
+
+NATIVE_WS=$(echo "$NODE_CAPS" | grep "^NATIVE_WS:" | cut -d: -f2)
+if [ "$NATIVE_WS" = "OK" ]; then
+    pass "Native WebSocket: AVAILABLE"
+else
+    info "Native WebSocket: NOT AVAILABLE (may need ws package)"
+fi
 
 # ============================================================
 # SUMMARY

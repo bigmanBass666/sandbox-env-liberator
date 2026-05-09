@@ -111,6 +111,43 @@ Common ports that may be locally listening:
 
 Outbound connectivity is typically proxy-only. Direct TCP connections to external hosts usually timeout.
 
+## WebSocket 通道
+
+- 端口40005提供WebSocket服务
+- Node.js原生WebSocket可用
+- 可作为额外通信通道
+
+## 代理认证处理
+
+代理可能返回407 Proxy Authentication Required。
+
+凭据来源:
+- 环境变量 (PROXY_USER/PROXY_PASS)
+- 代理URL中的user:pass
+- /app/etc/配置文件
+
+自动配置: fix-network.js的`detectAndHandleProxyAuth()`函数
+
+手动配置:
+```bash
+export http_proxy=http://user:pass@127.0.0.1:18080
+export https_proxy=http://user:pass@127.0.0.1:18081
+```
+
+## 5通道自动降级下载
+
+1. curl (首选CLI工具)
+2. wget (备选CLI工具)
+3. Node.js fetch() (最可靠的编程通道)
+4. Python urllib (备选编程通道)
+5. Playwright page.goto() (浏览器作为代理，最后手段)
+
+使用方法:
+```javascript
+const { downloadWithFallback, downloadWithRetry } = require('/workspace/sandbox-env-setup/scripts/fix-network');
+await downloadWithRetry('https://example.com/file', '/tmp/file');
+```
+
 ## IPv6
 
 IPv6 resolution may work even when IPv4 direct connections don't. Test with:

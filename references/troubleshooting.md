@@ -137,6 +137,49 @@ go env -w GONOSUMCHECK=*
 apt-get install -y build-essential
 ```
 
+## VNC连接问题
+
+**症状**: 无法连接VNC
+**检查**:
+```bash
+node -e "const net=require('net');const s=net.createConnection({host:'127.0.0.1',port:5900,timeout:2000},()=>{console.log('VNC OK');s.destroy()});s.on('error',e=>console.log('VNC FAIL:',e.message))"
+```
+**修复**: VNC服务由Supervisor管理，检查 `cat /app/supervisord.conf`
+
+## CDP端点问题
+
+**症状**: CRAWLER_CDP_ENDPOINT不可达
+**检查**:
+```bash
+curl -s http://127.0.0.1:8088/v1/cdp
+```
+**修复**: CDP端点由agent-tool-host管理，检查进程 `ps aux | grep agent-tool-host`
+
+## 代理认证问题
+
+**症状**: curl/wget返回407
+**修复**: 运行 `node /workspace/sandbox-env-setup/scripts/fix-network.js` 自动检测和配置
+**手动**: 检查环境变量和/app/etc/下的配置文件
+
+## 磁盘空间不足
+
+**症状**: 磁盘使用率>85%
+**修复**:
+```bash
+apt-get clean && npm cache clean --force && rm -rf /tmp/debs /tmp/extracted_libs
+```
+
+## 健康监控
+
+**运行**:
+```bash
+bash /workspace/sandbox-env-setup/scripts/health-monitor.sh
+```
+**查看历史**:
+```bash
+cat /tmp/sandbox-health/history.log
+```
+
 ## Quick Diagnostic Commands
 
 ```bash

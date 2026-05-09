@@ -33,9 +33,21 @@ check_warn() {
     fi
 }
 
+check_perf() {
+    TOTAL=$((TOTAL + 1))
+    RESULT=$(eval "$2" 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
+        echo -e "${CYAN}[📊]${NC} $1: ${RESULT}"
+        PASSED=$((PASSED + 1))
+    else
+        echo -e "${YELLOW}[⚠️]${NC} $1: unavailable"
+        FAILED=$((FAILED + 1))
+    fi
+}
+
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║   ENVIRONMENT VERIFICATION                           ║"
-echo "║   Full 8-Domain Validation                           ║"
+echo "║   Full 12-Domain Validation                          ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo ""
 
@@ -120,6 +132,40 @@ check "~/.bashrc exists" "[ -f ~/.bashrc ]"
 check "~/.zshrc exists" "[ -f ~/.zshrc ]"
 check "~/.profile exists" "[ -f ~/.profile ]"
 check "/workspace writable" "touch /workspace/.verify_test && rm /workspace/.verify_test"
+echo ""
+
+# === Domain 9: Platform Service Health ===
+echo "━━━ Domain 9: Platform Service Health ━━━"
+check_warn "VNC service (port 5900)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/5900'"
+check_warn "CDP endpoint (port 8088 /v1/cdp)" "timeout 5 curl -s --connect-timeout 3 http://127.0.0.1:8088/v1/cdp -o /dev/null"
+check_warn "HTTP proxy (port 18080)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/18080'"
+check_warn "HTTPS proxy (port 18081)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/18081'"
+check_warn "WebSocket service (port 40005)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/40005'"
+check_warn "Health endpoint (port 13080 /health)" "timeout 5 curl -s --connect-timeout 3 http://127.0.0.1:13080/health -o /dev/null"
+check_warn "Health endpoint (port 19090 /health)" "timeout 5 curl -s --connect-timeout 3 http://127.0.0.1:19090/health -o /dev/null"
+check_warn "Chrome DevTools Protocol (port 9222)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/9222'"
+check_warn "Preview proxy (port 16000)" "timeout 3 bash -c 'echo >/dev/tcp/127.0.0.1/16000'"
+echo ""
+
+# === Domain 10: Security Baseline ===
+echo "━━━ Domain 10: Security Baseline ━━━"
+check "Seccomp status readable" "grep -q '^Seccomp:' /proc/1/status"
+check "Capabilities readable (CapEff)" "grep -q '^CapEff:' /proc/1/status"
+check_warn "AppArmor status readable" "timeout 3 cat /proc/1/attr/current >/dev/null 2>&1"
+echo ""
+
+# === Domain 11: Node.js Capabilities ===
+echo "━━━ Domain 11: Node.js Capabilities ━━━"
+check "crypto module available" "timeout 5 node -e \"require('crypto'); process.exit(0)\""
+check "worker_threads available" "timeout 5 node -e \"require('worker_threads'); process.exit(0)\""
+check "WebCrypto API available" "timeout 5 node -e \"const c=require('crypto'); if(c.subtle) process.exit(0); else process.exit(1)\""
+check "Native WebSocket available" "timeout 5 node -e \"if(typeof WebSocket!=='undefined') process.exit(0); else process.exit(1)\""
+echo ""
+
+# === Domain 12: Performance Baseline ===
+echo "━━━ Domain 12: Performance Baseline ━━━"
+check_perf "Network latency (httpbin.org/ip)" "timeout 15 node -e \"const t=Date.now(); fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout(12000)}).then(r=>{if(r.ok)console.log((Date.now()-t)+'ms');else process.exit(1)}).catch(()=>process.exit(1))\""
+check_perf "Download speed" "timeout 30 node -e \"const t=Date.now(); fetch('https://httpbin.org/bytes/65536',{signal:AbortSignal.timeout(25000)}).then(r=>r.arrayBuffer()).then(b=>{const ms=Date.now()-t; const kbs=Math.round(64/ms*1000); console.log(kbs+' KB/s')}).catch(()=>process.exit(1))\""
 echo ""
 
 # === Summary ===
