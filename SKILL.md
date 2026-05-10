@@ -747,6 +747,14 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
   - 找任何产物时：先 git log → 再本地文件系统搜索
   - 提交前必须先 git pull --rebase 避免冲突
   - 看到其他 session 的 commit → 先阅读理解 → 再决定是否基于其继续
+
+  Git 提交安全规范（必须遵守）：
+  - `git add` 前**必须**先 `git status` 检查暂存区内容，确认没有意外文件
+  - **禁止提交**: 测试文件(*-test-*)、临时文件(/tmp/)、persist-test 文件、*.log
+  - **禁止**: 不要 `git add .` 或 `git add -A` 盲目全量添加，用 `git add <specific files>`
+  - 工作记录统一放 `references/roundN-<topic>.md`，不放仓库根目录
+  - commit 后执行 `git show HEAD --stat` 确认提交内容正确
+  - 如果 verify-env 的 PASS 数比上一轮下降 → 必须在 handoff 中标记 Status=REGRESSION
 ═══════════════════════════════════════════════════════
 ```
 
@@ -813,6 +821,8 @@ Why: Environment may change. A blocker may auto-resolve. Assess reality, not sta
 | 假设本地文件是最新的 | 其他 session 可能刚 push | 每次 start 都 fetch+log |
 | 不看别人 commit 就开始写 | 可能覆盖或重复 | 先读最近 commits |
 | commit 前不 pull | 必然冲突 | `git pull --rebase` 然后 commit |
+| `git add -A` 不检查暂存区 | 可能提交测试文件/子模块垃圾 | `git status` 逐个确认后 `git add <files>` |
+| 工作记录放仓库根目录 | 污染根目录 | 放 `references/roundN-<topic>.md` |
 
 ### GitHub Issue Distributed Lock
 
