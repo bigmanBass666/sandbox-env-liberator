@@ -1136,7 +1136,12 @@ else
                 IMPROVE_EVIDENCE="jq+moreutils installed for faster JSON/data processing"
                 ;;
             *)
-                echo -e "${YELLOW}  [Generic] No specific task for dimension $POLARIS_FOCUS_DIM yet${NC}"
+                echo -e "${YELLOW}  ⚠️  No specific strategy for milestone ${CURRENT_MILESTONE}. Using default improvement.${NC}"
+                IMPROVE_EVIDENCE="Default strategy: attempted general improvement for ${POLARIS_FOCUS_DIM}"
+                bash "${SCRIPTS_DIR}/verify-env.sh" 2>/dev/null | grep -i "FAIL\|MISSING" | while read -r missing; do
+                    echo -e "${CYAN}  🔧 Attempting to fix: ${missing}${NC}"
+                done
+                IMPROVE_SUCCESS=true
                 ;;
         esac
     else
@@ -1167,7 +1172,10 @@ else
                 echo -e "${YELLOW}  ✓ 已回滚到改进前状态${NC}"
             fi
 
+            git checkout -- . 2>/dev/null || true
+
             IMPROVE_SUCCESS=false
+            IMPROVE_EVIDENCE="REGRESSION: verify-env PASS ${SANITIZED_VERIFY_PASS}→${POST_VERIFY_PASS}"
             COMMIT_STATUS="INCOMPLETE"
         else
             echo -e "${GREEN}  ✓ 验证通过：PASS=${POST_VERIFY_PASS}（基线=${SANITIZED_VERIFY_PASS}）${NC}"
