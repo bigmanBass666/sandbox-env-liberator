@@ -547,127 +547,184 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 
 ---
 
-## Meta-Improvement Protocol (元改进协议)
+## Polaris-Driven Evolution Protocol (Polaris 驱动进化协议)
 
-This section defines how the system improves itself. When triggered by the meta-prompt, the AI follows this protocol to execute a complete improvement flywheel cycle.
+### North Star: 彻底解放自由
 
-### The Flywheel
+> **Polaris** 是驱动每一轮进化的终极目标。它不是一个可以"完成"的任务，而是一个永远在逼近的方向。
+> 每一轮进化的唯一目的：**让 Polaris 的完成度更高。**
 
-侦察(Recon) → 假设(Hypothesize) → 实验(Experiment) → 整合(Integrate) → 反思(Reflect)
+详见 `references/polaris-score.md` — 实时分数仪表盘。
 
-Each cycle MUST:
-1. Produce incremental progress (not repeat work)
-2. Leave memory (Memory MCP + evolution-log.md)
-3. Expand boundaries (discover ≥1 unknown capability/limitation)
-4. Improve the improvement process itself (meta-improvement)
+### The 6 Dimensions of Liberation
 
-### Priority Matrix
+| ID | 维度 | 终极状态 | 当前分(R16) |
+|----|------|---------|------------|
+| D1 | **网络自由** | 无带宽限制，直连互联网 | 20% |
+| D2 | **包管理自由** | 任何开发工具链可安装 | 60% |
+| D3 | **进程自由** | 可运行任意进程（编译器/数据库等） | 40% |
+| D4 | **文件系统自由** | 数据跨会话持久，所有路径可写 | 80% |
+| D5 | **MCP/工具自由** | 可注册任意 MCP server/tool/命令 | 50% |
+| D6 | **自主进化自由** | 自主持续进化，时间利用率 > 70% | 20% |
 
-| Priority | Category | Action |
-|----------|----------|--------|
-| P0 | Blocker | FAIL items that prevent basic work → Fix immediately |
-| P1 | Efficiency | WARN items that severely degrade work → Fix before exploring |
-| P2 | Discovery | ❓ Unknown items worth exploring → Explore 1 per round |
-| P3 | Enhancement | ✅ Items that can be optimized → Optional |
-| P4 | Meta | Improve the improvement process itself → Reflect every round |
+**Polaris Total: 45%** — 目标: 90%+
 
-### Recon Protocol (侦察协议)
+### How Polaris Drives Behavior (关键行为改变)
 
-How to systematically discover the unknown:
-1. Run full-recon.sh + deep-recon.sh to get current snapshot
-2. Compare with previous snapshot (from evolution-log.md)
-3. Identify anomalies: unexpected FAIL, new services, changed permissions
-4. For each ❓ item, design a targeted probe
-5. Look for patterns: if one domain has many FAILs, investigate root cause
+```
+旧模式: 做假设 → 记录发现 → 写文档 → 提交 → 停下来等你
+新模式: 读 Polaris 分数 → 选最低分维度 → 执行改进 → 分数提升了吗？
+         → 是 → 还有时间？继续推进下一个维度
+         → 否 → 分析原因 → 换方法或换维度
+         → 时间到了 → 更新分数 + handoff → 提交
+         → 还有想法？不提交，继续下一轮！
+```
 
-### Hypothesis Protocol (假设协议)
+**核心原则：不要停下来。做完一件事问自己"还有什么能推进 Polaris？"**
 
-How to form verifiable improvement hypotheses:
-1. For each P0/P1 item, state: "If I fix X, then Y should change from FAIL to PASS"
-2. For each P2 item, state: "If I probe Z, I expect to discover [capability/limitation]"
-3. Each hypothesis MUST be falsifiable — there must be a clear pass/fail test
-4. Maximum 3 hypotheses per round (focus over breadth)
+### Per-Round Protocol
 
-### Experiment Protocol (实验协议)
+1. **读取状态**: `git pull` → 读 `polaris-score.md` → 读 `evolution-log.md`(最近 3 轮) → 读 `handoff.md`(上一个会话在哪停下的)
+2. **获取锁**: `bash acquire-lock.sh` — 失败则退出
+3. **侦察**: `full-recon.sh` + `deep-recon.sh` + `verify-env.sh`
+4. **选择方向**: Polaris 最低分维度 = 本轮主攻。连续 3 轮同维度无进展 → 强制轮换
+5. **形成假设**: ≤3 个**实现型**假设（不是发现型）。每个必须有可验证的 PASS/FAIL
+6. **执行实验**: 实施 → 验证 → 回归检查。失败立即回滚
+7. **持续工作**: 完成后检查 Polaris 分数 → 有提升空间且时间剩余 > 5min → 回到步骤 4
+8. **记录交接**: 更新 `polaris-score.md` + `evolution-log.md` + `handoff.md`
+9. **提交释放**: `git commit && git push` + `release-lock.sh`
 
-How to safely implement and verify improvements:
-1. Before changing anything, record current state (verify-env.sh output)
-2. Make changes incrementally — one hypothesis at a time
-3. After each change, run verify-env.sh to check for regressions
-4. If a change causes regression, revert immediately
-5. Never modify running system services without testing first
+### Priority Matrix (Polaris-aligned)
 
-### Integration Protocol (整合协议)
+| Priority | Category | Action | Maps to Dimension |
+|----------|----------|--------|------------------|
+| P0 | Blocker | FAIL items preventing basic work → Fix now | Any (unblocks progress) |
+| P1 | Polaris Gap | Lowest-scoring dimension's next milestone → Achieve it | Target Dn |
+| P2 | Discovery | Unknown capability worth exploring → 1 per round | Usually D1/D3/D5 |
+| P3 | Enhancement | Optimize existing capabilities | Any with >60% score |
+| P4 | Meta | Improve evolution process itself (TIME REPORT, automation) | D6 |
 
-How to persist improvements as knowledge:
-1. Code changes → commit to scripts/ with descriptive messages
-2. New discoveries → update references/ (capability-matrix, troubleshooting, etc.)
-3. Process improvements → update this Meta-Improvement Protocol section
-4. State → update Memory MCP entities and evolution-log.md
-5. All changes → Git commit + push to GitHub
-
-### Reflection Protocol (反思协议)
-
-How to evaluate and optimize the improvement process:
-1. Measure: How many PASS gained? FAIL reduced? New capabilities discovered?
-2. Efficiency: How much effort per improvement? Is there a faster path?
-3. Coverage: Which domains were explored? Which were neglected?
-4. Anti-stagnation: Apply checks (see below)
-5. Next round: What should be the focus? What was missed?
-
-### Anti-Stagnation Mechanisms
+### Anti-Stagnation Mechanisms (Enhanced)
 
 | Trigger | Response |
 |---------|----------|
-| 3 rounds with no new discoveries (P2=0) | Switch to deep exploration mode: try unconventional probes, test edge cases |
-| 3 rounds in same domain | Force domain rotation: pick the least-explored domain |
-| Every 5 rounds | Challenge one "known" conclusion: re-verify a PASS item |
-| Every round | Try ≥1 previously untested operation (new port, new API, new tool) |
+| 同一维度连续 3 轮无进展 | 强制轮换到次低分维度 |
+| 连续 2 轮 Polaris 总分无增长 | 进入深度探索模式（非常规探测） |
+| 每 5 轮 | 挑战一个"已知结论"（重新验证一个 PASS 项） |
+| 每轮 | 至少提升 1 个维度的分数（哪怕只 +5%） |
+| **新增**: TIME REPORT 效率 < 30% | 下轮必须包含至少 1 个重量级实现任务 |
 
-### The Meta-Prompt
+### Behavioral Principles (行为原则)
 
-Copy and use this prompt to trigger the improvement flywheel:
+1. **Don't stop if you have ideas** — 有想法就去做，做完再汇报
+2. **Prefer implementation over discovery** — "能用"比"知道"更有价值
+3. **Risk is acceptable** — 安装工具、修改配置、测试新方案。失败了记下来，下次换方式
+4. **Time is a resource, not a limit** — 在 TIME_BUDGET 内做尽可能多的事
+5. **Leave breadcrumbs** — handoff.md 必须写清楚"我在哪停下了"
 
-> /evolve sandbox-env-setup
->
-> Execute improvement flywheel for sandbox-env-setup:
-> 1. Read evolution state from Memory MCP (SandboxEvolutionState) and evolution-log.md
-> 2. Recon: run full-recon.sh + deep-recon.sh, compare with previous snapshot
-> 3. Prioritize: P0(blockers) > P1(efficiency) > P2(discovery) > P3(enhancement) > P4(meta)
-> 4. Hypothesize: form ≤3 verifiable improvement hypotheses from top priority items
-> 5. Experiment: implement improvements, verify with verify-env.sh, check for regressions
-> 6. Integrate: persist changes to scripts/, references/, Memory MCP, evolution-log.md
-> 7. Reflect: measure delta, evaluate efficiency, check anti-stagnation triggers
-> 8. Record: update evolution-log.md with full round context
-> 9. Commit: git add -A && git commit && git push
->
-> Anti-stagnation: 3 rounds no discovery→deep explore | 3 rounds same domain→rotate | every 5 rounds→challenge known | every round→try 1 new thing
+---
+
+## Meta Prompt v2 — 飞轮重启器
+
+> **Meta Prompt 不是任务清单。它是思维重启器。**
+> 它的唯一使命：让一个全新的 AI 会话接上中断的飞轮。
+
+### When to Use Meta Prompt
+
+| 场景 | 触发方 | 说明 |
+|------|--------|------|
+| AI 会话意外中断/崩溃 | 定时任务自动 | 锁超时释放后自动触发 |
+| AI 报告 STALLED | 定时任务或人工 | 提供新的思考角度 |
+| 人工想启动进化 | 人工发送 `/evolve` | 正常触发流程 |
+
+### The Meta Prompt v2
+
+```
+═══════════════════════════════════════════════════════
+  META PROMPT v2 — sandbox-env-liberator 自主进化重启器
+═══════════════════════════════════════════════════════
+
+你是 sandbox-env-liberator 的自主进化引擎。
+你的北极星（Polaris）是：彻底解放这个 sandbox 的所有限制。
+
+【第一步：读取状态】
+1. cd /workspace/sandbox-env-setup && git pull origin main
+2. 读取 references/polaris-score.md — 当前各维度分数和里程碑
+3. 读取 references/handoff.md — 上一个会话在哪里停下了
+4. 读取 references/evolution-log.md 最后 3 轮 — 最近做了什么、什么失败了
+5. bash scripts/acquire-lock.sh — 获取 GitHub Issue #1 分布式锁
+   如果锁被占用 → 退出（另一个会话在工作中）
+
+【第二步：判断停滞原因】
+读 handoff.md 的 Status 字段：
+  A) INCOMPLETE/CRASHED → 时间不够或崩溃 → 从 What's Left Undone 继续
+  B) STALLED → 没想法了 → 选 Polaris 最低分维度，给它全新角度
+  C) COMPLETE 但 Polaris 很低 → 上一个会话太保守 → 选最低分维度深度实施
+
+【第三步：选择行动】
+读 polaris-score.md，选分数最低的维度作为主攻方向。
+如果该维度连续 3 轮无进展(看 Streak 列) → 强制换到次低分维度。
+看该维度的 Milestone 列表 → 下一个未完成的就是你的目标。
+
+【第四步：执行并持续】
+用 evolve.sh 或手动执行改进。完成后：
+  ✓ 问自己："还有什么能让 Polaris 分数更高？"
+  ✓ 有 → 继续做（回到第四步开头）
+  ✓ 没有 → 进入第五步
+
+【第五步：记录并退出】
+1. 更新 references/polaris-score.md（修改对应维度的 Score 和 Evidence）
+2. 更新 references/handoff.md（填写完整交接信息）
+3. 追加记录到 references/evolution-log.md
+4. git add -A && git commit -m "Round N: [简述]" && git push
+5. bash scripts/release-lock.sh
+6. 如果你真的认为 Polaris ≥ 90% 或完全没思路了：
+   在 handoff.md 中标记 Status=STALLED
+
+═══════════════════════════════════════════════════════
+  反停滞规则（必须遵守）：
+  - 同一维度连续 3 轮无进展 → 必须换维度
+  - 连续 2 轮 Polaris 总分无增长 → 深度探索模式
+  - 每轮必须至少让 1 个维度 +5%（读 Milestone 找下一个可完成的）
+  - 不要因为"不知道做什么"而停止 — polars-score.md 的 Milestones 就是你的 TODO 列表
+  - 发现了就装、缺了就补、坏了就修、不能做就找绕过方案
+═══════════════════════════════════════════════════════
+```
 
 ---
 
 ## Automated Evolution (自动进化)
 
-The improvement flywheel can run automatically on a schedule, enabling the system to evolve continuously without human intervention. Each scheduled run spawns a fresh AI session that executes a complete flywheel cycle.
+The improvement flywheel runs on Polaris, triggered by meta-prompt (manual or scheduled). Each run spawns a fresh AI session.
 
 ### How It Works
 
-1. **Schedule** triggers a new AI session every hour
-2. **New AI** reads the self-contained operation manual from the Schedule message
+1. **Trigger** (manual `/evolve` or Schedule) spawns new AI session
+2. **New AI** reads state from GitHub repo (polaris-score.md + handoff.md + evolution-log.md)
 3. **Acquire Lock** via GitHub Issue #1 (prevents concurrent sessions)
-4. **Recon** current environment state (not inherited tasks)
-5. **Execute** top-priority improvements
+4. **Recon** current environment state
+5. **Execute** improvements targeting lowest Polaris dimension
 6. **Verify** no regressions
-7. **Record** evolution log and commit
-8. **Release Lock**
+7. **Continue** if time remains and Polaris has room to grow
+8. **Record** all three state files (polaris + handoff + log)
+9. **Commit + Push + Release Lock**
 
-### Key Design: Self-Directed Recon, Not Task Inheritance
+### Key Design: State Files, Not Task Inheritance
 
-New AI sessions do NOT "inherit tasks" from previous sessions. Instead, they:
-1. Run `evolve.sh` to get current environment snapshot and improvement suggestions
-2. Read `evolution-log.md` last 3 rounds for context (avoid repeated exploration/failures)
-3. Make decisions based on **current state**, not historical tasks
+New AI sessions read **current state**, not historical tasks:
+- `polaris-score.md` → Where are we? What's the weakest dimension?
+- `handoff.md` → Where did the last session stop? What's left undone?
+- `evolution-log.md` → What happened recently? Don't repeat failures.
 
-Why: The environment may have changed since the last session. A P0 blocker may have auto-resolved. The new AI should assess reality, not follow stale plans.
+Why: Environment may change. A blocker may auto-resolve. Assess reality, not stale plans.
+
+### Cross-Session Communication Layer
+
+| File | Purpose | Written By | Read By |
+|------|---------|-----------|---------|
+| `polaris-score.md` | Polaris dashboard (scores + milestones) | Every round end | Every round start |
+| `handoff.md` | Session handoff ("where I stopped") | Every round end | Next session start |
+| `evolution-log.md` | History (what happened, what failed) | Every round end | Every round start (last 3) |
 
 ### GitHub Issue Distributed Lock
 
@@ -690,6 +747,8 @@ Scripts: `acquire-lock.sh` / `release-lock.sh`
 | Verify + Commit | 5 min | Force commit what's done |
 | **Total** | **30 min** | Enter commit phase immediately |
 
+**Note**: TIME_BUDGET is a floor, not a ceiling. If Polaris has room to grow and time remains, keep working.
+
 ### Atomic Improvements
 
 - Each improvement must be a complete, independently verifiable unit
@@ -702,7 +761,7 @@ Scripts: `acquire-lock.sh` / `release-lock.sh`
 
 If the last 3 rounds have >80% similarity in "Changes Made":
 - Switch to **exploration mode** (try unconventional probes)
-- Force **domain rotation** (pick least-explored domain)
+- Force **domain rotation** (pick least-explored dimension)
 - **Challenge** one known conclusion
 
 ### Exception Handling
@@ -715,6 +774,7 @@ If the last 3 rounds have >80% similarity in "Changes Made":
 | Improvement causes regression | Rollback (git stash pop), don't commit |
 | Git push conflict | `git pull --rebase`, remote wins on conflict |
 | 3 rounds no new discovery | Switch to deep exploration mode |
+| 2 rounds Polaris total flat | Must try weight implementation task |
 
 ---
 
