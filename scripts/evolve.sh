@@ -29,10 +29,8 @@ START_TIME=$(date +%s)
 TIME_BUDGET=1800
 RECON_BUDGET=300
 
-# Phase timing tracking (associative array)
-declare -A PHASE_START
-declare -A PHASE_END
-declare -A PHASE_NAME
+# Phase timing tracking (scalar globals to avoid associative array issues in $(( )) context)
+PHASE_IDS=(0 01 05 1 2 3 4 5 55 57 6 7 8 9)
 PHASE_NAMES=(
     [0]="Lock+Env"
     [05]="MirrorInit"
@@ -75,7 +73,7 @@ check_recon_time() {
 phase_start() {
     local id="$1"
     local name="${PHASE_NAMES[$id]:-$id}"
-    PHASE_START[$id]=$(date +%s)
+    eval "PHASE_START_${id}=\$(date +%s)"
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) started at $(date '+%H:%M:%S')${NC}"
 }
 
@@ -83,8 +81,10 @@ phase_start() {
 phase_end() {
     local id="$1"
     local name="${PHASE_NAMES[$id]:-$id}"
-    PHASE_END[$id]=$(date +%s)
-    local elapsed=$(( PHASE_END[id] - PHASE_START[id] ))
+    eval "PHASE_END_${id}=\$(date +%s)"
+    local start_var="PHASE_START_${id}"
+    local end_var="PHASE_END_${id}"
+    local elapsed=$(( ${!end_var} - ${!start_var} ))
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) elapsed: ${elapsed}s${NC}"
 }
 
@@ -1371,32 +1371,36 @@ phase_end "9"
 print_time_report() {
     local total_elapsed=$(( $(date +%s) - START_TIME ))
     local total_min=$(( total_elapsed / 60 ))
-    
+
     local effective_time=0
     for id in 3 4; do
-        if [[ -n "${PHASE_START[$id]+x}" ]] && [[ -n "${PHASE_END[$id]+x}" ]]; then
-            effective_time=$(( effective_time + PHASE_END[id] - PHASE_START[id] ))
+        local start_var="PHASE_START_${id}"
+        local end_var="PHASE_END_${id}"
+        if [[ -n "${!start_var:-}" ]] && [[ -n "${!end_var:-}" ]]; then
+            effective_time=$(( effective_time + ${!end_var} - ${!start_var} ))
         fi
     done
-    
+
     local efficiency_pct=0
     if [ $total_elapsed -gt 0 ]; then
         efficiency_pct=$(( effective_time * 100 / total_elapsed ))
     fi
-    
+
     echo ""
     echo -e "${BOLD}${CYAN}╔══════════════════════════════════════╗${NC}"
     echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
-    
+
     for id in 0 05 1 2 3 4 5 55 57 6 7 8 9; do
-        if [[ -n "${PHASE_START[$id]+x}" ]] && [[ -n "${PHASE_END[$id]+x}" ]]; then
-            local elapsed=$(( PHASE_END[id] - PHASE_START[id] ))
+        local start_var="PHASE_START_${id}"
+        local end_var="PHASE_END_${id}"
+        if [[ -n "${!start_var:-}" ]] && [[ -n "${!end_var:-}" ]]; then
+            local elapsed=$(( ${!end_var} - ${!start_var} ))
             local name="${PHASE_NAMES[$id]:-$id}"
             printf "║   %-25s %4ds              ║\n" "$name" "$elapsed"
         fi
     done
-    
+
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
     printf "║   %-25s %4ds (%dm%02ds)     ║\n" "TOTAL" "$total_elapsed" "$((total_min))" "$((total_elapsed % 60))"
     printf "║   %-25s %4ds (%d%%)          ║\n" "EFFECTIVE" "$effective_time" "$efficiency_pct"
@@ -1406,7 +1410,7 @@ print_time_report() {
     printf "║   %-25s %-18s ║\n" "EVIDENCE" "${IMPROVE_EVIDENCE:-none}"
     printf "║   %-25s %-18s ║\n" "CONTINUE LOOPS" "${CONTINUE_LOOP_COUNT:-0}"
     if [ "$CONTINUE_LOOP_COUNT" -gt 0 ]; then
-        printf "║   %-25s %-18s ║\n" "TOTAL CYCLES" "$(( CONTINUE_LOOP_COUNT + 1))"
+        printf "║   %-25s %-18s ║\n" "TOTAL CYCLES" "$(( CONTINUE_LOOP_COUNT + 1 ))"
     fi
     echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
 }
