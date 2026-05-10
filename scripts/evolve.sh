@@ -15,8 +15,10 @@ if [[ "${1:-}" == "--dry-run" ]]; then
     echo -e "${YELLOW}🏃 DRY-RUN 模式：只生成计划，不执行改进${NC}"
 fi
 
-SCRIPTS_DIR="/workspace/sandbox-env-setup/scripts"
-REFERENCES_DIR="/workspace/sandbox-env-setup/references"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="${SCRIPT_DIR}"
+REFERENCES_DIR="${SCRIPT_DIR}/../references"
+PROJECT_DIR="${SCRIPT_DIR}/.." 
 EVOLUTION_LOG="${REFERENCES_DIR}/evolution-log.md"
 RECON_DIR="/tmp/sandbox-recon"
 DEEP_RECON_DIR="/tmp/sandbox-deep-recon"
@@ -258,7 +260,6 @@ echo ""
 # ============================================================
 # POLARIS SCORE READER
 # ============================================================
-PROJECT_DIR="/workspace/sandbox-env-setup"
 POLARIS_SCORE_FILE="${PROJECT_DIR}/references/polaris-score.md"
 D1_SCORE=0; D2_SCORE=0; D3_SCORE=0; D4_SCORE=0; D5_SCORE=0; D6_SCORE=0
 POLARIS_FOCUS_DIM=""
@@ -965,9 +966,9 @@ else
     echo -e "${CYAN}  改进前 verify-env PASS 数: ${SANITIZED_VERIFY_PASS}${NC}"
 
     STASH_RESULT=""
-    if [ -d "/workspace/sandbox-env-setup/.git" ]; then
+    if [ -d "${PROJECT_DIR}/.git" ]; then
         echo -e "${CYAN}  创建 git stash 作为回滚点...${NC}"
-        STASH_RESULT=$(cd /workspace/sandbox-env-setup && git stash push -m "evolve-round-${NEXT_ROUND}-pre-change" 2>&1 || true)
+        STASH_RESULT=$(cd "${PROJECT_DIR}" && git stash push -m "evolve-round-${NEXT_ROUND}-pre-change" 2>&1 || true)
         if echo "$STASH_RESULT" | grep -q "No local changes"; then
             echo -e "${YELLOW}  无本地变更需要 stash${NC}"
             STASH_RESULT="none"
@@ -1074,8 +1075,8 @@ else
             echo -e "${RED}  ❌ 验证失败：PASS 数从 ${SANITIZED_VERIFY_PASS} 降至 ${POST_VERIFY_PASS}，存在回归${NC}"
             echo -e "${YELLOW}  回滚变更...${NC}"
 
-            if [ "$STASH_RESULT" != "none" ] && [ -n "$STASH_RESULT" ] && [ -d "/workspace/sandbox-env-setup/.git" ]; then
-                cd /workspace/sandbox-env-setup && git stash pop 2>/dev/null || true
+            if [ "$STASH_RESULT" != "none" ] && [ -n "$STASH_RESULT" ] && [ -d "${PROJECT_DIR}/.git" ]; then
+                cd "${PROJECT_DIR}" && git stash pop 2>/dev/null || true
                 echo -e "${YELLOW}  ✓ 已回滚到改进前状态${NC}"
             fi
 
@@ -1084,9 +1085,9 @@ else
         else
             echo -e "${GREEN}  ✓ 验证通过：PASS=${POST_VERIFY_PASS}（基线=${SANITIZED_VERIFY_PASS}）${NC}"
 
-            if [ -d "/workspace/sandbox-env-setup/.git" ]; then
+            if [ -d "${PROJECT_DIR}/.git" ]; then
                 echo -e "${CYAN}  提交到 main...${NC}"
-                cd /workspace/sandbox-env-setup
+                cd "${PROJECT_DIR}"
                 git add -A 2>/dev/null || true
                 git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS}" --allow-empty 2>/dev/null || true
                 echo -e "${GREEN}  ✓ 提交成功${NC}"

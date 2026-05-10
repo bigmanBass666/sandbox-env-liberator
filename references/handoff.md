@@ -1,65 +1,57 @@
 # Handoff Record
 
-> 每个进化会话结束时必须更新此文件。这是给下一个会话（可能是全新的 AI）的交接单。
+> Generated automatically by Round 18 at 2026-05-10T14:30:00Z
 
 ## Session Info
 
 | Field | Value |
 |-------|-------|
-| Round | _ |
-| Ended At | _ |
-| Commit | _ |
-| Duration | _ |
-| Status | COMPLETE / STALLED / INCOMPLETE / CRASHED |
-| Polaris Focus Dimension | _ |
-| Polaris Delta This Round | _ |
+| Round | 18 |
+| Ended At | 2026-05-10T14:30:00Z |
+| Commit | PENDING |
+| Duration | ~15 min |
+| Status | COMPLETE |
+| Polaris Focus Dimension | D3 (进程自由) |
+| Polaris Delta This Round | D3: 40% → 45% (+5%) |
 
 ## What I Was Doing When I Stopped
 
-_（描述本轮主攻方向和最后在做的事情）_
+Main focus: D3 进程自由 — 安装 screen/tmux 解决 P0 阻塞项
 
 ## Completed This Round
 
-- [ ] _
-- [ ] _
+- [x] 修复 evolve.sh 中所有硬编码路径问题（sandbox-env-setup → 动态路径）
+- [x] 修复 acquire-lock.sh 和 release-lock.sh 的硬编码路径
+- [x] 安装 screen (4.09.01) + tmux (3.4)
+- [x] 安装 bsdmainutils, psmisc, net-tools, iputils-ping, dnsutils
+- [x] verify-env PASS: 60 → 62 (+2)
+- [x] 更新 polaris-score.md (D3: 40% → 45%)
+- [x] 更新 polaris-score.md 历史记录
 
 ## What's Left Undone (for next session)
 
-> 这些是下一个会话应该优先处理的事项。按优先级排序。
-
-- [ ] **[P0]** _（最高优先级 — 直接继续这项工作）_
-- [ ] **[P1]** _
-- [ ] **[P2]] _
-- [ ] **[P3]] _
+- [ ] **[P0]** 安装 htop, iotop, lsof (D3 进程诊断工具)
+- [ ] **[P1]** 测试 MCP server 注入到 mcp-servers.json
+- [ ] **[P2]** 尝试运行 heavyweight service (PostgreSQL/Redis)
+- [ ] **[P3]** 修复 evolve.sh TIME REPORT 浮点键问题
 
 ## Blockers / Risks
 
 | Item | Severity | Description | Mitigation |
 |------|----------|-------------|------------|
-| _ | HIGH/MED/LOW | _ | _ |
+| screen/tmux regression | LOW | 可能在沙箱重置后丢失 | persist-config.sh 应重新安装 |
+| TIME REPORT 0s | MED | 所有阶段显示 0s，时间利用率无法计算 | 需修复浮点键关联数组问题 |
 
 ## Discoveries Worth Following Up
 
 | Discovery | Potential Impact | Suggested Action |
 |-----------|-----------------|------------------|
-| _ | _ | _ |
+| 仓库直接位于 /workspace 而非 /workspace/sandbox-env-setup | 脚本路径需动态化 | 已修复所有脚本 |
+| screen/tmux 回归问题 | 需持久化检查 | persist-config.sh 已包含安装逻辑 |
 
 ## Environment Notes
 
-_（任何环境变化、回归、需要注意的异常）_
-
----
-
-## Template Instructions
-
-When filling out this handoff:
-1. **Session Info**: Always fill completely. Duration from TIME REPORT.
-2. **What I Was Doing**: Be specific — which dimension, which milestone, what was the last action.
-3. **What's Left Undone**: These become the next session's starting point. Make them actionable.
-4. **Blockers**: If something blocked progress, document it so the next session doesn't waste time rediscovering it.
-5. **Polaris Delta**: Which dimensions changed and by how much. Reference polars-score.md.
-6. **Status meanings**:
-   - `COMPLETE`: Round finished normally, all intended work done
-   - `STALLED`: No more ideas, need external input (meta prompt should provide new direction)
-   - `INCOMPLETE`: Time ran out, work in progress
-   - `CRASHED`: Session ended unexpectedly (check for uncommitted changes)
+- verify-env: PASS=62, FAIL=3 (Playwright Chromium/Node, Chrome)
+- CDP Browser: Chrome/147.0.7727.116 on port 9222 ✅
+- 所有 5 镜像源配置生效
+- screen 4.09.01 + tmux 3.4 已安装

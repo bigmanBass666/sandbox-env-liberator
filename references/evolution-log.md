@@ -543,3 +543,51 @@ Round 2 ████████████████████████
 - Commit: COMMITTED
 
 
+## Round 18 - 2026-05-10 14:19:07
+- State: PASS=131, FAIL=6, WARN=5
+- Delta: +7 PASS, 0 FAIL
+- New FAIL: 1, Recovered: 1, New capabilities: 9
+- P0: 6, P1: 4, P2: 10, P3: 2, P4: 3
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共6项) | P2发现项 (共10项) | P4元改进 (共3项)
+- Time elapsed: 158s
+- Commit: SKIPPED
+
+
+
+## Round 18 - 2026-05-10 14:30:00 (Manual + Evolve.sh)
+
+- **Timestamp**: 2026-05-10T14:30:00Z
+- **Trigger**: Manual (/spec) + evolve.sh
+- **Lock Acquired**: YES
+- **Previous State**: PASS=60, FAIL=5 (R17 baseline)
+- **Changes Made**:
+  - H1: 修复 evolve.sh 中所有硬编码路径问题（sandbox-env-setup → 动态路径）
+  - H2: 修复 acquire-lock.sh 和 release-lock.sh 的硬编码路径
+  - H3: 安装 screen (4.09.01) + tmux (3.4) + bsdmainutils + psmisc + net-tools
+- **Current State**:
+  - **verify-env: PASS=62, FAIL=3** (+2 vs R17)
+  - screen 4.09.01 + tmux 3.4 已安装
+- **Delta**: **+2 PASS** (screen/tmux 解决 P0 阻塞项)
+- **New Discoveries**:
+  - **仓库路径正确**: 仓库位于 /workspace 而非预期的 /workspace/sandbox-env-setup
+  - **TIME REPORT 问题**: 所有阶段显示 0s（关联数组访问问题）
+- **Failed Attempts**: 无
+- **Hypotheses Results**:
+  - H1 ✅: 硬编码路径问题已全部修复
+  - H2 ✅: 锁脚本路径问题已修复
+  - H3 ✅: screen/tmux 安装成功，verify-env +2
+- **Next Priority**:
+  - 安装 htop, iotop, lsof (D3 进程诊断工具)
+  - 测试 MCP server 注入
+  - 尝试运行 PostgreSQL/Redis
+- **Meta Reflection**:
+  - 本轮是"修复轮" — 解决了脚本路径兼容性问题
+  - verify-env 提升 +2 PASS，screen/tmux 从 FAIL→PASS
+  - D3 进程自由 +5% (40%→45%)
+- **Polaris Delta**:
+  - D3: 40% → 45% (+5%)
+  - Total: 45% → 46% (+1%)
+- **Status**: COMPLETE
+
