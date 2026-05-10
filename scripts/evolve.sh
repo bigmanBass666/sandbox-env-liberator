@@ -1282,6 +1282,17 @@ echo ""
 # SAVE STATE FOR NEXT ROUND
 # ============================================================
 phase_start "8"
+
+BRANCH_NAME="evolve/round-${NEXT_ROUND}"
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+if [ "$CURRENT_BRANCH" = "main" ]; then
+    git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME" 2>/dev/null
+    echo -e "${CYAN}  🌿 Created/switched to branch ${BRANCH_NAME}${NC}"
+else
+    echo -e "${CYAN}  🌿 Already on branch ${CURRENT_BRANCH}${NC}"
+    BRANCH_NAME="$CURRENT_BRANCH"
+fi
+
 echo "$CURR_PASS" > "${EVOLVE_STATE_DIR}/last_pass.txt"
 echo "$CURR_FAIL" > "${EVOLVE_STATE_DIR}/last_fail.txt"
 echo "$CURR_WARN" > "${EVOLVE_STATE_DIR}/last_warn.txt"
@@ -1424,6 +1435,49 @@ update_polaris_score() {
 echo -e "${CYAN}  Writing state files (handoff + polaris-score)...${NC}"
 write_handoff
 update_polaris_score
+
+if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
+    if [ -d "${PROJECT_DIR}/.git" ]; then
+        cd "${PROJECT_DIR}"
+        git add -A 2>/dev/null || true
+        git commit -m "evolve: Round ${NEXT_ROUND} - state files" --allow-empty 2>/dev/null || true
+    fi
+
+    git push origin "$BRANCH_NAME" 2>/dev/null || git push -u origin "$BRANCH_NAME" 2>/dev/null
+
+    if command -v gh &>/dev/null; then
+        PR_TITLE="Round ${NEXT_ROUND}: ${POLARIS_FOCUS_DIM:-unknown} ${IMPROVE_EVIDENCE:-evolution}"
+        PR_BODY="## Round ${NEXT_ROUND} Evolution
+
+| Field | Value |
+|-------|-------|
+| Focus | ${POLARIS_FOCUS_DIM:-?} |
+| Improvement | ${IMPROVE_EVIDENCE:-N/A} |
+| Success | ${IMPROVE_SUCCESS:-false} |
+| Duration | ${duration:-0}s |
+
+$(cat "$PROJECT_DIR/references/handoff.md" 2>/dev/null || echo 'Handoff not available')"
+
+        PR_URL=$(gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --label "evolution" \
+            2>/dev/null || echo "PR_CREATE_FAILED")
+
+        if [[ "$PR_URL" == http* ]]; then
+            echo -e "${GREEN}  ✅ PR created: ${PR_URL}${NC}"
+            if gh pr merge "$PR_URL" --merge --auto 2>/dev/null; then
+                echo -e "${GREEN}  ✅ PR auto-merge enabled${NC}"
+            fi
+        else
+            echo -e "${YELLOW}  ⚠️  PR creation failed. Changes pushed to branch ${BRANCH_NAME}${NC}"
+        fi
+    else
+        echo -e "${YELLOW}  ⚠️  gh CLI not available. Changes pushed to branch ${BRANCH_NAME}. Manual PR needed.${NC}"
+    fi
+fi
 
 phase_end "8"
 
