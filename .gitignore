@@ -3,6 +3,10 @@
 *.temp
 /tmp/
 
+# Sandbox test/artifact files
+.sandbox-persist-test-*
+erl_crash.dump
+
 # OS files
 .DS_Store
 Thumbs.db
