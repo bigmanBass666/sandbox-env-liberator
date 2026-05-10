@@ -269,6 +269,45 @@ libcups.so.2         → libcups2
 
 **If MCP "Target closed" errors occur**: Fall back to Playwright Node.js API directly.
 
+**CDP Browser Connection** (Round 10 discovery — preferred over downloading Chromium):
+
+Chrome 147+ is already running on port 9222 with CDP enabled, managed by the **browser_ctrl** service (port 9090). This eliminates the need to download ~170MB of Chromium binary.
+
+```javascript
+// Connect to existing Chrome via CDP — no download required
+const { connectCDPBrowser } = require('/workspace/sandbox-env-setup/scripts/fix-network');
+const browser = await connectCDPBrowser(); // defaults to http://127.0.0.1:9222
+
+if (browser) {
+    const page = browser.contexts()[0].pages()[0] || await browser.contexts()[0].newPage();
+    await page.goto('https://example.com');
+    // Use browser normally — it's already running!
+} else {
+    // Fallback: launch local Chromium
+    const { chromium } = require('playwright');
+    const browser = await chromium.launch({ headless: true });
+}
+```
+
+Or use Playwright directly:
+```javascript
+const { chromium } = require('playwright');
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
+```
+
+**Key advantages of CDP connection**:
+- ✅ Zero download (~170MB saved)
+- ✅ Instant connection (browser already warm)
+- ✅ Managed by platform's browser_ctrl service (port 9090)
+- ✅ Persists across sessions (platform-managed process)
+- ⚠️ Browser state is shared — don't close it if other tools are using it
+
+**Verify CDP availability**:
+```bash
+curl -s http://127.0.0.1:9222/json/version | head -5
+# Expected: {"Browser":"Chrome/147.x.x.x","Protocol-Version":"1.3",...}
+```
+
 ---
 
 ### Domain 6: Development Toolchain
@@ -404,12 +443,14 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 |------|---------|-------------|
 | 80 | HTTP | agent-tool-host |
 | 5900 | VNC | RFB 003.008 remote desktop |
-| 8088 | CDP | Browser remote control endpoint |
+| 8088 | CDP | Browser remote control endpoint (/v1/cdp) |
 | 8999 | HTTP | agent-tool-host service |
-| 9090-9092 | Monitoring | Metrics collection |
+| 9090 | browser_ctrl | Prometheus metrics (3 workers) |
+| 9091 | egress | Network egress controller (2 workers) |
+| 9092 | sentinel | /workspace/restic-restore endpoint |
 | 9222 | CDP | Chrome DevTools Protocol |
 | 10249 | HTTP | API (404) |
-| 13080 | HTTP | API + /health |
+| 13080 | HTTP | Health API ({"status":"ok"}) |
 | 16000 | HTTP | Preview proxy |
 | 18080 | HTTP | Outbound proxy |
 | 18081 | HTTPS | Outbound proxy |

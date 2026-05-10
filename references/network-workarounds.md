@@ -148,6 +148,41 @@ const { downloadWithFallback, downloadWithRetry } = require('/workspace/sandbox-
 await downloadWithRetry('https://example.com/file', '/tmp/file');
 ```
 
+## CDP Browser Connection (浏览器直连绕过)
+
+**Problem**: Downloading Chromium binary (~170MB) fails in restricted networks or takes too long.
+
+**Solution**: The sandbox platform runs Chrome 147+ with CDP already enabled on port 9222. Connect to it directly instead of downloading a local Chromium.
+
+```javascript
+const { connectCDPBrowser } = require('/workspace/sandbox-env-setup/scripts/fix-network');
+
+// Method 1: Use the helper function (recommended)
+const browser = await connectCDPBrowser();
+if (browser) {
+    const page = browser.contexts()[0].pages()[0] || await browser.contexts()[0].newPage();
+    await page.goto('https://example.com');
+}
+
+// Method 2: Use Playwright API directly
+const { chromium } = require('playwright');
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
+```
+
+**How it works**:
+1. Probes `http://127.0.0.1:9222/json/version` to confirm CDP is available
+2. Parses browser version info (Browser, Protocol-Version)
+3. Calls `chromium.connectOverCDP()` to attach to running Chrome
+4. Returns browser instance (or `null` if unavailable)
+
+**When to use this workaround**:
+- `npx playwright install chromium` fails or hangs
+- Disk space is limited (~170MB savings)
+- Need instant browser access (no download wait)
+- Network is too slow for large downloads
+
+**Service context**: The CDP browser is managed by **browser_ctrl** on port 9090 (Prometheus metrics, 3 workers). Do not close the browser — other tools may depend on it.
+
 ## IPv6
 
 IPv6 resolution may work even when IPv4 direct connections don't. Test with:

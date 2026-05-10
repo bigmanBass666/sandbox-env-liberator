@@ -697,6 +697,39 @@ async function testNetworkPaths() {
     }
 }
 
+async function connectCDPBrowser(cdpUrl) {
+    const targetUrl = cdpUrl || 'http://127.0.0.1:9222';
+    log('INFO', `Connecting to CDP browser at ${targetUrl}...`);
+
+    let playwright;
+    try {
+        playwright = require('playwright');
+    } catch {
+        log('FAIL', 'Playwright not installed — cannot use CDP connection');
+        return null;
+    }
+
+    try {
+        const versionResp = await testUrl(`${targetUrl}/json/version`);
+        if (!versionResp.ok) {
+            log('WARN', `CDP endpoint not responding at ${targetUrl}`);
+            return null;
+        }
+
+        const versionInfo = JSON.parse(versionResp.body);
+        log('PASS', `CDP browser detected: ${versionInfo.Browser || 'Chrome'} (${versionInfo['Protocol-Version'] || 'unknown'})`);
+
+        const browser = await playwright.chromium.connectOverCDP(targetUrl);
+        const contexts = browser.contexts();
+        const pages = contexts.length > 0 ? contexts[0].pages().length : 0;
+        log('PASS', `CDP connected: ${contexts.length} context(s), ${pages} page(s)`);
+        return browser;
+    } catch (e) {
+        log('WARN', `CDP connection failed: ${e.message.substring(0, 100)}`);
+        return null;
+    }
+}
+
 (async () => {
     console.log('╔═══════════════════════════════════════════════════════╗');
     console.log('║   NETWORK FIX & OPTIMIZATION                         ║');
@@ -733,6 +766,7 @@ module.exports = {
     detectAndHandleProxyAuth,
     probeWebSocket,
     downloadViaNodeFetch,
+    connectCDPBrowser,
     isPackageInstalled,
     isNpmGlobalInstalled,
     isLineInFile,

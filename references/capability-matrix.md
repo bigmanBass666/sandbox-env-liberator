@@ -159,12 +159,14 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 |------|------|------|
 | 80 | HTTP (agent-tool-host) | ✅ |
 | 5900 | VNC (RFB 003.008) | ✅ |
-| 8088 | CDP端点 | ✅ |
+| 8088 | CDP端点 (/v1/cdp) | ✅ |
 | 8999 | agent-tool-host | ✅ |
-| 9090-9092 | 监控指标 | ✅ |
-| 9222 | Chrome DevTools | ✅ |
+| 9090 | browser_ctrl (Prometheus metrics, 3 workers) | ✅ |
+| 9091 | egress (网络出口控制器, 2 workers) | ✅ |
+| 9092 | sentinel (/workspace/restic-restore endpoint) | ✅ |
+| 9222 | Chrome DevTools Protocol (CDP) | ✅ |
 | 10249 | HTTP API | ✅ |
-| 13080 | HTTP API + /health | ✅ |
+| 13080 | Health API ({\"status\":\"ok\"}) | ✅ |
 | 16000 | 预览代理 | ✅ |
 | 18080 | HTTP代理（出站） | ✅ |
 | 18081 | HTTPS代理（出站） | ✅ |
