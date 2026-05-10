@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-10T16:13:37Z
-Round: 29
+Last Updated: 2026-05-10T17:20:24Z
+Round: 32
 Total: 53%
 
 ## Scoring Principles (评分原则)
@@ -120,6 +120,9 @@ Total: 53%
 ## History
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R32 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R31 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R30 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R29 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | TIME REPORT 89% efficient, associative array bug fixed |
 | R28 | 50% | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
 | R27 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |

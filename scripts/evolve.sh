@@ -29,6 +29,10 @@ START_TIME=$(date +%s)
 TIME_BUDGET=1800
 RECON_BUDGET=300
 
+TIMELINE_FILE="/tmp/sandbox-evolve/timeline.jsonl"
+mkdir -p "$(dirname "$TIMELINE_FILE")"
+> "$TIMELINE_FILE"
+
 # Phase timing tracking (scalar globals to avoid associative array issues in $(( )) context)
 PHASE_IDS=(0 0g 05 1 2 3 4 5 55 57 6 7 8 9)
 declare -A PHASE_NAMES
@@ -77,6 +81,10 @@ phase_start() {
     local id="$1"
     local name="${PHASE_NAMES[$id]:-$id}"
     PHASE_START_TIMES[$id]=$(date +%s)
+    local _tl_ts=$(date +%s)
+    local _tl_iso=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+    printf '{"event":"phase_start","round":"%s","phase":"%s","phase_name":"%s","ts":%d,"iso":"%s"}\n' \
+        "${NEXT_ROUND:-?}" "$id" "$name" "$_tl_ts" "$_tl_iso" >> "$TIMELINE_FILE" 2>/dev/null || true
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) started at $(date '+%H:%M:%S')${NC}"
 }
 
@@ -87,6 +95,9 @@ phase_end() {
     local start_ts="${PHASE_START_TIMES[$id]:-0}"
     local end_ts="${PHASE_END_TIMES[$id]:-0}"
     local elapsed=$(( end_ts - start_ts ))
+    local _tl_ts=$(date +%s)
+    printf '{"event":"phase_end","round":"%s","phase":"%s","phase_name":"%s","ts":%d,"elapsed":%d}\n' \
+        "${NEXT_ROUND:-?}" "$id" "$name" "$_tl_ts" "$elapsed" >> "$TIMELINE_FILE" 2>/dev/null || true
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) elapsed: ${elapsed}s${NC}"
 }
 
@@ -1299,12 +1310,36 @@ if [ ! -f "$EVOLUTION_LOG" ]; then
 fi
 echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
 
+if [ -f "$TIMELINE_FILE" ] && [ -s "$TIMELINE_FILE" ]; then
+    TIMELINE_TABLE=$(awk -F'"' '
+        /phase_end/ {
+            name=""; elapsed=""
+            for(i=1;i<=NF;i++) {
+                if($i=="phase_name") { name=$(i+2) }
+                if($i=="elapsed") {
+                    e=$(i+1)
+                    gsub(/[:}]/,"",e)
+                    elapsed=e
+                }
+            }
+            if(name!="" && elapsed!="") printf "| %-20s %5s |\n", name, elapsed "s"
+        }
+    ' "$TIMELINE_FILE")
+    LOG_ENTRY="${LOG_ENTRY}
+
+### Timeline
+${TIMELINE_TABLE}"
+    echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
+fi
+
 echo -e "${GREEN}  Evolution state saved to ${EVOLVE_STATE_DIR}/${NC}"
 echo -e "${GREEN}  Evolution log appended to ${EVOLUTION_LOG}${NC}"
 
 write_handoff() {
     local hf="$PROJECT_DIR/references/handoff.md"
     local duration=$(( $(date +%s) - START_TIME ))
+    local dur_min=$(( duration / 60 ))
+    local dur_sec=$(( duration % 60 ))
     local status="COMPLETE"
     [ "$IMPROVE_SUCCESS" != true ] && [ "$COMMIT_STATUS" = "INCOMPLETE" ] && status="INCOMPLETE"
     [ "${CURR_FAIL:-0}" -gt 3 ] && status="PARTIAL"
@@ -1321,7 +1356,7 @@ write_handoff() {
 | Round | ${NEXT_ROUND} |
 | Ended At | $(date '+%Y-%m-%dT%H:%M:%SZ') |
 | Commit | ${COMMIT_STATUS_LOG:-pending} |
-| Duration | ${duration}s (${duration} sec) |
+| Duration | ${duration}s (${dur_min}m${dur_sec}s) |
 | Status | ${status} |
 | Polaris Focus Dimension | ${POLARIS_FOCUS_DIM:-none} |
 | Polaris Delta This Round | See polaris-score.md |
@@ -1406,7 +1441,28 @@ echo -e "${BOLD}╚════════════════════�
 
 phase_end "9"
 
+print_time_report
+
+if [ -f "${TIMELINE_FILE:-}" ] && [ -s "${TIMELINE_FILE}" ]; then
+    TL_ARCHIVE="${REFERENCES_DIR:-.}/timeline-round-${NEXT_ROUND:-unknown}.jsonl"
+    cp "$TIMELINE_FILE" "$TL_ARCHIVE" 2>/dev/null || true
+    echo -e "${CYAN}  📋 Timeline archived to ${TL_ARCHIVE}${NC}"
+fi
+
 print_time_report() {
+    local _prev_ts=0
+    local _monotonic_ok=true
+    for id in 0 0g 05 1 2 3 4 5 55 57 6 7 8 9; do
+        local _s="${PHASE_START_TIMES[$id]:-0}"
+        local _e="${PHASE_END_TIMES[$id]:-0}"
+        if [[ "$_s" -gt 0 ]] && [[ "$_e" -gt 0 ]]; then
+            [[ "$_s" -lt "$_prev_ts" ]] && _monotonic_ok=false
+            [[ "$_e" -lt "$_s" ]] && _monotonic_ok=false
+            _prev_ts="$_e"
+        fi
+    done
+    [ "$_monotonic_ok" = false ] && echo -e "${YELLOW}║   ⚠ Timeline integrity: non-monotonic detected  ║${NC}"
+
     local total_elapsed=$(( $(date +%s) - START_TIME ))
     local total_min=$(( total_elapsed / 60 ))
 
@@ -1449,6 +1505,10 @@ print_time_report() {
     printf "║   %-25s %-18s ║\n" "CONTINUE LOOPS" "${CONTINUE_LOOP_COUNT:-0}"
     if [ "$CONTINUE_LOOP_COUNT" -gt 0 ]; then
         printf "║   %-25s %-18s ║\n" "TOTAL CYCLES" "$(( CONTINUE_LOOP_COUNT + 1 ))"
+    fi
+    if [ -f "${TIMELINE_FILE:-}" ] && [ -s "${TIMELINE_FILE}" ]; then
+        local _tl_count=$(wc -l < "$TIMELINE_FILE")
+        printf "║   %-25s %-18s ║\n" "TIMELINE EVENTS" "${_tl_count}"
     fi
     echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
 }
