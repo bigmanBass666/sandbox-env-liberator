@@ -83,12 +83,105 @@ mkdir -p "$(dirname $PROXY_CONF)"
 } > "$PROXY_CONF"
 fix "Saved proxy config to $PROXY_CONF"
 
-# === Save npm config ===
+# === Save npm config (with mirror) ===
 NPMRC="/root/.npmrc"
-if [ ! -f "$NPMRC" ]; then
-    touch "$NPMRC"
-    fix "Created empty .npmrc"
+fix "Configuring npm mirror (npmmirror.com)..."
+if [ ! -f "$NPMRC" ] || ! grep -q "npmmirror.com" "$NPMRC" 2>/dev/null; then
+    {
+        echo "registry=https://registry.npmmirror.com"
+        echo "maxsockets=10"
+        echo "fetch-retries=3"
+        echo "fetch-retry-midletimeout=5000"
+        echo "fetch-timeout=30000"
+    } > "$NPMRC"
+    pass "npm → npmmirror.com"
+else
+    pass "npm mirror already configured"
 fi
+
+# === Configure pip mirror (Tsinghua PyPI) ===
+fix "Configuring pip mirror (Tsinghua)..."
+PIP_CONF_DIR="/root/.pip"
+mkdir -p "$PIP_CONF_DIR"
+PIP_CONF="$PIP_CONF_DIR/pip.conf"
+if [ ! -f "$PIP_CONF" ] || ! grep -q "tuna.tsinghua.edu.cn" "$PIP_CONF" 2>/dev/null; then
+    cat > "$PIP_CONF" << 'PIPEOF'
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+trusted-host = pypi.tuna.tsinghua.edu.cn
+timeout = 30
+retries = 3
+PIPEOF
+    pass "pip → pypi.tuna.tsinghua.edu.cn"
+else
+    pass "pip mirror already configured"
+fi
+
+# === Configure Go GOPROXY (goproxy.cn) ===
+fix "Configuring Go GOPROXY (goproxy.cn)..."
+if command -v go &>/dev/null; then
+    CURRENT_GOPROXY=$(go env GOPROXY 2>/dev/null)
+    if [[ "$CURRENT_GOPROXY" != *"goproxy.cn"* ]]; then
+        go env -w GOPROXY=https://goproxy.cn,direct
+        pass "Go → goproxy.cn,direct"
+    else
+        pass "Go GOPROXY already configured"
+    fi
+else
+    fix "Go not installed, skipping"
+fi
+
+# === Configure Cargo mirror (rsproxy.cn) ===
+fix "Configuring Cargo mirror (rsproxy.cn)..."
+CARGO_DIR="/root/.cargo"
+mkdir -p "$CARGO_DIR"
+CARGO_CONFIG="$CARGO_DIR/config.toml"
+if [ ! -f "$CARGO_CONFIG" ] || ! grep -q "rsproxy.cn" "$CARGO_CONFIG" 2>/dev/null; then
+    cat > "$CARGO_CONFIG" << 'CARGOEOF'
+[source.crates-io]
+replace-with = 'rsproxy-sparse'
+
+[source.rsproxy]
+registry = "https://rsproxy.cn/crates.io-index"
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+
+[registries.rsproxy]
+index = "https://rsproxy.cn/crates.io-index"
+
+[net]
+git-fetch-with-cli = true
+CARGOEOF
+    pass "Cargo → rsproxy.cn (sparse)"
+else
+    pass "Cargo mirror already configured"
+fi
+
+# === Configure apt mirror (Tsinghua Ubuntu) ===
+fix "Configuring apt mirror (Tsinghua)..."
+APT_MIRROR="/etc/apt/sources.list.d/ubuntu-mirror.list"
+if [ ! -f "$APT_MIRROR" ] || ! grep -q "tuna.tsinghua.edu.cn" "$APT_MIRROR" 2>/dev/null; then
+    cat > "$APT_MIRROR" << 'APTEOF'
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-updates main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-security main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-backports main restricted universe multiverse
+APTEOF
+    pass "apt → mirrors.tuna.tsinghua.edu.cn"
+else
+    pass "apt mirror already configured"
+fi
+
+echo ""
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║   MIRROR SOURCES CONFIGURED                         ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo "  npm   → registry.npmmirror.com"
+echo "  pip   → pypi.tuna.tsinghua.edu.cn/simple"
+echo "  Go    → goproxy.cn,direct"
+echo "  Cargo → rsproxy.cn (sparse protocol)"
+echo "  apt   → mirrors.tuna.tsinghua.edu.cn/ubuntu"
 
 # === Create workspace restore script ===
 RESTORE_SCRIPT="/usr/local/bin/sandbox-restore.sh"

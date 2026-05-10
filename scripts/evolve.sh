@@ -86,6 +86,62 @@ fi
 echo ""
 
 # ============================================================
+# 0.5. MIRROR SOURCE INITIALIZATION (idempotent)
+# ============================================================
+echo -e "${CYAN}━━━ Phase 0.5: 镜像源初始化 ━━━${NC}"
+
+setup_mirror() {
+    local name="$1" cmd="$2"
+    if $cmd 2>/dev/null; then
+        echo -e "${GREEN}  ✅ ${name}${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}  ⚠️  ${name} 配置失败（非致命）${NC}"
+        return 1
+    fi
+}
+
+setup_mirror "npm → npmmirror.com" bash -c '
+    f=/root/.npmrc
+    if ! grep -q "npmmirror.com" "$f" 2>/dev/null; then
+        { echo "registry=https://registry.npmmirror.com"; echo "fetch-retries=3"; echo "fetch-timeout=30000"; } > "$f"
+    fi
+'
+
+setup_mirror "pip → Tsinghua PyPI" bash -c '
+    d=/root/.pip; mkdir -p "$d"
+    f="$d/pip.conf"
+    if ! grep -q "tuna.tsinghua.edu.cn" "$f" 2>/dev/null; then
+        printf "[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple\ntrusted-host = pypi.tuna.tsinghua.edu.cn\ntimeout = 30\nretries = 3\n" > "$f"
+    fi
+'
+
+if command -v go &>/dev/null; then
+    setup_mirror "Go → goproxy.cn" bash -c '
+        [ "$(go env GOPROXY 2>/dev/null)" != "https://goproxy.cn,direct" ] && go env -w GOPROXY=https://goproxy.cn,direct
+    '
+else
+    echo -e "${YELLOW}  ⏭️  Go 未安装，跳过${NC}"
+fi
+
+setup_mirror "Cargo → rsproxy.cn" bash -c '
+    d=/root/.cargo; mkdir -p "$d"
+    f="$d/config.toml"
+    if ! grep -q "rsproxy.cn" "$f" 2>/dev/null; then
+        printf "[source.crates-io]\nreplace-with = \"rsproxy-sparse\"\n\n[source.rsproxy-sparse]\nregistry = \"sparse+https://rsproxy.cn/index/\"\n\n[net]\ngit-fetch-with-cli = true\n" > "$f"
+    fi
+'
+
+setup_mirror "apt → Tsinghua Ubuntu" bash -c '
+    f=/etc/apt/sources.list.d/ubuntu-mirror.list
+    if ! grep -q "tuna.tsinghua.edu.cn" "$f" 2>/dev/null; then
+        printf "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-updates main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-security main restricted universe multiverse\n" > "$f"
+    fi
+'
+
+echo ""
+
+# ============================================================
 # 1. EVOLUTION STATE READING
 # ============================================================
 echo -e "${CYAN}━━━ Phase 1: Evolution State Reading ━━━${NC}"
