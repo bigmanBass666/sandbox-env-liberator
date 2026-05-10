@@ -652,7 +652,15 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 > ⚠️ 你可能在一个全新的 AI 会话中，workspace 是空的。
 > 以下步骤确保你无论在什么环境下都能开始工作。
 
-1. **确保 Git 仓库可用**：
+**0. 一键初始化环境（bootstrap）**：
+   - 执行 `bash scripts/bootstrap.sh`
+   - 此脚本会：检查 GITHUB_TOKEN → 安装依赖 → clone 仓库 → 配置镜像源 → 安装 npm 包 → 运行 verify-env 基线
+   - **退出码 0** = 成功，继续下一步
+   - **退出码 1** = 致命错误（缺少 GITHUB_TOKEN），必须停止
+   - **退出码 2** = 有警告但可继续
+   - 脚本是幂等的 — 在已配置的环境上运行也是安全的
+
+1. **进入项目目录**（bootstrap 已确保仓库存在）：
    - 检查 `/workspace/sandbox-env-setup` 是否存在且是 git 仓库（`git rev-parse --is-inside-work-tree`）
    - ❌ 不存在 → `git clone https://github.com/bigmanBass666/sandbox-env-liberator.git /workspace/sandbox-env-setup`
    - ❌ 存在但不是 git 仓库 → `rm -rf /workspace/sandbox-env-setup` 然后重新 clone
