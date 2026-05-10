@@ -1027,13 +1027,49 @@ else
         case "$POLARIS_FOCUS_DIM" in
             D1)
                 if echo "$POLARIS_NEXT_MILESTONE" | grep -qi "speed\|100KB"; then
-                    echo -e "${CYAN}  [D1 Task] Testing download speed to mirror...${NC}"
-                    SPEED_TEST=$(curl -so /dev/null -w '%{speed_download}' --max-time 10 https://npmmirror.com/mirrors/npm/index.json 2>/dev/null || echo "0")
-                    SPEED_KBPS=$(( ${SPEED_TEST%.*} / 1024 ))
-                    echo -e "${CYAN}  Download speed: ${SPEED_KBPS} KB/s${NC}"
-                    if [ "$SPEED_KBPS" -gt 100 ]; then
+                    echo -e "${CYAN}  [D1 Task] Multi-mirror speed test...${NC}"
+                    
+                    MIRROR_URLS=(
+                        "npmmirror|https://npmmirror.com/mirrors/npm/index.json"
+                        "rsproxy|https://rsproxy.cn/api/index/config"
+                        "tsinghua-pip|https://pypi.tuna.tsinghua.edu.cn/simple/"
+                    )
+                    
+                    MAX_SPEED=0
+                    BEST_MIRROR="none"
+                    SPEED_RESULTS=""
+                    
+                    for mirror_entry in "${MIRROR_URLS[@]}"; do
+                        mirror_name="${mirror_entry%%|*}"
+                        mirror_url="${mirror_entry#*|}"
+                        echo -e "${CYAN}    Testing $mirror_name ($mirror_url)...${NC}"
+                        
+                        raw_speed=$(curl -so /dev/null -w '%{speed_download}' --max-time 10 "$mirror_url" 2>/dev/null || echo "0")
+                        speed_kbps=$(( ${raw_speed%.*} / 1024 ))
+                        
+                        if [ "$speed_kbps" -gt 0 ] 2>/dev/null; then
+                            echo -e "${GREEN}      ✓ $mirror_name: ${speed_kbps} KB/s${NC}"
+                        else
+                            echo -e "${YELLOW}      ✗ $mirror_name: timeout/failed${NC}"
+                        fi
+                        
+                        SPEED_RESULTS="$SPEED_RESULTS $mirror_name=${speed_kbps}KB/s"
+                        
+                        if [ "$speed_kbps" -gt "$MAX_SPEED" ] 2>/dev/null; then
+                            MAX_SPEED=$speed_kbps
+                            BEST_MIRROR=$mirror_name
+                        fi
+                    done
+                    
+                    echo -e "${CYAN}  Result: Best mirror = $BEST_MIRROR at ${MAX_SPEED} KB/s${NC}"
+                    
+                    if [ "$MAX_SPEED" -gt 100 ]; then
                         IMPROVE_SUCCESS=true
-                        IMPROVE_EVIDENCE="Download speed ${SPEED_KBPS}KB/s >100KB/s threshold"
+                        IMPROVE_EVIDENCE="Multi-mirror speed test:${SPEED_RESULTS} (max=${MAX_SPEED}KB/s via $BEST_MIRROR)"
+                    else
+                        echo -e "${YELLOW}  ⚠  All mirrors <100KB/s (max=${MAX_SPEED}KB/s). D1 milestone not reached.${NC}"
+                        IMPROVE_SUCCESS=false
+                        IMPROVE_EVIDENCE="Multi-mirror speed test:${SPEED_RESULTS} (max=${MAX_SPEED}KB/s <100 threshold)"
                     fi
                 else
                     echo -e "${CYAN}  [D1 Task] Configuring additional network optimizations...${NC}"
