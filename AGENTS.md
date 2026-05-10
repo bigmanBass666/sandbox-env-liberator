@@ -35,6 +35,12 @@ prompts/
   worker.md          — Night Evolution Worker 执行指令
   cso.md             — CSO 审查/改进指令（待创建）
   reviewer.md        — PR Reviewer 审查指令（待创建）
+
+.agents/rules/
+  evolve-scripts.md  — scripts/ 目录守则（path-specific）
+  polaris-scoring.md — 评分完整性规则（path-specific）
+  prompts-protection.md — Worker 禁止修改系统文件（path-specific）
+  worker-guardrails.md — Worker 自检清单（CRITICAL + WARNING）
 ```
 
 ## Multi-Agent Roles

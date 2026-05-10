@@ -1,5 +1,10 @@
 @AGENTS.md
 
+@.agents/rules/evolve-scripts.md
+@.agents/rules/polaris-scoring.md
+@.agents/rules/prompts-protection.md
+@.agents/rules/worker-guardrails.md
+
 ## Claude Code Specific
 
 - Use plan mode for changes to `scripts/evolve.sh` architecture

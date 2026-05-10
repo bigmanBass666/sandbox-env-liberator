@@ -1443,6 +1443,34 @@ if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
         git commit -m "evolve: Round ${NEXT_ROUND} - state files" --allow-empty 2>/dev/null || true
     fi
 
+    GUARDRAILS_PASSED=true
+
+    echo -e "${CYAN}  🛡️  Running guardrails checks...${NC}"
+
+    if ! bash -n "$SCRIPTS_DIR/evolve.sh" 2>/dev/null; then
+        echo -e "${RED}  ❌ GUARDRAIL: Syntax check failed${NC}"
+        GUARDRAILS_PASSED=false
+    fi
+
+    FORBIDDEN=$(git diff --name-only HEAD 2>/dev/null | grep -E '(^-test-|/tmp/|\.log$|erl_crash\.dump|\.bak$|^-test-)' || true)
+    if [ -n "$FORBIDDEN" ]; then
+        echo -e "${RED}  ❌ GUARDRAIL: Forbidden files detected: ${FORBIDDEN}${NC}"
+        GUARDRAILS_PASSED=false
+    fi
+
+    if [ -f "$TIMELINE_FILE" ] && [ -s "$TIMELINE_FILE" ]; then
+        EVENT_COUNT=$(wc -l < "$TIMELINE_FILE" 2>/dev/null || echo 0)
+        if [ "$EVENT_COUNT" -lt 20 ] 2>/dev/null; then
+            echo -e "${YELLOW}  ⚠️  GUARDRAIL: Timeline events (${EVENT_COUNT}) < 20, may be incomplete${NC}"
+        fi
+    fi
+
+    if [ "$GUARDRAILS_PASSED" = true ]; then
+        echo -e "${GREEN}  ✅ All guardrails passed${NC}"
+    else
+        echo -e "${RED}  ❌ Guardrails failed. Committing but flagging for review.${NC}"
+    fi
+
     git push origin "$BRANCH_NAME" 2>/dev/null || git push -u origin "$BRANCH_NAME" 2>/dev/null
 
     if command -v gh &>/dev/null; then
