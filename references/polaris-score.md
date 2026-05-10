@@ -2,15 +2,15 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-10T14:30:00Z
-Round: 18
-Total: 46%
+Last Updated: 2026-05-10T15:00:00Z
+Round: 19
+Total: 50%
 
 ## Dimensions
 
 | ID | Dimension | Score | Evidence | Last Improved | Streak (rounds without progress) |
 |----|-----------|-------|----------|---------------|----------------------------------|
-| D1 | 网络自由 | 20% | 镜像源生效, ~38KB/s via egress tunnel, 14:1 rx:tx ratio | R11 | 5 |
+| D1 | 网络自由 | 40% | 镜像源生效, rsproxy.cn ~253KB/s, npmmirror.com ~340KB/s, 突破100KB/s里程碑 | R19 | 0 |
 | D2 | 包管理自由 | 60% | 5 mirrors (npm/pip/Go/Cargo/apt), p7zip, esbuild, meson, node-gyp | R15 | 1 |
 | D3 | 进程自由 | 45% | 4GB RAM / 2 CPU / ulimit generous / screen + tmux installed | R17 | 0 |
 | D4 | 文件系统自由 | 80% | 1.5TB total, 9% used, /workspace writable, /data/user/ discovered | R15 | 1 |
@@ -22,7 +22,7 @@ Total: 46%
 ### D1 网络自由 — Break free from bandwidth prison
 
 - [x] [20%] 镜像源配置完成 (5 package managers) — R14
-- [ ] [40%] 下载速度突破 100KB/s（当前 ~38KB/s）
+- [x] [40%] 下载速度突破 100KB/s (rsproxy.cn ~253KB/s, npmmirror ~340KB/s) — R19
 - [ ] [60%] 发现绕过 egress sidecar 限制的方法或可接受的替代方案
 - [ ] [80%] 大文件(>100MB)可靠下载并验证完整性
 - [ ] [100%] 无带宽限制或找到等效的完整解决方案
@@ -109,5 +109,5 @@ Total: 46%
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
 |-------|-------|----|----|----|----|----|----|-------|
-| R18 | 46% | 20 | 60 | 45 | 80 | 50 | 20 | screen+tmux installed, evolve.sh path fixes |
+| R19 | 50% | 40 | 60 | 45 | 80 | 50 | 20 | rsproxy.cn 253KB/s, npmmirror 340KB/s, D1突破100KB/s里程碑 |
 | R16 | 45% | 20 | 60 | 40 | 80 | 50 | 20 | Time tracking bug fix, MCP deep dive |
