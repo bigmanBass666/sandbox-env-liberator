@@ -1,0 +1,27 @@
+name: Chief System Officer
+version: "1.0"
+role: cso
+branch: main
+trigger: manual
+
+capabilities:
+  - architecture-design
+  - system-improvement
+  - pr-review
+  - spec-creation
+  - rule-maintenance
+
+permissions:
+  allow:
+    - "**"
+  deny: []
+
+guardrails:
+  - type: no-daily-evolution
+    description: "CSO does not execute daily evolution rounds"
+  - type: pr-workflow
+    description: "Must use PR workflow, not direct push to main"
+
+handoff:
+  reads: ["**"]
+  writes: ["**"]
