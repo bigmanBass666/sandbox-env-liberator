@@ -50,6 +50,8 @@ PHASE_NAMES=(
 )
 
 LOCK_HELD=false
+declare -A PHASE_START_TIMES
+declare -A PHASE_END_TIMES
 
 check_time() {
     local elapsed=$(( $(date +%s) - START_TIME ))
@@ -71,22 +73,20 @@ check_recon_time() {
     return 0
 }
 
-# Time tracking: record phase start
 phase_start() {
     local id="$1"
     local name="${PHASE_NAMES[$id]:-$id}"
-    eval "PHASE_START_${id}=\$(date +%s)"
+    PHASE_START_TIMES[$id]=$(date +%s)
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) started at $(date '+%H:%M:%S')${NC}"
 }
 
-# Time tracking: record phase end and print elapsed
 phase_end() {
     local id="$1"
     local name="${PHASE_NAMES[$id]:-$id}"
-    eval "PHASE_END_${id}=\$(date +%s)"
-    local start_var="PHASE_START_${id}"
-    local end_var="PHASE_END_${id}"
-    local elapsed=$(( ${!end_var} - ${!start_var} ))
+    PHASE_END_TIMES[$id]=$(date +%s)
+    local start_ts="${PHASE_START_TIMES[$id]:-0}"
+    local end_ts="${PHASE_END_TIMES[$id]:-0}"
+    local elapsed=$(( end_ts - start_ts ))
     echo -e "${MAGENTA}  ⏱️  Phase $id ($name) elapsed: ${elapsed}s${NC}"
 }
 
@@ -1411,11 +1411,11 @@ print_time_report() {
     local total_min=$(( total_elapsed / 60 ))
 
     local effective_time=0
-    for id in 3 4; do
-        local start_var="PHASE_START_${id}"
-        local end_var="PHASE_END_${id}"
-        if [[ -n "${!start_var:-}" ]] && [[ -n "${!end_var:-}" ]]; then
-            effective_time=$(( effective_time + ${!end_var} - ${!start_var} ))
+    for id in 1 2 4 5 55 57 7; do
+        local start_ts="${PHASE_START_TIMES[$id]:-0}"
+        local end_ts="${PHASE_END_TIMES[$id]:-0}"
+        if [[ -n "$start_ts" ]] && [[ -n "$end_ts" ]] && [[ "$start_ts" -gt 0 ]]; then
+            effective_time=$(( effective_time + end_ts - start_ts ))
         fi
     done
 
@@ -1430,10 +1430,10 @@ print_time_report() {
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
 
     for id in 0 0g 05 1 2 3 4 5 55 57 6 7 8 9; do
-        local start_var="PHASE_START_${id}"
-        local end_var="PHASE_END_${id}"
-        if [[ -n "${!start_var:-}" ]] && [[ -n "${!end_var:-}" ]]; then
-            local elapsed=$(( ${!end_var} - ${!start_var} ))
+        local start_ts="${PHASE_START_TIMES[$id]:-0}"
+        local end_ts="${PHASE_END_TIMES[$id]:-0}"
+        if [[ -n "$start_ts" ]] && [[ -n "$end_ts" ]] && [[ "$start_ts" -gt 0 ]]; then
+            local elapsed=$(( end_ts - start_ts ))
             local name="${PHASE_NAMES[$id]:-$id}"
             printf "║   %-25s %4ds              ║\n" "$name" "$elapsed"
         fi

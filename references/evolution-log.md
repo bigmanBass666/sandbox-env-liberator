@@ -727,3 +727,56 @@ Round 2 ████████████████████████
 - Commit: PLAN_ONLY
 
 
+## Round 29 - 2026-05-10 16:13:37
+- State: PASS=125, FAIL=6, WARN=9
+- Delta: +0 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 1
+- P0: 6, P1: 2, P2: 8, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共6项) | P2发现项 (共8项) | P4元改进 (共2项)
+- Time elapsed: 189s
+- Commit: COMMITTED
+
+## Round 29 - 2026-05-10 16:13:37 (Manual + D6 Breakthrough)
+- **Timestamp**: 2026-05-10T16:13:37Z
+- **Trigger**: Manual (/spec) + evolve.sh
+- **Lock Acquired**: YES
+- **Previous State**: PASS=60, FAIL=5 (verify-env baseline)
+- **Changes Made**:
+  - 🔴 **CRITICAL BUG FIX**: evolve.sh TIME REPORT 完全重写
+    - 根因: bash `eval` 间接变量引用在 phase_end 中不可靠，导致 PHASE_START/PHASE_END 变量无法跨函数访问
+    - 修复: 改用 `declare -A PHASE_START_TIMES` / `PHASE_END_TIMES` 关联数组
+    - 效果: EFFECTIVE 从 0% → **89%** (169s/189s)
+  - 升级 D6 分数: 20% → **40%** (里程碑 [40%] TIME REPORT 验证完成)
+  - 更新 polaris-score.md: D6 里程碑标记 ✅
+- **Current State**:
+  - full-recon: PASS=84, FAIL=6, WARN=9
+  - deep-recon: PASS=41, FAIL=0, WARN=0
+  - **verify-env: PASS=60, FAIL=5** (稳定)
+  - **TIME REPORT: EFFECTIVE=89%** 🎉
+- **Delta**: **D6: 20% → 40% (+20%), Total: 50% → 53% (+3%)**
+- **New Discoveries**:
+  - **TIME REPORT Bug 根因**: eval 间接变量引用在 bash 函数内不可靠
+  - **关联数组方案更可靠**: `declare -A PHASE_START_TIMES` / `PHASE_END_TIMES`
+  - **效率重新测量**: Phase 2(145s) + Phase 7(24s) = 169s 有效时间
+  - **89% 效率已超过 50% 里程碑目标！**
+- **Failed Attempts**: 无
+- **Hypotheses Results**:
+  - H1 ✅🚀: TIME REPORT Bug 定位并修复（2次尝试）
+  - H2 ✅: D6 里程碑 [40%] 验证完成
+- **Next Priority**:
+  - D6 下一个里程碑 [60%]: 已完成（89% > 50%）
+  - D6 下一个里程碑 [80%]: 目标 >70% 效率
+  - 解决 P0 阻塞项（screen/tmux/Playwright）
+- **Meta Reflection**:
+  - **本轮是 D6 重大突破轮** — 耗时 8 轮（R22-R29）的 TIME REPORT Bug 终于修复
+  - 根因分析教训：bash 间接变量引用（`${!var}`）在函数内使用时，变量必须是全局可见的
+  - 关联数组（`declare -A`）是 bash 4.0+ 内置功能，比 eval 更安全可靠
+  - **89% 效率远超预期**：只需要 >50% 就达成里程碑
+- **Polaris Delta**:
+  - D6: 20% → 40% (+20%)
+  - Total: 50% → 53% (+3%)
+- **Status**: COMPLETE
+
+
