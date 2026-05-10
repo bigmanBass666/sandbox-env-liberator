@@ -153,6 +153,38 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | Kubernetes | ✅ | KUBERNETES_SERVICE_HOST存在 |
 | Node.js预加载 | ✅ | /app/mcp_proxy_bootstrap/preload.cjs |
 
+### Sentinel (Port 9092) — Webhook/API Gateway
+
+- **Type**: Webhook/API Gateway (embedded in agent-tool-host, pid 821)
+- **Endpoints**:
+  - `POST /hook/dispatch` — Main webhook dispatcher (32 calls observed)
+  - `POST /workspace/restic-restore` — Fire-and-forget restore trigger (1 call, returns 200, no body)
+  - All other paths → 404
+- **Metrics**: `sentinel_http_requests_total`, `sentinel_http_request_duration_seconds` (histogram)
+- **Key insight**: NOT a REST API server — it's an async webhook trigger system. The restic-restore endpoint triggers external platform-side restoration.
+
+### Egress Sidecar (Port 9091) — Network Tunnel Proxy
+
+- **Type**: Sidecar Tunnel Proxy (embedded in agent-tool-host, pid 821)
+- **Architecture**: App → egress(sidecar) → ProxyServer via HTTP CONNECT tunnels
+- **Runtime**:
+  - 2 tokio worker threads, 12 alive tasks
+  - 3 active tunnels currently
+- **Policy System**:
+  - privileged_allow: 377
+  - allow: 245
+  - deny: 4
+  - privileged_deny: 6
+- **Traffic Statistics**:
+  - Total sent: 11.2MB | Total received: 158.8MB
+  - Download:Upload ratio ~10:1 (explains slow uploads)
+  - 632 total requests, 581 CONNECT success (92%)
+  - client_connection_attempts: 622 ok
+- **Tunnel Errors**:
+  - d2u_error dominant: 61 shutdown, 13 read, 4 write
+- **Bandwidth limiting root cause**: All egress traffic goes through tunnel proxy to external ProxyServer. The ~20KB/s limit is imposed by the proxy or tunnel protocol overhead.
+- **No admin/config API exposed** on port 9091
+
 ### 完整端口映射表
 
 | 端口 | 服务 | 状态 |
@@ -161,9 +193,9 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | 5900 | VNC (RFB 003.008) | ✅ |
 | 8088 | CDP端点 (/v1/cdp) | ✅ |
 | 8999 | agent-tool-host | ✅ |
-| 9090 | browser_ctrl (Prometheus metrics, 3 workers) | ✅ |
-| 9091 | egress (网络出口控制器, 2 workers) | ✅ |
-| 9092 | sentinel (/workspace/restic-restore endpoint) | ✅ |
+| 9090 | browser_ctrl | Chrome DevTools browser controller |
+| 9091 | egress sidecar | Network tunnel proxy (bandwidth limiter root cause) |
+| 9092 | sentinel | Webhook gateway (restic-restore trigger) |
 | 9222 | Chrome DevTools Protocol (CDP) | ✅ |
 | 10249 | HTTP API | ✅ |
 | 13080 | Health API ({\"status\":\"ok\"}) | ✅ |

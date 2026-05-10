@@ -45,6 +45,21 @@ check_perf() {
     fi
 }
 
+check_cdp_browser() {
+    TOTAL=$((TOTAL + 1))
+    CDP_RESPONSE=$(curl -s --connect-timeout 3 http://127.0.0.1:9222/json/version 2>/dev/null)
+    if echo "$CDP_RESPONSE" | grep -q '"Browser"'; then
+        CDP_BROWSER_VER=$(echo "$CDP_RESPONSE" | grep -oP '"Browser":\s*"\K[^"]+')
+        echo -e "${GREEN}[✅]${NC} CDP Browser (${CDP_BROWSER_VER}) on port 9222"
+        PASSED=$((PASSED + 1))
+        CDP_AVAILABLE=1
+    else
+        echo -e "${RED}[❌]${NC} CDP Browser on port 9222"
+        FAILED=$((FAILED + 1))
+        CDP_AVAILABLE=0
+    fi
+}
+
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║   ENVIRONMENT VERIFICATION                           ║"
 echo "║   Full 12-Domain Validation                          ║"
@@ -98,13 +113,39 @@ echo ""
 
 # === Domain 5: Browser & GUI ===
 echo "━━━ Domain 5: Browser & GUI ━━━"
+CDP_RESPONSE=$(curl -s --connect-timeout 3 http://127.0.0.1:9222/json/version 2>/dev/null)
+if echo "$CDP_RESPONSE" | grep -q '"Browser"'; then
+    CDP_AVAILABLE=1
+    CDP_BROWSER_VER=$(echo "$CDP_RESPONSE" | grep -oP '"Browser":\s*"\K[^"]+')
+else
+    CDP_AVAILABLE=0
+fi
 BROWSER=$(find /root/.cache/ms-playwright -name "chrome" -type f 2>/dev/null | head -1)
-check "Playwright Chromium installed" "[ -n '$BROWSER' ] && [ -f '$BROWSER' ]"
+if [ -n "$BROWSER" ] && [ -f "$BROWSER" ]; then
+    check "Playwright Chromium installed" "[ -n '$BROWSER' ] && [ -f '$BROWSER' ]"
+else
+    TOTAL=$((TOTAL + 1))
+    if [ "$CDP_AVAILABLE" -eq 1 ] && node -e "require('playwright')" &>/dev/null; then
+        echo -e "${YELLOW}[⚠️]${NC} Playwright Chromium installed (Chromium binary missing, BYPASS: use connectOverCDP to port 9222)"
+        FAILED=$((FAILED + 1))
+    else
+        echo -e "${RED}[❌]${NC} Playwright Chromium installed"
+        FAILED=$((FAILED + 1))
+    fi
+fi
 if [ -n "$BROWSER" ] && [ -f "$BROWSER" ]; then
     check "Browser all libs satisfied" "ldd '$BROWSER' 2>&1 | grep -q 'not found'; [ \$? -ne 0 ]"
     check "Browser launches" "'$BROWSER' --version"
 fi
 check "Playwright Node module" "node -e \"require('playwright')\""
+TOTAL=$((TOTAL + 1))
+if [ "$CDP_AVAILABLE" -eq 1 ]; then
+    echo -e "${GREEN}[✅]${NC} CDP Browser (${CDP_BROWSER_VER}) on port 9222"
+    PASSED=$((PASSED + 1))
+else
+    echo -e "${RED}[❌]${NC} CDP Browser on port 9222"
+    FAILED=$((FAILED + 1))
+fi
 echo ""
 
 # === Domain 6: Dev Toolchain ===
