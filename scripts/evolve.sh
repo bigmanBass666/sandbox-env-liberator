@@ -27,6 +27,24 @@ START_TIME=$(date +%s)
 TIME_BUDGET=1800
 RECON_BUDGET=300
 
+# Phase timing tracking (associative array)
+declare -A PHASE_START
+declare -A PHASE_END
+declare -A PHASE_NAME
+PHASE_NAMES=(
+    [0]="Lock+Env"
+    [0.5]="MirrorInit"
+    [1]="Recon"
+    [2]="DeltaAnalysis"
+    [3]="Hypotheses"
+    [4]="Experiments"
+    [5]="AntiStagnation"
+    [6]="Integration"
+    [7]="Reflection"
+    [8]="RecordCommit"
+    [9]="ReleaseLock"
+)
+
 LOCK_HELD=false
 
 check_time() {
@@ -47,6 +65,23 @@ check_recon_time() {
         return 1
     fi
     return 0
+}
+
+# Time tracking: record phase start
+phase_start() {
+    local id="$1"
+    local name="${PHASE_NAMES[$id]:-$id}"
+    PHASE_START[$id]=$(date +%s)
+    echo -e "${MAGENTA}  ⏱️  Phase $id ($name) started at $(date '+%H:%M:%S')${NC}"
+}
+
+# Time tracking: record phase end and print elapsed
+phase_end() {
+    local id="$1"
+    local name="${PHASE_NAMES[$id]:-$id}"
+    PHASE_END[$id]=$(date +%s)
+    local elapsed=$(( PHASE_END[id] - PHASE_START[id] ))
+    echo -e "${MAGENTA}  ⏱️  Phase $id ($name) elapsed: ${elapsed}s${NC}"
 }
 
 release_lock_on_exit() {
@@ -71,6 +106,7 @@ echo ""
 # 0. DISTRIBUTED LOCK ACQUISITION
 # ============================================================
 echo -e "${CYAN}━━━ Phase 0: 分布式锁获取 ━━━${NC}"
+phase_start "0"
 
 if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}  DRY-RUN: 跳过锁获取${NC}"
@@ -83,12 +119,14 @@ else
     echo -e "${GREEN}  锁获取成功，开始飞轮${NC}"
 fi
 
+phase_end "0"
 echo ""
 
 # ============================================================
 # 0.5. MIRROR SOURCE INITIALIZATION (idempotent)
 # ============================================================
 echo -e "${CYAN}━━━ Phase 0.5: 镜像源初始化 ━━━${NC}"
+phase_start "0.5"
 
 setup_mirror() {
     local name="$1" cmd="$2"
@@ -139,12 +177,14 @@ setup_mirror "apt → Tsinghua Ubuntu" bash -c '
     fi
 '
 
+phase_end "0.5"
 echo ""
 
 # ============================================================
 # 1. EVOLUTION STATE READING
 # ============================================================
 echo -e "${CYAN}━━━ Phase 1: Evolution State Reading ━━━${NC}"
+phase_start "1"
 
 if [ -f "$EVOLUTION_LOG" ]; then
     LAST_ROUND=$(grep -oP 'Round\s+\K\d+' "$EVOLUTION_LOG" 2>/dev/null | sort -rn | head -1 || echo 0)
@@ -210,12 +250,14 @@ if [ -f "$DEEP_RECON_DIR/results.txt" ]; then
     grep "^WARN|" "$DEEP_RECON_DIR/results.txt" 2>/dev/null | cut -d'|' -f2- >> "$PREV_WARN_ITEMS"
 fi
 
+phase_end "1"
 echo ""
 
 # ============================================================
 # 2. CURRENT ENVIRONMENT SNAPSHOT
 # ============================================================
 echo -e "${CYAN}━━━ Phase 2: Current Environment Snapshot ━━━${NC}"
+phase_start "2"
 
 echo -e "${CYAN}  Running full-recon.sh...${NC}"
 FULL_RECON_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/full-recon.sh" 2>&1) || true
@@ -282,12 +324,14 @@ else
     fi
 fi
 
+phase_end "2"
 echo ""
 
 # ============================================================
 # 3. DIFF COMPARISON
 # ============================================================
 echo -e "${CYAN}━━━ Phase 3: Diff Comparison ━━━${NC}"
+phase_start "3"
 
 CURR_RECON_PASS=$(grep -c "^PASS|" "$RECON_DIR/results.txt" 2>/dev/null || true)
 CURR_RECON_FAIL=$(grep -c "^FAIL|" "$RECON_DIR/results.txt" 2>/dev/null || true)
@@ -408,12 +452,14 @@ if [ "$NEW_CAP_COUNT" -gt 0 ]; then
     [ "$NEW_CAP_COUNT" -gt 5 ] && echo -e "    ... and $((NEW_CAP_COUNT - 5)) more"
 fi
 
+phase_end "3"
 echo ""
 
 # ============================================================
 # 4. IMPROVEMENT SUGGESTION GENERATION
 # ============================================================
 echo -e "${CYAN}━━━ Phase 4: Improvement Suggestion Generation ━━━${NC}"
+phase_start "4"
 check_time || true
 
 BLOCKER_KEYWORDS="browser|chrome|chromium|network.*block|dns.*block|curl.*block|wget.*block|fetch.*fail|不可用|全断|not available|NOT FOUND"
@@ -566,12 +612,15 @@ echo -e "    P4 (Meta-Improve): ${MAGENTA}${P4_COUNT}${NC}"
 SUGGESTION_ELAPSED=$(( $(date +%s) - START_TIME ))
 SUGGESTION_REMAINING=$(( TIME_BUDGET - SUGGESTION_ELAPSED ))
 echo -e "  ⏱️  时间预算: 已用 ${SUGGESTION_ELAPSED}s, 剩余 ${SUGGESTION_REMAINING}s"
+
+phase_end "4"
 echo ""
 
 # ============================================================
 # 5. ANTI-STAGNATION CHECK
 # ============================================================
 echo -e "${CYAN}━━━ Phase 5: Anti-Stagnation Check ━━━${NC}"
+phase_start "5"
 
 STAGNATION_ROUNDS=0
 DOMAIN_HISTORY=""
@@ -633,12 +682,15 @@ fi
 echo -e "  探索衰减: ${DISCOVERY_DECAY}$([ "$DISCOVERY_DECAY" = "WARNING" ] && echo " (${STAGNATION_ROUNDS}轮无新发现)" || echo "")"
 echo -e "  维度集中: ${DOMAIN_CONCENTRATION}$([ "$DOMAIN_CONCENTRATION" = "WARNING" ] && echo " (连续${CONCENTRATION_COUNT}轮在${CONCENTRATION_DOMAIN}域)" || echo "")"
 echo -e "  建议: ${ANTI_STAGNATION_ADVICE}"
+
+phase_end "5"
 echo ""
 
 # ============================================================
 # 5.5 DEGENERATION DETECTION
 # ============================================================
 echo -e "${CYAN}━━━ Phase 5.5: Degeneration Detection ━━━${NC}"
+phase_start "5.5"
 
 DEGENERATION_WARNING=false
 DEGENERATION_KEYWORDS=""
@@ -677,12 +729,14 @@ else
     echo -e "${YELLOW}  无进化日志，跳过退化检测${NC}"
 fi
 
+phase_end "5.5"
 echo ""
 
 # ============================================================
 # 5.7 CDP BROWSER EXPERIMENT
 # ============================================================
 echo -e "${CYAN}━━━ Phase 5.7: CDP Browser Experiment ━━━${NC}"
+phase_start "5.7"
 
 test_cdp_browser() {
     if [ "$CDP_BROWSER_AVAILABLE" != true ]; then
@@ -722,11 +776,13 @@ const { chromium } = require('playwright');
 
 test_cdp_browser || true
 
+phase_end "5.7"
 echo ""
 
 # ============================================================
 # 6. OUTPUT FORMATTED PLAN
 # ============================================================
+phase_start "6"
 NEXT_ROUND=$((LAST_ROUND + 1))
 
 echo ""
@@ -829,11 +885,13 @@ echo -e "  1. 首要: ${FOCUS_PRIMARY}"
 echo -e "  2. 探索: ${FOCUS_EXPLORE}"
 echo -e "  3. 反思: ${FOCUS_REFLECT}"
 
+phase_end "6"
 echo ""
 
 # ============================================================
 # 7. EXECUTION PHASE (with atomic commit support)
 # ============================================================
+phase_start "7"
 if [ "$DRY_RUN" = true ]; then
     echo -e "${BOLD}${YELLOW}━━━ DRY-RUN: 跳过执行阶段 ━━━${NC}"
     echo -e "${YELLOW}  计划已生成，但未执行任何改进${NC}"
@@ -897,9 +955,12 @@ else
     echo ""
 fi
 
+phase_end "7"
+
 # ============================================================
 # SAVE STATE FOR NEXT ROUND
 # ============================================================
+phase_start "8"
 echo "$CURR_PASS" > "${EVOLVE_STATE_DIR}/last_pass.txt"
 echo "$CURR_FAIL" > "${EVOLVE_STATE_DIR}/last_fail.txt"
 echo "$CURR_WARN" > "${EVOLVE_STATE_DIR}/last_warn.txt"
@@ -931,7 +992,10 @@ echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
 echo -e "${GREEN}  Evolution state saved to ${EVOLVE_STATE_DIR}/${NC}"
 echo -e "${GREEN}  Evolution log appended to ${EVOLUTION_LOG}${NC}"
 
+phase_end "8"
+
 echo ""
+phase_start "9"
 echo -e "${BOLD}╔═══════════════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}║   EVOLUTION ENGINE COMPLETE                          ║${NC}"
 if [ "$DRY_RUN" = true ]; then
@@ -941,3 +1005,42 @@ else
 fi
 echo -e "${BOLD}║   Total time: ${TOTAL_ELAPSED}s                                  ║${NC}"
 echo -e "${BOLD}╚═══════════════════════════════════════════════════════╝${NC}"
+
+phase_end "9"
+
+print_time_report() {
+    local total_elapsed=$(( $(date +%s) - START_TIME ))
+    local total_min=$(( total_elapsed / 60 ))
+    
+    local effective_time=0
+    for id in 3 4; do
+        if [[ -n "${PHASE_START[$id]+x}" ]] && [[ -n "${PHASE_END[$id]+x}" ]]; then
+            effective_time=$(( effective_time + PHASE_END[id] - PHASE_START[id] ))
+        fi
+    done
+    
+    local efficiency_pct=0
+    if [ $total_elapsed -gt 0 ]; then
+        efficiency_pct=$(( effective_time * 100 / total_elapsed ))
+    fi
+    
+    echo ""
+    echo -e "${BOLD}${CYAN}╔══════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
+    echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
+    
+    for id in 0 0.5 1 2 3 4 5 5.5 5.7 6 7 8 9; do
+        if [[ -n "${PHASE_START[$id]+x}" ]] && [[ -n "${PHASE_END[$id]+x}" ]]; then
+            local elapsed=$(( PHASE_END[id] - PHASE_START[id] ))
+            local name="${PHASE_NAMES[$id]:-$id}"
+            printf "║   %-25s %4ds              ║\n" "$name" "$elapsed"
+        fi
+    done
+    
+    echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
+    printf "║   %-25s %4ds (%dm%02ds)     ║\n" "TOTAL" "$total_elapsed" "$((total_min))" "$((total_elapsed % 60))"
+    printf "║   %-25s %4ds (%d%%)          ║\n" "EFFECTIVE" "$effective_time" "$efficiency_pct"
+    echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
+}
+
+print_time_report
