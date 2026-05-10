@@ -73,6 +73,13 @@ if [ -d "$PROJECT_DIR" ]; then
     if cd "$PROJECT_DIR" && git rev-parse --is-inside-work-tree &>/dev/null; then
         log_pass "Repository exists at $PROJECT_DIR (pulling latest...)"
         git pull origin main 2>/dev/null || log_warn "git pull failed (may be offline or up-to-date)"
+        ROUND_NUM=$(grep -oP 'R\d+' "$PROJECT_DIR/references/polaris-score.md" 2>/dev/null | grep -oP '\d+' | sort -n | tail -1 || echo "0")
+        NEXT_ROUND=$((ROUND_NUM + 1))
+        BRANCH_NAME="evolve/round-${NEXT_ROUND}"
+        cd "$PROJECT_DIR" && git checkout -b "$BRANCH_NAME" 2>/dev/null || true
+        if git branch --show-current | grep -q "evolve/round"; then
+            log_pass "Working branch: $(git branch --show-current)"
+        fi
         echo ""
         echo -e "${CYAN}  📋 最近 5 条 commits（其他 session 可能提交了新内容）：${NC}"
         git log --oneline -5 2>/dev/null | while IFS= read -r line; do

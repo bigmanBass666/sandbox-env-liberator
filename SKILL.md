@@ -666,6 +666,12 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
    - ❌ 存在但不是 git 仓库 → `rm -rf /workspace/sandbox-env-setup` 然后重新 clone
    - ✅ 存在且是仓库 → `cd /workspace/sandbox-env-setup && git pull origin main`
 
+1.5 **创建工作分支**：
+   - 读取 `references/polaris-score.md` 获取最新轮次号 N
+   - 执行 `git checkout -b evolve/round-$((N+1))`
+   - 所有后续修改在此分支上进行
+   - **不要直接 push 到 main** — 通过 PR 合并
+
 2. **验证关键依赖**：
    - 检查 `GITHUB_PERSONAL_ACCESS_TOKEN` 环境变量是否设置
    - ❌ 未设置 → 无法获取分布式锁，**立即退出**并报告："GITHUB_PERSONAL_ACCESS_TOKEN 未设置"
@@ -733,7 +739,9 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
    - 如果是 New Capability → 正常记录 Delta
 2. 更新 references/handoff.md（填写完整交接信息）
 3. 追加记录到 references/evolution-log.md
-4. git add -A && git commit -m "Round N: [简述]" && git push
+4. git add -A && git commit -m "Round N: [简述]" && git push origin evolve/round-N
+   如果 gh CLI 可用 → `gh pr create --title "Round N: <维度> <描述>" --base main --head evolve/round-N`
+   如果 gh CLI 不可用 → 记录到 handoff.md 提示手动创建 PR
 5. bash scripts/release-lock.sh
 6. 如果你真的认为 Polaris ≥ 90% 或完全没思路了：
    在 handoff.md 中标记 Status=STALLED
@@ -750,7 +758,7 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
   - GitHub 是唯一真相源 — 本地文件系统只是缓存，可能过期
   - 开始任何工作前：git fetch origin && git log --oneline -15 --all
   - 找任何产物时：先 git log → 再本地文件系统搜索
-  - 提交前必须先 git pull --rebase 避免冲突
+  - 在 `evolve/round-N` 分支上工作，通过 PR 合并到 main（不要直接 push main）
   - 看到其他 session 的 commit → 先阅读理解 → 再决定是否基于其继续
 
   Git 提交安全规范（必须遵守）：
@@ -828,6 +836,41 @@ Why: Environment may change. A blocker may auto-resolve. Assess reality, not sta
 | commit 前不 pull | 必然冲突 | `git pull --rebase` 然后 commit |
 | `git add -A` 不检查暂存区 | 可能提交测试文件/子模块垃圾 | `git status` 逐个确认后 `git add <files>` |
 | 工作记录放仓库根目录 | 污染根目录 | 放 `references/roundN-<topic>.md` |
+| 直接 `git push origin main` | 多 AI 必然冲突 | 在 `evolve/round-N` 分支工作，通过 PR 合并 |
+| Sub-agent 各自 commit | 形成冲突 commit 链 | 主 agent 统一 commit + push 到分支 |
+
+### PR-Based Evolution Workflow
+
+> **每个 AI 在自己的分支上工作，通过 PR 合并到 main。直接 push 到 main 是禁止的。**
+
+**为什么用 PR 而不是直接 push**：
+- 直接 push main → 多 AI 必然冲突 → rebase 痛苦 → 可能损坏代码
+- PR 模式 → 每个 AI 独立分支 → 零冲突 → 可审查 → 可回滚
+
+**分支策略**：
+```
+main ──────────────────────────────────────────→
+  │                                              │
+  ├── evolve/round-18 ──→ PR #2 ──→ merge ──────┤
+  │                                              │
+  ├── evolve/round-19 ──→ PR #3 ──→ merge ──────┤
+  │                                              │
+  └── evolve/round-20 ──→ PR #4 ──→ (pending)   │
+```
+
+**分支命名**：`evolve/round-N`（N = polaris-score.md 最新轮次 + 1）
+
+**PR 内容规范**：
+- 标题：`Round N: <维度> <描述>`（如 `Round 20: D6 Timeline persistence`）
+- 正文：Focus / Improvement / Evidence / Duration 表格 + handoff.md 内容
+- 标签：`evolution` + 维度标签（如 `D6`）
+
+**合并策略**：
+- 无冲突 + bash -n 通过 → 自动 merge（`gh pr merge --merge --auto`）
+- 有冲突 → PR 标注 conflict，等待人工或下一个 AI 解决
+- 垃圾 commit（如 submodule gitlink）→ PR 审查拦截
+
+**回滚**：`git revert <merge-commit>` 即可回退整个 round
 
 ### GitHub Issue Distributed Lock
 
