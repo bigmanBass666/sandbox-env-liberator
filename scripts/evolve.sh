@@ -243,6 +243,8 @@ if ! check_time; then
     HEALTH_OK=0
     HEALTH_WARN=0
     HEALTH_CRIT=0
+    CDP_BROWSER_AVAILABLE=false
+    CDP_BROWSER_VERSION=""
 else
     echo ""
     echo -e "${CYAN}  Running verify-env.sh...${NC}"
@@ -265,6 +267,19 @@ else
     HEALTH_WARN=${HEALTH_WARN:-0}
     HEALTH_CRIT=${HEALTH_CRIT:-0}
     echo -e "${GREEN}  health-monitor.sh complete: OK=${HEALTH_OK}, WARN=${HEALTH_WARN}, CRITICAL=${HEALTH_CRIT}${NC}"
+
+    echo ""
+    echo -e "${CYAN}  Probing CDP browser at 127.0.0.1:9222...${NC}"
+    CDP_VERSION_INFO=$(curl -s --max-time 3 http://127.0.0.1:9222/json/version 2>/dev/null || true)
+    if [ -n "$CDP_VERSION_INFO" ]; then
+        CDP_BROWSER_AVAILABLE=true
+        CDP_BROWSER_VERSION=$(echo "$CDP_VERSION_INFO" | grep -oP '"Browser":\s*"\K[^"]+' 2>/dev/null || echo "unknown")
+        echo -e "${GREEN}  ✅ CDP Browser available: ${CDP_BROWSER_VERSION}${NC}"
+    else
+        CDP_BROWSER_AVAILABLE=false
+        CDP_BROWSER_VERSION=""
+        echo -e "${YELLOW}  ⚠️  CDP Browser not available at 127.0.0.1:9222${NC}"
+    fi
 fi
 
 echo ""
@@ -536,6 +551,10 @@ if [ "$NEW_FAIL_COUNT" -gt 0 ]; then
 "
 fi
 
+if [ "$CDP_BROWSER_AVAILABLE" = true ]; then
+    echo -e "${CYAN}  ℹ️  CDP Browser available - Chromium download NOT needed, use connectOverCDP${NC}"
+fi
+
 TOTAL_SUGGESTIONS=$((P0_COUNT + P1_COUNT + P2_COUNT + P3_COUNT + P4_COUNT))
 echo -e "  Generated ${GREEN}${TOTAL_SUGGESTIONS}${NC} improvement suggestions"
 echo -e "    P0 (Blockers):     ${RED}${P0_COUNT}${NC}"
@@ -657,6 +676,51 @@ if [ -f "$EVOLUTION_LOG" ]; then
 else
     echo -e "${YELLOW}  无进化日志，跳过退化检测${NC}"
 fi
+
+echo ""
+
+# ============================================================
+# 5.7 CDP BROWSER EXPERIMENT
+# ============================================================
+echo -e "${CYAN}━━━ Phase 5.7: CDP Browser Experiment ━━━${NC}"
+
+test_cdp_browser() {
+    if [ "$CDP_BROWSER_AVAILABLE" != true ]; then
+        echo -e "${YELLOW}  CDP Browser not available, skipping test${NC}"
+        return 1
+    fi
+
+    echo -e "${CYAN}  Testing CDP browser connectivity via Playwright...${NC}"
+    CDP_TEST_RESULT=$(node -e "
+const { chromium } = require('playwright');
+(async () => {
+    try {
+        const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
+        const context = browser.contexts()[0] || await browser.newContext();
+        const page = await context.newPage();
+        await page.goto('https://example.com', { timeout: 10000 });
+        const title = await page.title();
+        console.log('SUCCESS:' + title);
+        await page.close();
+        await browser.close();
+    } catch (e) {
+        console.log('FAILURE:' + e.message);
+    }
+})();
+" 2>&1) || true
+
+    if echo "$CDP_TEST_RESULT" | grep -q "^SUCCESS:"; then
+        CDP_TEST_TITLE=$(echo "$CDP_TEST_RESULT" | grep "^SUCCESS:" | cut -d: -f2-)
+        echo -e "${GREEN}  ✅ CDP Browser test passed: navigated to ${CDP_TEST_TITLE}${NC}"
+        return 0
+    else
+        echo -e "${RED}  ❌ CDP Browser test failed${NC}"
+        echo "$CDP_TEST_RESULT" | grep "^FAILURE:" | sed 's/^FAILURE:/    /'
+        return 1
+    fi
+}
+
+test_cdp_browser || true
 
 echo ""
 

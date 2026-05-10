@@ -1,4 +1,4 @@
-# Platform Services Deep Dive (Rounds 10-11)
+# Platform Services Deep Dive (Rounds 10-12)
 
 > Deep analysis of internal platform services discovered through port probing and Prometheus metrics scraping.
 
@@ -147,3 +147,31 @@ Operations like `/workspace/restic-restore` return immediately with HTTP 200. Th
 ### 5. Policy-Based Access Control in Egress
 
 The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6 denied). This suggests domain-based or destination-based filtering at the tunnel layer, which may explain why some external hosts are reachable while others timeout even though DNS resolves correctly.
+
+## Platform Configuration Files
+
+### /app/etc/ide_dynamic_config_basic.json
+- Feature gates: enableCmdBlocking=true, enableCheckImageContent=true, enableCueflow=false
+- AI features: mcpToolLimit=40, mcpTokenLimit=8000, customPromptTokenLimit=10000
+- Auto-accept enabled with diff view
+- Snapshot V2 enabled
+
+### /app/etc/mcp_servers.json
+- Currently empty: `{"mcpServers": {}}`
+- This is where MCP server configurations would be registered
+
+### /etc/profile.d/sandbox-env.sh
+- Dynamic LD_LIBRARY_PATH for extracted libs and Playwright Chrome
+- Auto-adds ~/.local/bin, ~/go/bin, ~/.cargo/bin to PATH
+- Sets PLAYWRIGHT_BROWSERS_PATH
+
+### /etc/profile.d/trae-env.sh
+- Full language runtime initialization: pyenv, nvm, cargo, mise, phpenv, swiftly
+- Calls /usr/local/bin/setup_universal.sh if exists
+- TRAE_ENV_INITIALIZED guard prevents double init
+
+### Key Environment Variables
+- HTTP_PROXY/HTTPS_PROXY=http://127.0.0.1:18080 (all traffic through egress proxy)
+- no_proxy/NO_PROXY=localhost,127.0.0.1,.svc,.cluster.local,::1
+- NODE_OPTIONS=--require /app/mcp_proxy_bootstrap/preload.cjs (MCP proxy bootstrap)
+- PREVIEW_PROXY_PUBLIC_PORT=16000

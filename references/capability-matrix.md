@@ -116,6 +116,11 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | Cloud CLIs | ❌ | None installed |
 | Container tools | ❌ | None installed |
 | SSH client | ✅ | Available |
+| meson | ✅ | v1.11.1 (pip) |
+| node-gyp | ✅ | v12.3.0 (npm) |
+| ninja | ✅ | v1.11.1 |
+| gdb | ✅ | Available |
+| -dev packages | ✅ | 81 installed, Python headers available |
 
 ## Domain 7: MCP & External Integration
 
