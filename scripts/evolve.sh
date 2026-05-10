@@ -1317,12 +1317,18 @@ phase_start "8"
 
 BRANCH_NAME="evolve/round-${NEXT_ROUND}"
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
-if [ "$CURRENT_BRANCH" = "main" ]; then
-    git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME" 2>/dev/null
-    echo -e "${CYAN}  🌿 Created/switched to branch ${BRANCH_NAME}${NC}"
+
+if [ "${EVOLVE_ROLE:-worker}" = "cso" ]; then
+    echo -e "${CYAN}  👑 CSO mode: pushing directly to main (对话即 Review)${NC}"
+    BRANCH_NAME="main"
 else
-    echo -e "${CYAN}  🌿 Already on branch ${CURRENT_BRANCH}${NC}"
-    BRANCH_NAME="$CURRENT_BRANCH"
+    if [ "$CURRENT_BRANCH" = "main" ]; then
+        git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME" 2>/dev/null
+        echo -e "${CYAN}  🌿 Worker mode: created branch ${BRANCH_NAME}${NC}"
+    else
+        echo -e "${CYAN}  🌿 Already on branch ${CURRENT_BRANCH}${NC}"
+        BRANCH_NAME="$CURRENT_BRANCH"
+    fi
 fi
 
 echo "$CURR_PASS" > "${EVOLVE_STATE_DIR}/last_pass.txt"
@@ -1518,7 +1524,9 @@ if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
 
     git push origin "$BRANCH_NAME" 2>/dev/null || git push -u origin "$BRANCH_NAME" 2>/dev/null
 
-    if command -v gh &>/dev/null; then
+    if [ "${EVOLVE_ROLE:-worker}" = "cso" ]; then
+        echo -e "${GREEN}  ✅ CSO mode: pushed directly to main${NC}"
+    elif command -v gh &>/dev/null; then
         PR_TITLE="Round ${NEXT_ROUND}: ${POLARIS_FOCUS_DIM:-unknown} ${IMPROVE_EVIDENCE:-evolution}"
         PR_BODY="## Round ${NEXT_ROUND} Evolution
 

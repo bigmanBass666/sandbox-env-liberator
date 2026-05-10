@@ -68,10 +68,21 @@ prompts/
 
 ## Git Workflow
 
-- **Worker** works on `night-evolve` branch, pushes directly
-- **CSO** works on `evolve/round-N` branches, creates PRs via `gh pr create`
-- **main** is the source of truth — never push directly to main
-- PR auto-merge enabled when checks pass and no conflicts
+### 主线直推 + 并线 PR
+
+- **CSO（交互式对话）**：直推 main — 对话即 Review，用户实时审核
+- **Worker（自主运行）**：必须走 PR — 无人类在场，PR 是唯一安全门控
+- **Reviewer**：审查 Worker 的 PR，确认后 merge
+
+| Role | Branch | Commit Method | Review Gate |
+|------|--------|---------------|-------------|
+| CSO | main | `git push origin main` | 用户对话 = 实时 review |
+| Worker | night-evolve | `gh pr create` → PR | Reviewer 人工 review |
+| Reviewer | — | merge PR | — |
+
+- **main** 是 source of truth
+- CSO 直推前必须 `git fetch` + `git pull`，确保基于最新状态
+- Worker 的 PR 在用户醒来后由 Reviewer 或 CSO 审查合入
 
 ## Code Style
 
@@ -99,4 +110,4 @@ prompts/
 2. **Anti-Stagnation**: Same dimension 3 rounds without progress → must switch dimension.
 3. **Scoring Integrity**: "Re-measuring known state" is not grounds for score increase. Mark as `(measurement correction)`.
 4. **Timeline Integrity**: All timestamps from `$(date +%s)`. Timeline events must be monotonically increasing.
-5. **PR Workflow**: Never push directly to main. Use branches + PRs (or night-evolve for Worker).
+5. **Git Workflow**: CSO 直推 main（对话即 review），Worker 必须走 PR（无人类在场）。

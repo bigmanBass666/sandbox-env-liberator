@@ -684,11 +684,10 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
    - ❌ 存在但不是 git 仓库 → `rm -rf /workspace/sandbox-env-setup` 然后重新 clone
    - ✅ 存在且是仓库 → `cd /workspace/sandbox-env-setup && git pull origin main`
 
-1.5 **创建工作分支**：
-   - 读取 `references/polaris-score.md` 获取最新轮次号 N
-   - 执行 `git checkout -b evolve/round-$((N+1))`
-   - 所有后续修改在此分支上进行
-   - **不要直接 push 到 main** — 通过 PR 合并
+1.5 **确定工作模式**：
+   - **CSO（与用户对话）**：直接在 main 上工作，`git pull origin main` 后开始修改
+   - **Worker（自主运行）**：创建分支 `git checkout -b evolve/round-$((N+1))`，通过 PR 合并
+   - Worker **不要直接 push 到 main** — 通过 PR 合并
 
 2. **验证关键依赖**：
    - 检查 `GITHUB_PERSONAL_ACCESS_TOKEN` 环境变量是否设置
@@ -854,26 +853,27 @@ Why: Environment may change. A blocker may auto-resolve. Assess reality, not sta
 | commit 前不 pull | 必然冲突 | `git pull --rebase` 然后 commit |
 | `git add -A` 不检查暂存区 | 可能提交测试文件/子模块垃圾 | `git status` 逐个确认后 `git add <files>` |
 | 工作记录放仓库根目录 | 污染根目录 | 放 `references/roundN-<topic>.md` |
-| 直接 `git push origin main` | 多 AI 必然冲突 | 在 `evolve/round-N` 分支工作，通过 PR 合并 |
+| 直接 `git push origin main`（Worker） | 无人类 review，风险高 | Worker 在 `evolve/round-N` 分支工作，通过 PR 合并 |
 | Sub-agent 各自 commit | 形成冲突 commit 链 | 主 agent 统一 commit + push 到分支 |
 
-### PR-Based Evolution Workflow
+### Git Workflow: 主线直推 + 并线 PR
 
-> **每个 AI 在自己的分支上工作，通过 PR 合并到 main。直接 push 到 main 是禁止的。**
+> **CSO 与用户对话时直推 main（对话即 Review）；Worker 自主运行时必须走 PR（无人类在场）。**
 
-**为什么用 PR 而不是直接 push**：
-- 直接 push main → 多 AI 必然冲突 → rebase 痛苦 → 可能损坏代码
-- PR 模式 → 每个 AI 独立分支 → 零冲突 → 可审查 → 可回滚
+**为什么这样设计**：
+- CSO + 用户对话 = 实时 review，再套 PR 是形式主义
+- Worker 无人类在场 = PR 是唯一安全门控
+- 直推 main 前必须 `git fetch` + `git pull`，确保基于最新状态
 
 **分支策略**：
 ```
 main ──────────────────────────────────────────→
   │                                              │
-  ├── evolve/round-18 ──→ PR #2 ──→ merge ──────┤
+  │  CSO 直推（对话 = review）                    │
   │                                              │
-  ├── evolve/round-19 ──→ PR #3 ──→ merge ──────┤
+  ├── Worker: evolve/round-18 ──→ PR ──→ merge ─┤
   │                                              │
-  └── evolve/round-20 ──→ PR #4 ──→ (pending)   │
+  └── Worker: evolve/round-19 ──→ PR ──→ merge ─┤
 ```
 
 **分支命名**：`evolve/round-N`（N = polaris-score.md 最新轮次 + 1）
