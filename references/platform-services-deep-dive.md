@@ -212,3 +212,126 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 - Successfully wrote test MCP server config to the file
 - `agent-tool-host` (pid 821) would need restart/reload to pick up changes
 - **Key finding**: MCP server configuration IS injectable at the file level — the file permissions allow writes, but the running process does not hot-reload the config
+
+## MCP Server Dual-Layer Configuration (Round 16)
+
+### Architecture Discovery: Two-Level MCP Config
+
+| Level | Path | Size | Content | Role |
+|-------|------|------|---------|------|
+| System | `/app/etc/mcp_servers.json` | 23 bytes | `{"mcpServers": {}}` | Empty placeholder |
+| User | `/data/user/mcp/mcp-servers.json` | 444 bytes | 4 active servers | **Active configuration** |
+
+**Key insight**: The system-level config is an empty shell. The user-level config at `/data/user/mcp/` is where all actual MCP server definitions live. Both files have mode 644 (writable by root).
+
+### Active MCP Servers (from user-level config)
+
+| Server | Command | Env Vars | Purpose |
+|--------|---------|----------|---------|
+| **Memory** | `npx -y @modelcontextprotocol/server-memory` | `MEMORY_FILE_PATH=memory.json` | Knowledge graph persistence |
+| **Playwright** | `npx -y @executeautomation/playwright-mcp-server` | — | Browser automation via MCP |
+| **Sequential Thinking** | `npx -y @modelcontextprotocol/server-sequential-thinking` | — | Chain-of-thought reasoning |
+| **context7** | `npx -y @upstash/context7-mcp@latest` | `DEFAULT_MINIMUM_TOKENS=10000` | Code context retrieval |
+
+### MCP Server Memory Footprint
+
+| Process | PID | RSS (MB) | VSZ (MB) | Notes |
+|---------|-----|----------|----------|-------|
+| playwright-mcp-server | 960 | ~180 | ~1,513 | **Largest single MCP process** |
+| context7-mcp | 892 | ~98 | ~989 | Code context service |
+| mcp-server-memory | 883 | ~92 | ~1,533 | Memory/knowledge graph |
+| mcp-server-sequential-thinking | 901 | ~90 | ~1,497 | Reasoning engine |
+| **Total** | | **~460** | | 11.5% of 4GB RAM limit |
+
+### Implications
+
+1. **Custom MCP injection**: Edit `/data/user/mcp/mcp-servers.json` → restart agent-tool-host → new server available
+2. **Memory budget**: Each new MCP server costs ~90-180MB RAM. With 4GB limit, room for ~20 more servers (but CPU is limited to 2 cores)
+3. **Playwright MCP redundancy**: We already have CDP browser on port 9222. The Playwright MCP server (180MB) may be redundant — potential memory saving opportunity
+
+## Process Domain Deep Analysis (Round 16)
+
+### Container Init Chain
+
+```
+tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
+                                                    ├── sentinel (port 9092)
+                                                    ├── egress (port 9091)
+                                                    ├── browser_ctrl (port 9090)
+                                                    ├── HTTP server (port 80)
+                                                    ├── CDP proxy (port 8088)
+                                                    └── 4× MCP servers (npx-spawned)
+```
+
+### cgroup v2 Limits
+
+| Resource | Limit | Value | Notes |
+|----------|-------|-------|-------|
+| Memory | `memory.max` | 4,294,967,296 (4 GB) | Generous for sandbox |
+| CPU | `cpu.max` | 200000 / 100000 (2 cores) | Standard container allocation |
+| Cgroup path | — | `0::/` | cgroup v2 unified hierarchy |
+
+### ulimit Configuration
+
+| Resource | Limit | Assessment |
+|----------|-------|------------|
+| open files | 1,048,576 | ✅ Very generous |
+| max user processes | 7,504 | ✅ Sufficient |
+| core file size | 0 | ⚠️ No core dumps (debugging limitation) |
+| stack size | 8,192 KB (8 MB) | ✅ Standard |
+| max locked memory | 8,192 KB (8 MB) | ⚠️ May limit mlock usage |
+| file size | unlimited | ✅ |
+| virtual memory | unlimited | ✅ |
+| address space | unlimited | ✅ |
+| real-time priority | 0 | ⚠️ No RT scheduling |
+
+### Listening Ports (17 total, all from agent-tool-host)
+
+| Port | Service | Bind Address |
+|------|---------|-------------|
+| 80 | HTTP server | `*:*` |
+| 40005 | WebSocket | `*:*` |
+| 51008 | Internal | 127.0.0.1 |
+| 8088 | CDP proxy | `*:*` |
+| 8999 | Preview proxy | `*:*` |
+| 9090 | browser_ctrl | `*:*` |
+| 9091 | egress sidecar | `*:*` |
+| 9092 | sentinel webhook | `*:*` |
+| 9222 | CDP browser | 127.0.0.1 |
+| 13080 | Health API | `*:*` |
+| 16000 | Preview proxy public | `*:*` |
+| 18080 | HTTP proxy | 127.0.0.1 |
+| 18081 | HTTPS/SOCKS proxy | 127.0.0.1 |
+| 19090 | Internal | `*:*` |
+| 19091 | Internal | `*:*` |
+| 5900 | VNC | 127.0.0.1 / [::1] |
+
+### Supervisor Status
+
+```
+agent-tool-host    RUNNING   pid 821, uptime 3:46:13
+```
+
+Only ONE managed process. Everything else is internal to agent-tool-host.
+
+## Commands System (Round 16)
+
+### /data/user/commands/ Structure
+
+Single command defined: `evolve.md`
+
+### Command Definition Format
+
+```yaml
+---
+name: evolve
+description: /evolve sandbox-env-setup
+---
+
+Execute improvement flywheel for sandbox-env-setup:
+1. Read evolution state...
+2. Recon: ...
+... (Markdown body with full procedure)
+```
+
+**Pattern**: YAML front matter (`name` + `description`) + Markdown body. This is the template for creating new custom commands.

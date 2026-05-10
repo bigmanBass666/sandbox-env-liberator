@@ -305,7 +305,62 @@ Round 2 ████████████████████████
   - Phase 5-9 (验证+提交): ~60s
   - **Estimated Total: ~300s (~5 min)** — 仍然偏快
   - 下次应通过 evolve.sh 运行获取精确自动计时数据
-- **Status**: COMPLETE / INCOMPLETE / SKIPPED
+- **Status**: COMPLETE
+
+## Round 16 - 2026-05-10 11:34:36 (Manual, Time-Instrumented + Bug Fix)
+- **Timestamp**: 2026-05-10T11:34:36Z
+- **Trigger**: Manual (/evolve)
+- **Lock Acquired**: YES
+- **Previous State**: PASS=63, FAIL=2, WARN=2 (R15 verify-env)
+- **Changes Made**:
+  - 🔴 **CRITICAL BUG FIX**: evolve.sh 时间追踪浮点键语法错误
+    - 根因: bash `declare -A` 关联数组不支持浮点数键 (0.5/5.5/5.7)
+    - 症状: TIME REPORT 所有阶段显示 0s，`phase_start`/`phase_end` 报 `syntax error: invalid arithmetic operator`
+    - 修复: 0.5→05, 5.5→55, 5.7→57（整数键替换），新增 PHASE_NAMES[55]/[57] 条目
+  - H1: MCP 配置文件对比 — 用户级 vs 系统级差异分析
+  - H2: commands/evolve.md 命令定义格式解析
+  - H3: 进程域深度分析（cgroup/ulimit/supervisor/端口/MCP server 内存）
+- **Current State**:
+  - full-recon: PASS=133, FAIL=4, WARN=3 (+4 PASS vs R15 的 129)
+  - deep-recon: PASS=42, FAIL=1, WARN=0
+  - **verify-env: PASS=63, FAIL=2** (稳定)
+  - CDP Browser: Chrome/147.0.7727.55 ✅
+- **Delta**: **+4 full-recon PASS, 时间追踪 Bug 修复**
+- **New Discoveries**:
+  - **🔥 MCP 配置双层级架构**: 系统级 `/app/etc/mcp_servers.json` 为空壳 `{"mcpServers":{}}`(23B)，用户级 `/data/user/mcp/mcp-servers.json` 含 4 个活跃 server(444B)
+  - **4 个 MCP Server 进程**: Memory(92MB), Playwright(180MB!), Sequential Thinking(90MB), context7(98MB) — 总计 ~460MB RSS
+  - **commands/evolve.md 格式**: YAML front matter(name+description) + Markdown 正文，含完整 9 步 evolve 流程定义
+  - **cgroup v2 限制**: 内存 4GB, CPU 2核(200000/100000), 路径 `0::/`
+  - **ulimit 配置**: open files=1,048,756, max processes=7,504, core=0, stack=8MB, locked mem=8MB
+  - **进程拓扑**: tini(PID1) → supervisord → agent-tool-host(PID821,124MB) → 17个端口全部由其监听
+  - **Supervisor 仅管理 1 个进程**: agent-tool-host（MCP servers 由 agent-tool-host 内部 spawn）
+  - **pstree 未安装**: 需要在后续轮次安装以获取更好的进程树视图
+- **Failed Attempts**:
+  - evolve.sh 首次运行 TIME REPORT 全 0s — 浮点键 Bug 导致（已修复 ✅）
+- **Hypotheses Results**:
+  - H1 ✅🔥: 用户级 mcp-servers.json 是实际生效配置，系统级为空占位符。两者均为 644 权限可写
+  - H2 ✅: commands/evolve.md 是标准命令模板格式，可用于创建新自定义命令
+  - H3 ✅📊: 完整进程域画像 — 4GB RAM/2 CPU/460MB MCP overhead/17 ports/1 supervisor process
+- **Next Priority**:
+  - 测试向 /data/user/mcp/mcp-servers.json 注入自定义 MCP server 并重启 agent-tool-host
+  - 安装 pstree 以获取更清晰的进程树
+  - 利用 4GB 内存和宽松 ulimit 做更多内存密集型操作
+  - 基于 commands/evolve.md 模板创建新自定义命令（如 /recon, /fix-network）
+- **Meta Reflection**:
+  - **本轮最大的发现是 Bug 本身** — R14 部署的时间追踪基础设施存在 bash 兼容性问题，R16 是首次原生执行才暴露
+  - **MCP 双层配置是关键架构发现**: 系统级为空、用户级有数据，说明平台设计支持用户自定义 MCP server
+  - **MCP server 内存开销巨大**: 4 个 server 消耗 ~460MB（Playwright 单个 180MB），在 4GB 限制下占比 11.5%
+  - **agent-tool-host 是真正的单体**: supervisor 只管它一个进程，所有服务（sentinel/egress/browser_ctrl/MCP）都是内部 tokio 任务
+  - Domain 轮换: R15(Domain 2+4) → R16(Domain 7+3) ✅ 符合反停滞策略
+- **Anti-Stagnation Check**:
+  - Discovery decay: N/A (本轮有重大 Bug 发现 + 架构发现)
+  - Domain concentration: ROTATED (Domain 2+4 → Domain 7+3) ✅
+  - New thing tried: cgroup v2 + ulimit 完整画像 + MCP 双层配置对比 ✅
+- **⏱️ TIME REPORT (Bug Fixed, next run will validate)**:
+  - evolve.sh 原生执行总耗时: 169s (2m49s)
+  - TIME REPORT 输出: ❌ 全 0s（Bug 已修复，下轮验证）
+  - Bug 根因: bash associative array float key (0.5/5.5/5.7) → fixed to (05/55/57)
+- **Status**: COMPLETE
 
 
 ## Round 6 - 2026-05-09 21:38:30
@@ -474,5 +529,17 @@ Round 2 ████████████████████████
 - Focus: P0阻塞项 (共4项) | P2发现项 (共132项) | P4元改进 (共3项)
 - Time elapsed: 151s
 - Commit: PLAN_ONLY
+
+
+## Round 16 - 2026-05-10 11:37:25
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +-38 PASS, -15 FAIL
+- New FAIL: 0, Recovered: 15, New capabilities: 6
+- P0: 4, P1: 2, P2: 7, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共7项) | P4元改进 (共2项)
+- Time elapsed: 169s
+- Commit: COMMITTED
 
 

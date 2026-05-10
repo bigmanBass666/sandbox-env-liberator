@@ -33,12 +33,14 @@ declare -A PHASE_END
 declare -A PHASE_NAME
 PHASE_NAMES=(
     [0]="Lock+Env"
-    [0.5]="MirrorInit"
+    [05]="MirrorInit"
     [1]="Recon"
     [2]="DeltaAnalysis"
     [3]="Hypotheses"
     [4]="Experiments"
     [5]="AntiStagnation"
+    [55]="Degeneration"
+    [57]="CDPBrowser"
     [6]="Integration"
     [7]="Reflection"
     [8]="RecordCommit"
@@ -126,7 +128,7 @@ echo ""
 # 0.5. MIRROR SOURCE INITIALIZATION (idempotent)
 # ============================================================
 echo -e "${CYAN}━━━ Phase 0.5: 镜像源初始化 ━━━${NC}"
-phase_start "0.5"
+phase_start "05"
 
 setup_mirror() {
     local name="$1" cmd="$2"
@@ -177,7 +179,7 @@ setup_mirror "apt → Tsinghua Ubuntu" bash -c '
     fi
 '
 
-phase_end "0.5"
+phase_end "05"
 echo ""
 
 # ============================================================
@@ -690,7 +692,7 @@ echo ""
 # 5.5 DEGENERATION DETECTION
 # ============================================================
 echo -e "${CYAN}━━━ Phase 5.5: Degeneration Detection ━━━${NC}"
-phase_start "5.5"
+phase_start "55"
 
 DEGENERATION_WARNING=false
 DEGENERATION_KEYWORDS=""
@@ -729,14 +731,14 @@ else
     echo -e "${YELLOW}  无进化日志，跳过退化检测${NC}"
 fi
 
-phase_end "5.5"
+phase_end "55"
 echo ""
 
 # ============================================================
 # 5.7 CDP BROWSER EXPERIMENT
 # ============================================================
 echo -e "${CYAN}━━━ Phase 5.7: CDP Browser Experiment ━━━${NC}"
-phase_start "5.7"
+phase_start "57"
 
 test_cdp_browser() {
     if [ "$CDP_BROWSER_AVAILABLE" != true ]; then
@@ -776,7 +778,7 @@ const { chromium } = require('playwright');
 
 test_cdp_browser || true
 
-phase_end "5.7"
+phase_end "57"
 echo ""
 
 # ============================================================
@@ -1029,7 +1031,7 @@ print_time_report() {
     echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
     
-    for id in 0 0.5 1 2 3 4 5 5.5 5.7 6 7 8 9; do
+    for id in 0 05 1 2 3 4 5 55 57 6 7 8 9; do
         if [[ -n "${PHASE_START[$id]+x}" ]] && [[ -n "${PHASE_END[$id]+x}" ]]; then
             local elapsed=$(( PHASE_END[id] - PHASE_START[id] ))
             local name="${PHASE_NAMES[$id]:-$id}"
