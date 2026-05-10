@@ -677,6 +677,32 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
    - 读取 `references/handoff.md` — 上一个会话在哪里停下了
    - 读取 `references/evolution-log.md` 最后 3 轮 — 最近做了什么、什么失败了
 
+3.5 **【黄金法则：GitHub 同步与 Artifact 发现】**
+   > ⚠️ 这是整个系统最重要的一条规则。违反它会导致重复劳动、遗漏他人成果、甚至覆盖别人的工作。
+   > 
+   > **这个系统是分布式的 — 多个 AI 会话向同一个 GitHub 仓库贡献代码。GitHub 是唯一的真相源（Source of Truth），你的本地文件系统只是一个可能过期的缓存。**
+   >
+   > **每次开始工作前，必须执行以下 Artifact Discovery Protocol：**
+   >
+   > ```
+   > # Step A: 拉取远程所有新内容
+   > git fetch origin
+   >
+   > # Step B: 查看最近 15 条 commits（可能有其他会话提交了你没见过的东西）
+   > git log --oneline -15 --all --graph
+   >
+   > # Step C: 如果有新的 commit → 合并到本地
+   > git pull origin main --rebase
+   >
+   > # Step D: 如果你需要找某个文件/产出物：
+   > #   先看 git log 找到相关 commit
+   > #   再 git show <commit>:<path> 或 git checkout <commit> -- <path>
+   > #   最后才考虑在本地文件系统搜索 (find/ls/glob)
+   > ```
+   >
+   > **永远不要假设"文件就在本地磁盘上"。其他会话的产出物可能只在 GitHub 上。**
+   > **找任何东西的顺序：git log → git fetch → 本地文件系统**
+
 4. **获取分布式锁**：
    - 执行 `bash scripts/acquire-lock.sh`
    - 锁被占用 → 退出（另一个会话在工作中）
@@ -714,6 +740,13 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
   - 每轮必须至少让 1 个维度 +5%（读 Milestone 找下一个可完成的）
   - 不要因为"不知道做什么"而停止 — polars-score.md 的 Milestones 就是你的 TODO 列表
   - 发现了就装、缺了就补、坏了就修、不能做就找绕过方案
+
+  分布式协作规则（必须遵守）：
+  - GitHub 是唯一真相源 — 本地文件系统只是缓存，可能过期
+  - 开始任何工作前：git fetch origin && git log --oneline -15 --all
+  - 找任何产物时：先 git log → 再本地文件系统搜索
+  - 提交前必须先 git pull --rebase 避免冲突
+  - 看到其他 session 的 commit → 先阅读理解 → 再决定是否基于其继续
 ═══════════════════════════════════════════════════════
 ```
 
@@ -751,6 +784,35 @@ Why: Environment may change. A blocker may auto-resolve. Assess reality, not sta
 | `polaris-score.md` | Polaris dashboard (scores + milestones) | Every round end | Every round start |
 | `handoff.md` | Session handoff ("where I stopped") | Every round end | Next session start |
 | `evolution-log.md` | History (what happened, what failed) | Every round end | Every round start (last 3) |
+
+### GitHub Source of Truth Principle (黄金法则)
+
+> **这个系统是分布式的。GitHub 是唯一的真相源。本地文件系统只是缓存。**
+
+**Why this matters (教训来源)**: Round 18 中，一个新 AI session 在 GitHub 上提交了工作产物（`1.md` 工作记录 + 代码改动），但审查者只在本地文件系统中搜索（find/glob/ls），完全没想到执行 `git log`。结果浪费了大量时间才找到文件。
+
+**Artifact Discovery Protocol（必须遵守的搜索顺序）**：
+
+```
+当需要寻找任何工作产物时（文件、commit、其他 session 的输出）：
+
+  ① git fetch origin                    # 拉取远程最新引用
+  ② git log --oneline -15 --all --graph # 查看所有分支最近活动
+  ③ 如果发现新的/未知的 commit：
+     → git pull origin main --rebase     # 合并到本地
+     → git show <commit>:<path>          # 查看具体文件内容
+  ④ 只有确认 git log 没有新东西之后
+     → 才使用本地文件系统工具 (find/ls/glob/grep)
+```
+
+**Common Anti-Patterns（反模式，必须避免）**：
+
+| 反模式 | 为什么错 | 正确做法 |
+|--------|---------|----------|
+| 直接 `find /workspace -name X` | 本地可能过期 | 先 `git fetch && git log` |
+| 假设本地文件是最新的 | 其他 session 可能刚 push | 每次 start 都 fetch+log |
+| 不看别人 commit 就开始写 | 可能覆盖或重复 | 先读最近 commits |
+| commit 前不 pull | 必然冲突 | `git pull --rebase` 然后 commit |
 
 ### GitHub Issue Distributed Lock
 

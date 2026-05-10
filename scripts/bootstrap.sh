@@ -73,6 +73,11 @@ if [ -d "$PROJECT_DIR" ]; then
     if cd "$PROJECT_DIR" && git rev-parse --is-inside-work-tree &>/dev/null; then
         log_pass "Repository exists at $PROJECT_DIR (pulling latest...)"
         git pull origin main 2>/dev/null || log_warn "git pull failed (may be offline or up-to-date)"
+        echo ""
+        echo -e "${CYAN}  📋 最近 5 条 commits（其他 session 可能提交了新内容）：${NC}"
+        git log --oneline -5 2>/dev/null | while IFS= read -r line; do
+            echo -e "    ${CYAN}${line}${NC}"
+        done || true
     else
         log_warn "$PROJECT_DIR exists but is not a git repo — removing and re-cloning"
         rm -rf "$PROJECT_DIR"

@@ -127,6 +127,44 @@ phase_end "0"
 echo ""
 
 # ============================================================
+# 0.1. GITHUB SYNC — Source of Truth Alignment
+# ============================================================
+echo -e "${CYAN}━━━ Phase 0.1: GitHub 真像源同步 ━━━${NC}"
+phase_start "01"
+
+echo -e "${BOLD}  📡 Artifact Discovery Protocol${NC}"
+echo -e "  GitHub 是唯一真相源。检查远程是否有其他 session 的新提交..."
+
+if git fetch origin &>/dev/null; then
+    echo -e "${GREEN}  ✅ git fetch 成功${NC}"
+else
+    echo -e "${YELLOW}  ⚠️  git fetch 失败（可能离线）${NC}"
+fi
+
+LOCAL_HEAD=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+REMOTE_HEAD=$(git rev-parse --short origin/main 2>/dev/null || echo "unknown")
+echo -e "  本地 HEAD: ${CYAN}${LOCAL_HEAD}${NC} | 远程 origin/main: ${CYAN}${REMOTE_HEAD}${NC}"
+
+if [ "$LOCAL_HEAD" != "$REMOTE_HEAD" ] && [ "$REMOTE_HEAD" != "unknown" ]; then
+    echo -e "${YELLOW}  ⚠️  本地与远程不同步！正在 rebase...${NC}"
+    if git pull origin main --rebase 2>/dev/null; then
+        NEW_HEAD=$(git rev-parse --short HEAD)
+        echo -e "${GREEN}  ✅ 已同步到 ${NEW_HEAD}${NC}"
+    else
+        echo -e "${RED}  ❌ rebase 失败，手动处理可能需要的冲突${NC}"
+    fi
+fi
+
+echo ""
+echo -e "${BOLD}  📋 最近 10 条 commits（可能有其他 session 的产出）：${NC}"
+git log --oneline -10 --all --graph 2>/dev/null | while read -r line; do
+    echo "    $line"
+done
+
+phase_end "01"
+echo ""
+
+# ============================================================
 # 0.5. MIRROR SOURCE INITIALIZATION (idempotent)
 # ============================================================
 echo -e "${CYAN}━━━ Phase 0.5: 镜像源初始化 ━━━${NC}"
