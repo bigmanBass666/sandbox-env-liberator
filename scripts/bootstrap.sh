@@ -1,8 +1,13 @@
 #!/bin/bash
 # bootstrap.sh — Fresh environment one-command initialization
 # Idempotent: safe to run multiple times on any environment state
-# Usage: bash scripts/bootstrap.sh
+# Usage: bash scripts/bootstrap.sh [--role worker|reviewer|cso]
 set -euo pipefail
+
+ROLE="${1:-worker}"
+if [[ "$ROLE" == --role ]]; then
+    ROLE="${2:-worker}"
+fi
 
 REPO_URL="https://github.com/bigmanBass666/sandbox-env-liberator.git"
 PROJECT_DIR="/workspace/sandbox-env-setup"
@@ -73,12 +78,20 @@ if [ -d "$PROJECT_DIR" ]; then
     if cd "$PROJECT_DIR" && git rev-parse --is-inside-work-tree &>/dev/null; then
         log_pass "Repository exists at $PROJECT_DIR (pulling latest...)"
         git pull origin main 2>/dev/null || log_warn "git pull failed (may be offline or up-to-date)"
-        ROUND_NUM=$(grep -oP 'R\d+' "$PROJECT_DIR/references/polaris-score.md" 2>/dev/null | grep -oP '\d+' | sort -n | tail -1 || echo "0")
-        NEXT_ROUND=$((ROUND_NUM + 1))
-        BRANCH_NAME="evolve/round-${NEXT_ROUND}"
-        cd "$PROJECT_DIR" && git checkout -b "$BRANCH_NAME" 2>/dev/null || true
-        if git branch --show-current | grep -q "evolve/round"; then
-            log_pass "Working branch: $(git branch --show-current)"
+        if [ "$ROLE" = "worker" ]; then
+            git checkout night-evolve 2>/dev/null || git checkout -b night-evolve origin/main 2>/dev/null || true
+            git pull origin night-evolve 2>/dev/null || true
+            if git branch --show-current | grep -q "night-evolve"; then
+                log_pass "Working branch: $(git branch --show-current)"
+            fi
+        else
+            ROUND_NUM=$(grep -oP 'R\d+' "$PROJECT_DIR/references/polaris-score.md" 2>/dev/null | grep -oP '\d+' | sort -n | tail -1 || echo "0")
+            NEXT_ROUND=$((ROUND_NUM + 1))
+            BRANCH_NAME="evolve/round-${NEXT_ROUND}"
+            cd "$PROJECT_DIR" && git checkout -b "$BRANCH_NAME" 2>/dev/null || true
+            if git branch --show-current | grep -q "evolve/round"; then
+                log_pass "Working branch: $(git branch --show-current)"
+            fi
         fi
         echo ""
         echo -e "${CYAN}  📋 最近 5 条 commits（其他 session 可能提交了新内容）：${NC}"
@@ -144,12 +157,21 @@ echo "╠═══════════════════════�
 printf "║  %-20s %s%-20s ║\n" "✅ Passed:" "$GREEN" "$PASS_COUNT$NC"
 printf "║  %-20s %s%-20s ║\n" "⚠️  Warnings:" "$YELLOW" "$WARN_COUNT$NC"
 printf "║  %-20s %s%-20s ║\n" "❌ Failed:" "$RED" "$FAIL_COUNT$NC"
+printf "║  %-20s %-20s ║\n" "Role:" "$ROLE"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 
 if [ "$FAIL_COUNT" -gt 2 ]; then
     echo -e "${YELLOW}⚠️  Multiple failures detected. Review above before proceeding.${NC}"
     exit 2
+fi
+
+if [ -f "prompts/${ROLE}.md" ]; then
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  Loading ${ROLE} prompt from prompts/${ROLE}.md${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo ""
+    cat "prompts/${ROLE}.md"
 fi
 
 exit 0
