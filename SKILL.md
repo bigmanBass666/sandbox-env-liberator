@@ -726,6 +726,11 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 
 【第五步：记录并退出】
 1. 更新 references/polaris-score.md（修改对应维度的 Score 和 Evidence）
+5.5 **评分校验**：
+   - 判断本次分数变化是 New Capability 还是 Measurement Correction
+   - 如果是 Measurement Correction → polaris-score.md History 表标注 `(measurement correction)`
+   - 如果是 Discovery Bonus → 限制为 +5%
+   - 如果是 New Capability → 正常记录 Delta
 2. 更新 references/handoff.md（填写完整交接信息）
 3. 追加记录到 references/evolution-log.md
 4. git add -A && git commit -m "Round N: [简述]" && git push

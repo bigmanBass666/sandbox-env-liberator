@@ -6,6 +6,18 @@ Last Updated: 2026-05-10T15:00:00Z
 Round: 19
 Total: 50%
 
+## Scoring Principles (评分原则)
+
+> **新分数必须对应本轮实际执行的新增能力或可复现验证。**
+>
+> | 类型 | 定义 | 评分处理 |
+> |------|------|---------|
+> | **New Capability** | 本轮安装/配置/启用了之前不存在的能力 | 正常加分 |
+> | **Measurement Correction** | 能力一直存在但之前未被发现/未测量 | 更新分数到正确值，History 标注 `(measurement correction)`，Delta 不计入正增长 |
+> | **Discovery Bonus** | 首次发现已有能力（一次性奖励） | 最多 +5% discovery bonus |
+>
+> **反模式示例**："镜像源 R14 就配好了，R19 只是重新跑了一遍 curl 测速" → Measurement Correction，不是 +20% New Capability。
+
 ## Dimensions
 
 | ID | Dimension | Score | Evidence | Last Improved | Streak (rounds without progress) |
@@ -22,7 +34,7 @@ Total: 50%
 ### D1 网络自由 — Break free from bandwidth prison
 
 - [x] [20%] 镜像源配置完成 (5 package managers) — R14
-- [x] [40%] 下载速度突破 100KB/s (rsproxy.cn ~253KB/s, npmmirror ~340KB/s) — R19
+- [x] [40%] 下载速度突破 100KB/s (rsproxy.cn ~253KB/s, npmmirror ~340KB/s) — R19 *(measurement correction)*
 - [ ] [60%] 发现绕过 egress sidecar 限制的方法或可接受的替代方案
 - [ ] [80%] 大文件(>100MB)可靠下载并验证完整性
 - [ ] [100%] 无带宽限制或找到等效的完整解决方案
@@ -109,5 +121,5 @@ Total: 50%
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
 |-------|-------|----|----|----|----|----|----|-------|
-| R19 | 50% | 40 | 60 | 45 | 80 | 50 | 20 | rsproxy.cn 253KB/s, npmmirror 340KB/s, D1突破100KB/s里程碑 |
+| R19 | 50% | 40 | 60 | 45 | 80 | 50 | 20 | rsproxy.cn 253KB/s, npmmirror 340KB/s, D1突破100KB/s里程碑 *(measurement correction)* |
 | R16 | 45% | 20 | 60 | 40 | 80 | 50 | 20 | Time tracking bug fix, MCP deep dive |
