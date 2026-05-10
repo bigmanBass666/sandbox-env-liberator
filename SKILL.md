@@ -639,6 +639,24 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 
 ### The Meta Prompt v2
 
+> **Meta Prompt Steps ↔ evolve.sh Phases 对应关系**
+>
+> | Meta Prompt Step | evolve.sh Phase(s) | 说明 |
+> |------------------|---------------------|------|
+> | Step 0 (bootstrap) | — (bootstrap.sh 独立运行) | 环境初始化，evolve.sh 不包含此阶段 |
+> | Step 1 (进入项目目录) | — (前置条件) | evolve.sh 假设已在项目目录中运行 |
+> | Step 1.5 (创建工作分支) | Phase 6 (Integration) | evolve.sh 在 Phase 6 创建分支 |
+> | Step 2 (验证关键依赖) | — (bootstrap.sh 覆盖) | 依赖验证在 bootstrap 阶段完成 |
+> | Step 3 (读取状态文件) | Phase 1 (Recon) | evolve.sh Phase 1 读取日志和状态 |
+> | Step 3.5 (GitHub 同步) | Phase 0g (GitHub Sync) | Artifact Discovery Protocol |
+> | Step 4 (获取分布式锁) | Phase 0 (Lock+Env) | ⚠️ evolve.sh 中锁获取在最前面 |
+> | 第二步 (判断停滞) | Phase 5 (AntiStagnation) + Phase 55 (Degeneration) | 停滞/退化检测 |
+> | 第三步 (选择行动) | Phase 2 (DeltaAnalysis) + Phase 3 (Hypotheses) | 差异分析 + 假设生成 |
+> | 第四步 (执行并持续) | Phase 4 (Experiments) + Phase 05 (MirrorInit) + Phase 57 (CDPBrowser) | 实验执行循环 |
+> | 第五步 (记录并退出) | Phase 7 (Reflection) + Phase 8 (RecordCommit) + Phase 9 (ReleaseLock) | 反思→提交→释放锁 |
+>
+> **关键差异**：Meta Prompt 先读状态再获取锁（避免无谓锁占用），evolve.sh 先获取锁再读状态（自动化流水线保证独占）。
+
 ```
 ═══════════════════════════════════════════════════════
   META PROMPT v2 — sandbox-env-liberator 自主进化重启器

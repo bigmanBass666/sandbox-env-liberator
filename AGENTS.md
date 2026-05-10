@@ -24,17 +24,26 @@ scripts/
   acquire-lock.sh    — 分布式锁
   release-lock.sh    — 释放锁
   verify-env.sh      — 环境验证
+  deep-recon.sh      — 深度侦察（网络/权限/资源）
+  full-recon.sh      — 全量侦察
+  diagnose.sh        — 环境诊断
+  health-monitor.sh  — 健康监控
+  persist-config.sh  — 配置持久化
+  setup-dev-toolchain.sh — 开发工具链安装
+  fetch-deps.js      — Node.js 依赖获取
+  fix-network.js     — 网络修复脚本
 
 references/
-  polaris-score.md   — Polaris 评分系统（7 维度 × 100 分制）
+  polaris-score.md   — Polaris 评分系统（6 维度 × 100 分制）
   handoff.md         — 轮次交接信息
   evolution-log.md   — 进化历史日志
   timeline-round-N.jsonl — 每轮时间线归档
 
 prompts/
   worker.md          — Night Evolution Worker 执行指令
-  cso.md             — CSO 审查/改进指令（待创建）
-  reviewer.md        — PR Reviewer 审查指令（待创建）
+  worker.card.yaml   — Worker 角色卡（YAML 格式）
+  cso.card.yaml      — CSO 审查/改进角色卡
+  reviewer.card.yaml — PR Reviewer 审查角色卡
 
 .agents/rules/
   evolve-scripts.md  — scripts/ 目录守则（path-specific）
@@ -47,9 +56,9 @@ prompts/
 
 | Role | Prompt File | Branch | Trigger |
 |------|------------|--------|---------|
-| **CSO** | `prompts/cso.md` | main | Manual |
+| **CSO** | `prompts/cso.card.yaml` | main | Manual |
 | **Evolution Worker** | `prompts/worker.md` | night-evolve | Scheduled (hourly) |
-| **PR Reviewer** | `prompts/reviewer.md` | — | Manual |
+| **PR Reviewer** | `prompts/reviewer.card.yaml` | — | Manual |
 
 ### Permission Boundaries
 
