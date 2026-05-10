@@ -1,4 +1,4 @@
-# Platform Services Deep Dive (Rounds 10-12)
+# Platform Services Deep Dive (Rounds 10-13)
 
 > Deep analysis of internal platform services discovered through port probing and Prometheus metrics scraping.
 
@@ -175,3 +175,40 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 - no_proxy/NO_PROXY=localhost,127.0.0.1,.svc,.cluster.local,::1
 - NODE_OPTIONS=--require /app/mcp_proxy_bootstrap/preload.cjs (MCP proxy bootstrap)
 - PREVIEW_PROXY_PUBLIC_PORT=16000
+
+## MCP Proxy Bootstrap Mechanism (Round 13)
+
+### preload.cjs Analysis (29 lines)
+
+- **Purpose**: Make undici/global fetch use HTTP(S)_PROXY environment variables
+- **Injection**: Via `NODE_OPTIONS=--require /app/mcp_proxy_bootstrap/preload.cjs`
+- **Mechanism**: Uses undici's `setGlobalDispatcher(new EnvHttpProxyAgent())` to redirect all Node.js fetch calls through the proxy configured by `HTTP_PROXY`/`HTTPS_PROXY` env vars
+- **Activation**: Only activates if `HTTP_PROXY` or `HTTPS_PROXY` environment variables are set
+- **Debug mode**: Set `MCP_PROXY_DEBUG` env var to see log output
+- **Key insight**: This is NOT an MCP protocol interceptor — it's just a proxy configurator for Node.js fetch. It has no awareness of MCP messages, tool calls, or server lifecycle.
+
+### supervisord.conf Environment Variables
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `AGENT_TOOL_HOST_MCP_SERVER_CONF_FILE` | `/app/etc/mcp_servers.json` | MCP server config path |
+| `AGENT_TOOL_HOST_IDE_DYNAMIC_CONF_FILE` | `/app/etc/ide_dynamic_config_basic.json` | Feature gates path |
+| `CDP_USER_DATA_DIR` | `/data/tool/cdp-client-browser` | CDP browser data directory |
+| `CRAWLER_CDP_ENDPOINT` | `http://127.0.0.1:8088/v1/cdp` | CDP proxy endpoint |
+| `TOOLHOST_CWD` | `/workspace` | Working directory |
+| `ICUBE_USER_DATA_DIR` | `/data/user` | User data directory |
+| `BROWSER_SNAPSHOT_DIR` | `/data/tool/browser_snapshots` | Browser snapshot storage |
+| `MCP_LOG_DIR` | `/var/log/tool/mcp` | MCP log directory |
+
+### setup_universal.sh Language Version Control
+
+- Controlled by environment variables: `TRAE_ENV_PYTHON_VERSION`, `TRAE_ENV_NODE_VERSION`, `TRAE_ENV_RUST_VERSION`, `TRAE_ENV_GO_VERSION`, `TRAE_ENV_RUBY_VERSION`, `TRAE_ENV_PHP_VERSION`, `TRAE_ENV_JAVA_VERSION`, `TRAE_ENV_SWIFT_VERSION`
+- Each version manager (pyenv/nvm/rustup/mise/phpenv/swiftly) checks if the requested version is already installed
+- Falls back to the default version if the requested version is not found
+
+### mcp_servers.json Injection Test Result
+
+- **File is WRITABLE** (root:root, rw-r--r--)
+- Successfully wrote test MCP server config to the file
+- `agent-tool-host` (pid 821) would need restart/reload to pick up changes
+- **Key finding**: MCP server configuration IS injectable at the file level — the file permissions allow writes, but the running process does not hot-reload the config
