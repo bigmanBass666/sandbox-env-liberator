@@ -1315,20 +1315,17 @@ echo ""
 # ============================================================
 phase_start "8"
 
-BRANCH_NAME="evolve/round-${NEXT_ROUND}"
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 
 if [ "${EVOLVE_ROLE:-worker}" = "cso" ]; then
     echo -e "${CYAN}  👑 CSO mode: pushing directly to main (对话即 Review)${NC}"
     BRANCH_NAME="main"
 else
-    if [ "$CURRENT_BRANCH" = "main" ]; then
-        git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME" 2>/dev/null
-        echo -e "${CYAN}  🌿 Worker mode: created branch ${BRANCH_NAME}${NC}"
-    else
-        echo -e "${CYAN}  🌿 Already on branch ${CURRENT_BRANCH}${NC}"
-        BRANCH_NAME="$CURRENT_BRANCH"
+    BRANCH_NAME="worker"
+    if [ "$CURRENT_BRANCH" != "worker" ]; then
+        git checkout -b worker 2>/dev/null || git checkout worker 2>/dev/null || true
     fi
+    echo -e "${CYAN}  🔧 Worker mode: pushing to worker branch${NC}"
 fi
 
 echo "$CURR_PASS" > "${EVOLVE_STATE_DIR}/last_pass.txt"
@@ -1526,38 +1523,9 @@ if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
 
     if [ "${EVOLVE_ROLE:-worker}" = "cso" ]; then
         echo -e "${GREEN}  ✅ CSO mode: pushed directly to main${NC}"
-    elif command -v gh &>/dev/null; then
-        PR_TITLE="Round ${NEXT_ROUND}: ${POLARIS_FOCUS_DIM:-unknown} ${IMPROVE_EVIDENCE:-evolution}"
-        PR_BODY="## Round ${NEXT_ROUND} Evolution
-
-| Field | Value |
-|-------|-------|
-| Focus | ${POLARIS_FOCUS_DIM:-?} |
-| Improvement | ${IMPROVE_EVIDENCE:-N/A} |
-| Success | ${IMPROVE_SUCCESS:-false} |
-| Duration | ${duration:-0}s |
-
-$(cat "$PROJECT_DIR/references/handoff.md" 2>/dev/null || echo 'Handoff not available')"
-
-        PR_URL=$(gh pr create \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY" \
-            --base main \
-            --head "$BRANCH_NAME" \
-            --label "evolution" \
-            2>/dev/null || echo "PR_CREATE_FAILED")
-
-        if [[ "$PR_URL" == http* ]]; then
-            echo -e "${GREEN}  ✅ PR created: ${PR_URL}${NC}"
-            if gh pr merge "$PR_URL" --merge --auto 2>/dev/null; then
-                echo -e "${GREEN}  ✅ PR auto-merge enabled${NC}"
-            fi
-        else
-            echo -e "${YELLOW}  ⚠️  PR creation failed. Changes pushed to branch ${BRANCH_NAME}${NC}"
-        fi
     else
-        echo -e "${YELLOW}  ⚠️  gh CLI not available. Changes pushed to branch ${BRANCH_NAME}. Manual PR needed.${NC}"
-        echo "| MANUAL_PR_NEEDED | Changes pushed to ${BRANCH_NAME} | Create PR manually |" >> "$PROJECT_DIR/references/handoff.md"
+        echo -e "${GREEN}  ✅ Worker mode: pushed to worker branch${NC}"
+        echo -e "${CYAN}  📋 CSO will merge worker → main when ready${NC}"
     fi
 fi
 

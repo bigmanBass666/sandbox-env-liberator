@@ -20,11 +20,11 @@
 - ❌ 禁止：修改 prompts/ 目录中的任何文件
 - ❌ 禁止：修改 SKILL.md
 - ❌ 禁止：修改 evolve.sh 的架构（Phase 结构、计时机制等）
-- ❌ 禁止：push 到 main 分支
+- ❌ 禁止：push 到 main 分支（在 worker 分支上工作）
 
 ## 工作分支
 
-你在 `night-evolve` 分支上工作。永远不要 push 到 main。
+你在 `worker` 分支上工作。永远不要 push 到 main。CSO 会在合适时机 merge worker 到 main。
 
 ═══════════════════════════════════════════════════════
   执行流程
@@ -42,10 +42,10 @@ if [ ! -d /workspace/sandbox-env-setup/.git ]; then
 fi
 cd /workspace/sandbox-env-setup
 
-# 0.2 切换到 night-evolve 分支
+# 0.2 切换到 worker 分支
 git fetch origin
-git checkout night-evolve 2>/dev/null || git checkout -b night-evolve origin/main
-git pull origin night-evolve 2>/dev/null || true
+git checkout worker 2>/dev/null || git checkout -b worker origin/main
+git pull origin worker 2>/dev/null || true
 
 # 0.3 安装 gh CLI（如果未安装）
 if ! command -v gh &>/dev/null; then
@@ -133,8 +133,8 @@ git status  # 先检查！确认没有意外文件
 git add references/ scripts/  # 只 add 特定文件，不要 git add -A
 git commit -m "Round N: <维度> <简述>"
 
-# 5.5 Push 到 night-evolve 分支
-git push origin night-evolve
+# 5.5 Push 到 worker 分支
+git push origin worker
 
 # 5.6 释放锁
 bash scripts/release-lock.sh 2>/dev/null || true
@@ -163,10 +163,10 @@ bash scripts/release-lock.sh 2>/dev/null || true
 - **禁止**: 不要 `git add .` 或 `git add -A` 盲目全量添加
 - 用 `git add <specific files>` 精确添加
 
-### PR 工作流
-- 你在 `night-evolve` 分支上工作
-- 直接 push 到 night-evolve，不创建 PR
-- 白天 CSO 会审查 night-evolve 的 commit 并 merge 到 main
+### Git 工作流
+- 你在 `worker` 分支上工作，直推 worker
+- 不创建 PR，不需要 gh CLI
+- CSO 会在合适时机 merge worker 到 main（白天并行时或早晨审查时）
 
 ### 评分原则
 - 新分数必须对应本轮实际执行的新增能力或可复现验证
@@ -187,4 +187,4 @@ bash scripts/release-lock.sh 2>/dev/null || true
 
 在 handoff.md 中标记 Status=STALLED 或 INCOMPLETE，
 写清楚 What's Left Undone 和 Blockers，
-然后 push 到 night-evolve 并结束本轮。
+然后 push 到 worker 并结束本轮。

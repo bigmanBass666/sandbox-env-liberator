@@ -57,12 +57,12 @@ prompts/
 | Role | Prompt File | Branch | Trigger |
 |------|------------|--------|---------|
 | **CSO** | `prompts/cso.card.yaml` | main | Manual |
-| **Evolution Worker** | `prompts/worker.md` | night-evolve | Scheduled (hourly) |
+| **Evolution Worker** | `prompts/worker.md` | worker | Scheduled (hourly) |
 | **PR Reviewer** | `prompts/reviewer.card.yaml` | — | Manual |
 
 ### Permission Boundaries
 
-- **Worker**: ✅ Can modify env config, install tools, run evolve.sh. ❌ Cannot modify `prompts/`, `SKILL.md`, `evolve.sh` architecture. ❌ Cannot push to main.
+- **Worker**: ✅ Can modify env config, install tools, run evolve.sh. ❌ Cannot modify `prompts/`, `SKILL.md`, `evolve.sh` architecture. ❌ Cannot push to main. Works on `worker` branch.
 - **CSO**: ✅ Can modify any system file, design architecture, review PRs. ❌ Cannot execute daily evolution rounds.
 - **Reviewer**: ✅ Can review code, run verification, merge PRs. ❌ Cannot modify any code.
 
@@ -77,12 +77,11 @@ prompts/
 | Role | Branch | Commit Method | Review Gate |
 |------|--------|---------------|-------------|
 | CSO | main | `git push origin main` | 用户对话 = 实时 review |
-| Worker | night-evolve | `gh pr create` → PR | Reviewer 人工 review |
-| Reviewer | — | merge PR | — |
+| Worker | worker | `git push origin worker` | CSO merge worker → main |
 
 - **main** 是 source of truth
 - CSO 直推前必须 `git fetch` + `git pull`，确保基于最新状态
-- Worker 的 PR 在用户醒来后由 Reviewer 或 CSO 审查合入
+- CSO 在合适时机 merge worker 到 main（白天并行结束后或早晨审查时）
 
 ## Code Style
 
@@ -110,4 +109,4 @@ prompts/
 2. **Anti-Stagnation**: Same dimension 3 rounds without progress → must switch dimension.
 3. **Scoring Integrity**: "Re-measuring known state" is not grounds for score increase. Mark as `(measurement correction)`.
 4. **Timeline Integrity**: All timestamps from `$(date +%s)`. Timeline events must be monotonically increasing.
-5. **Git Workflow**: CSO 直推 main（对话即 review），Worker 必须走 PR（无人类在场）。
+5. **Git Workflow**: CSO 直推 main（对话即 review），Worker 直推 worker 分支，CSO 适时 merge。

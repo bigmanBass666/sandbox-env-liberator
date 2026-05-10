@@ -686,8 +686,8 @@ node /workspace/sandbox-env-setup/scripts/fix-network.js  # Re-fix
 
 1.5 **确定工作模式**：
    - **CSO（与用户对话）**：直接在 main 上工作，`git pull origin main` 后开始修改
-   - **Worker（自主运行）**：创建分支 `git checkout -b evolve/round-$((N+1))`，通过 PR 合并
-   - Worker **不要直接 push 到 main** — 通过 PR 合并
+   - **Worker（自主运行）**：在 `worker` 分支上工作，`git checkout worker` 或 `git checkout -b worker origin/main`
+   - Worker **不要直接 push 到 main** — 推 worker 分支，CSO 适时 merge
 
 2. **验证关键依赖**：
    - 检查 `GITHUB_PERSONAL_ACCESS_TOKEN` 环境变量是否设置
@@ -853,16 +853,17 @@ Why: Environment may change. A blocker may auto-resolve. Assess reality, not sta
 | commit 前不 pull | 必然冲突 | `git pull --rebase` 然后 commit |
 | `git add -A` 不检查暂存区 | 可能提交测试文件/子模块垃圾 | `git status` 逐个确认后 `git add <files>` |
 | 工作记录放仓库根目录 | 污染根目录 | 放 `references/roundN-<topic>.md` |
-| 直接 `git push origin main`（Worker） | 无人类 review，风险高 | Worker 在 `evolve/round-N` 分支工作，通过 PR 合并 |
+| 直接 `git push origin main`（Worker） | 无人类 review，风险高 | Worker 在 `worker` 分支工作，CSO merge |
 | Sub-agent 各自 commit | 形成冲突 commit 链 | 主 agent 统一 commit + push 到分支 |
 
-### Git Workflow: 主线直推 + 并线 PR
+### Git Workflow: 主线直推 + Worker 分支
 
-> **CSO 与用户对话时直推 main（对话即 Review）；Worker 自主运行时必须走 PR（无人类在场）。**
+> **CSO 与用户对话时直推 main（对话即 Review）；Worker 始终推 worker 分支，CSO 适时 merge。**
 
 **为什么这样设计**：
 - CSO + 用户对话 = 实时 review，再套 PR 是形式主义
-- Worker 无人类在场 = PR 是唯一安全门控
+- Worker 推 worker 分支 = 与 CSO 隔离，不冲突
+- CSO 在合适时机 merge worker → main（白天并行结束后或早晨审查时）
 - 直推 main 前必须 `git fetch` + `git pull`，确保基于最新状态
 
 **分支策略**：
@@ -871,24 +872,8 @@ main ─────────────────────────
   │                                              │
   │  CSO 直推（对话 = review）                    │
   │                                              │
-  ├── Worker: evolve/round-18 ──→ PR ──→ merge ─┤
-  │                                              │
-  └── Worker: evolve/round-19 ──→ PR ──→ merge ─┤
+  └── Worker: worker ──→ CSO merge ─────────────┤
 ```
-
-**分支命名**：`evolve/round-N`（N = polaris-score.md 最新轮次 + 1）
-
-**PR 内容规范**：
-- 标题：`Round N: <维度> <描述>`（如 `Round 20: D6 Timeline persistence`）
-- 正文：Focus / Improvement / Evidence / Duration 表格 + handoff.md 内容
-- 标签：`evolution` + 维度标签（如 `D6`）
-
-**合并策略**：
-- 无冲突 + bash -n 通过 → 自动 merge（`gh pr merge --merge --auto`）
-- 有冲突 → PR 标注 conflict，等待人工或下一个 AI 解决
-- 垃圾 commit（如 submodule gitlink）→ PR 审查拦截
-
-**回滚**：`git revert <merge-commit>` 即可回退整个 round
 
 ### GitHub Issue Distributed Lock
 
