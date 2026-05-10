@@ -30,9 +30,11 @@ TIME_BUDGET=1800
 RECON_BUDGET=300
 
 # Phase timing tracking (scalar globals to avoid associative array issues in $(( )) context)
-PHASE_IDS=(0 01 05 1 2 3 4 5 55 57 6 7 8 9)
+PHASE_IDS=(0 0g 05 1 2 3 4 5 55 57 6 7 8 9)
+declare -A PHASE_NAMES
 PHASE_NAMES=(
     [0]="Lock+Env"
+    [0g]="GitHub Sync"
     [05]="MirrorInit"
     [1]="Recon"
     [2]="DeltaAnalysis"
@@ -130,7 +132,7 @@ echo ""
 # 0.1. GITHUB SYNC — Source of Truth Alignment
 # ============================================================
 echo -e "${CYAN}━━━ Phase 0.1: GitHub 真像源同步 ━━━${NC}"
-phase_start "01"
+phase_start "0g"
 
 echo -e "${BOLD}  📡 Artifact Discovery Protocol${NC}"
 echo -e "  GitHub 是唯一真相源。检查远程是否有其他 session 的新提交..."
@@ -161,7 +163,7 @@ git log --oneline -10 --all --graph 2>/dev/null | while read -r line; do
     echo "    $line"
 done
 
-phase_end "01"
+phase_end "0g"
 echo ""
 
 # ============================================================
@@ -1427,7 +1429,7 @@ print_time_report() {
     echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
 
-    for id in 0 05 1 2 3 4 5 55 57 6 7 8 9; do
+    for id in 0 0g 05 1 2 3 4 5 55 57 6 7 8 9; do
         local start_var="PHASE_START_${id}"
         local end_var="PHASE_END_${id}"
         if [[ -n "${!start_var:-}" ]] && [[ -n "${!end_var:-}" ]]; then

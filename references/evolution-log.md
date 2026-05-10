@@ -631,3 +631,99 @@ Round 2 ████████████████████████
   - D3: 45% → 45% (稳定，htop/iotop/lsof 安装不影响分数)
   - Total: 46% → 50% (+4%)
 - **Status**: COMPLETE
+## Round 20 - 2026-05-10 15:28:46
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +1 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 3
+- P0: 4, P1: 2, P2: 4, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共4项) | P4元改进 (共2项)
+- Time elapsed: 177s
+- Commit: PLAN_ONLY
+
+
+## Round 21 - 2026-05-10 15:33:21
+- State: PASS=132, FAIL=4, WARN=3
+- Delta: +-1 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 2
+- P0: 4, P1: 2, P2: 3, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共3项) | P4元改进 (共2项)
+- Time elapsed: 158s
+- Commit: PLAN_ONLY
+
+
+## Round 22 - 2026-05-10 15:38:48
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +1 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 3
+- P0: 4, P1: 2, P2: 4, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共4项) | P4元改进 (共2项)
+- Time elapsed: 172s
+- Commit: PLAN_ONLY
+
+
+## Round 23 - 2026-05-10 15:44:16
+- State: PASS=140, FAIL=4, WARN=5
+- Delta: +7 PASS, 0 FAIL
+- New FAIL: 1, Recovered: 1, New capabilities: 9
+- P0: 4, P1: 4, P2: 10, P3: 2, P4: 3
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共10项) | P4元改进 (共3项)
+- Time elapsed: 172s
+- Commit: PLAN_ONLY
+
+
+## Round 24 - 2026-05-10 15:47:47
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +-7 PASS, 0 FAIL
+- New FAIL: 1, Recovered: 1, New capabilities: 2
+- P0: 4, P1: 2, P2: 3, P3: 2, P4: 3
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共3项) | P4元改进 (共3项)
+- Time elapsed: 156s
+- Commit: PLAN_ONLY
+
+
+## Round 25 - 2026-05-10 15:51:13
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +0 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 3
+- P0: 4, P1: 2, P2: 4, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共4项) | P4元改进 (共2项)
+- Time elapsed: 167s
+- Commit: PLAN_ONLY
+
+
+## Round 26 - 2026-05-10 15:54:52
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +0 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 3
+- P0: 4, P1: 2, P2: 4, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共4项) | P4元改进 (共2项)
+- Time elapsed: 162s
+- Commit: PLAN_ONLY
+
+
+## Round 27 - 2026-05-10 15:58:33
+- State: PASS=133, FAIL=4, WARN=3
+- Delta: +0 PASS, 0 FAIL
+- New FAIL: 0, Recovered: 0, New capabilities: 2
+- P0: 4, P1: 2, P2: 3, P3: 2, P4: 2
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共4项) | P2发现项 (共3项) | P4元改进 (共2项)
+- Time elapsed: 172s
+- Commit: PLAN_ONLY
+
+

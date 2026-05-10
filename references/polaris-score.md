@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-10T15:00:00Z
-Round: 19
+Last Updated: 2026-05-10T15:58:33Z
+Round: 27
 Total: 50%
 
 ## Scoring Principles (评分原则)
@@ -120,6 +120,14 @@ Total: 50%
 ## History
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R27 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R26 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R25 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R24 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R23 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R22 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R21 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
+| R20 | 40 | 60 | 45 | 80 | 50 | 20 | Polaris integration active |
 |-------|-------|----|----|----|----|----|----|-------|
 | R19 | 50% | 40 | 60 | 45 | 80 | 50 | 20 | rsproxy.cn 253KB/s, npmmirror 340KB/s, D1突破100KB/s里程碑 *(measurement correction)* |
 | R16 | 45% | 20 | 60 | 40 | 80 | 50 | 20 | Time tracking bug fix, MCP deep dive |
