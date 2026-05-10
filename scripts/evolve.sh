@@ -319,7 +319,11 @@ POLARIS_NEXT_MILESTONE=""
 
 read_polaris_score() {
     if [ ! -f "$POLARIS_SCORE_FILE" ]; then
-        echo -e "${YELLOW}  ⚠️  polaris-score.md not found — running without Polaris guidance${NC}"
+        echo -e "${RED}  ❌ polaris-score.md not found! Using defaults.${NC}"
+        D1_SCORE=0; D2_SCORE=0; D3_SCORE=0; D4_SCORE=0; D5_SCORE=0; D6_SCORE=0
+        POLARIS_FOCUS_DIM=""
+        POLARIS_FOCUS_SCORE=999
+        POLARIS_NEXT_MILESTONE=""
         return 1
     fi
     
@@ -330,8 +334,16 @@ read_polaris_score() {
     D5_SCORE=$(grep '| D5 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
     D6_SCORE=$(grep '| D6 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
     
+    D1_SCORE=${D1_SCORE:-0}; D2_SCORE=${D2_SCORE:-0}; D3_SCORE=${D3_SCORE:-0}
+    D4_SCORE=${D4_SCORE:-0}; D5_SCORE=${D5_SCORE:-0}; D6_SCORE=${D6_SCORE:-0}
+    
     for dim_id in 1 2 3 4 5 6; do
         eval "score=\$D${dim_id}_SCORE"
+        if ! [[ "$score" =~ ^[0-9]+$ ]]; then
+            echo -e "${YELLOW}  ⚠️  D${dim_id} score parse error ('${score}'), defaulting to 0${NC}"
+            eval "D${dim_id}_SCORE=0"
+            score=0
+        fi
         streak=$(grep -A20 "| D${dim_id} |" "$POLARIS_SCORE_FILE" 2>/dev/null | grep -i 'streak' | grep -oP '\K\d+' | tr -d '[:space:]' || echo "0")
         if [ "$score" -lt "$POLARIS_FOCUS_SCORE" ] && [ "${streak:-0}" -lt 3 ]; then
             POLARIS_FOCUS_SCORE=$score
@@ -1094,13 +1106,15 @@ else
                     apt-get install -y -qq gcc g++ make 2>/dev/null && \
                     echo -e "${GREEN}  ✓ gcc/g++/make installed${NC}" && \
                     which gcc > /dev/null 2>&1 && IMPROVE_SUCCESS=true && \
-                    IMPROVE_EVIDENCE="gcc/g++/make installed, $(gcc --version | head -1)"
+                    IMPROVE_EVIDENCE="gcc/g++/make installed, $(gcc --version | head -1)" \
+                    || { echo -e "${YELLOW}  ⚠️ Command failed: gcc/g++/make install${NC}"; IMPROVE_SUCCESS=false; }
                 elif echo "$POLARIS_NEXT_MILESTONE" | grep -qi "diagnostic\|pstree\|htop"; then
                     echo -e "${CYAN}  [D2/D3 Task] Installing diagnostic tools...${NC}"
                     apt-get install -y -qq pstree htop iotop lsof strace 2>/dev/null && \
                     echo -e "${GREEN}  ✓ Diagnostic tools installed${NC}" && \
                     which pstree htop > /dev/null 2>&1 && IMPROVE_SUCCESS=true && \
-                    IMPROVE_EVIDENCE="pstree/htop/iotop/lsof/strace installed"
+                    IMPROVE_EVIDENCE="pstree/htop/iotop/lsof/strace installed" \
+                    || { echo -e "${YELLOW}  ⚠️ Command failed: diagnostic tools install${NC}"; IMPROVE_SUCCESS=false; }
                 else
                     echo -e "${CYAN}  [D2 Task] Installing next useful package from milestone...${NC}"
                 fi
@@ -1110,7 +1124,8 @@ else
                 apt-get install -y -qq pstree htop iotop lsof 2>/dev/null && \
                 echo -e "${GREEN}  ✓ Process tools installed${NC}" && \
                 IMPROVE_SUCCESS=true && \
-                IMPROVE_EVIDENCE="pstree+htop+iotop+lsof installed for process domain"
+                IMPROVE_EVIDENCE="pstree+htop+iotop+lsof installed for process domain" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: process tools install${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D4)
                 echo -e "${CYAN}  [D4 Task] Testing filesystem persistence...${NC}"
@@ -1118,7 +1133,8 @@ else
                 echo "persistence_test_at=$(date)" > "$PERSIST_TEST_FILE" && \
                 echo -e "${GREEN}  ✓ File written to /workspace (persistence test)${NC}" && \
                 IMPROVE_SUCCESS=true && \
-                IMPROVE_EVIDENCE="Persistence test file written to $PERSIST_TEST_FILE"
+                IMPROVE_EVIDENCE="Persistence test file written to $PERSIST_TEST_FILE" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: persistence test write${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D5)
                 echo -e "${CYAN}  [D5 Task] MCP server injection test preparation...${NC}"
@@ -1133,7 +1149,8 @@ else
                 echo -e "${CYAN}  Installing additional utility packages for faster operations...${NC}"
                 apt-get install -y -qq jq moreutils 2>/dev/null && \
                 which jq > /dev/null 2>&1 && IMPROVE_SUCCESS=true && \
-                IMPROVE_EVIDENCE="jq+moreutils installed for faster JSON/data processing"
+                IMPROVE_EVIDENCE="jq+moreutils installed for faster JSON/data processing" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: jq/moreutils install${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             *)
                 echo -e "${YELLOW}  ⚠️  No specific strategy for milestone ${CURRENT_MILESTONE}. Using default improvement.${NC}"
@@ -1147,7 +1164,8 @@ else
     else
         echo -e "${YELLOW}  No Polaris focus set — attempting generic improvements...${NC}"
         echo -e "${CYAN}  Installing commonly useful packages...${NC}"
-        apt-get install -y -qq jq curl wget file tree 2>/dev/null && IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Generic package installation (jq/curl/wget/file/tree)"
+        apt-get install -y -qq jq curl wget file tree 2>/dev/null && IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Generic package installation (jq/curl/wget/file/tree)" \
+        || { echo -e "${YELLOW}  ⚠️ Command failed: generic package install${NC}"; IMPROVE_SUCCESS=false; }
     fi
     
     if [ "$IMPROVE_SUCCESS" = true ]; then
@@ -1253,17 +1271,20 @@ while true; do
         case "$POLARIS_FOCUS_DIM" in
             D3)
                 apt-get install -y -qq bsdmainutils procps psmisc 2>/dev/null && \
-                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Additional proc tools installed (loop #$CONTINUE_LOOP_COUNT)"
+                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Additional proc tools installed (loop #$CONTINUE_LOOP_COUNT)" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: proc tools install (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D2)
                 apt-get install -y -qq python3-pip python3-venv 2>/dev/null && \
                 pip3 install --break-system-packages requests 2>/dev/null && \
-                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Python3 + pip + requests (loop #$CONTINUE_LOOP_COUNT)"
+                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Python3 + pip + requests (loop #$CONTINUE_LOOP_COUNT)" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: python3+pip install (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D1)
                 echo "Testing alternative CDN connectivity..." && \
                 curl -so /dev/null -w '' --max-time 5 https://registry.npmjs.org/ 2>/dev/null && \
-                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="CDN connectivity tested (loop #$CONTINUE_LOOP_COUNT)"
+                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="CDN connectivity tested (loop #$CONTINUE_LOOP_COUNT)" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: CDN connectivity test (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D6)
                 npm install -g -q speed-test 2>/dev/null || true && \
@@ -1271,7 +1292,8 @@ while true; do
                 ;;
             *)
                 apt-get install -y -qq vim-tiny less 2>/dev/null && \
-                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Editor utilities installed (loop #$CONTINUE_LOOP_COUNT)"
+                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Editor utilities installed (loop #$CONTINUE_LOOP_COUNT)" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: editor utilities install (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
         esac
     fi
@@ -1512,6 +1534,7 @@ $(cat "$PROJECT_DIR/references/handoff.md" 2>/dev/null || echo 'Handoff not avai
         fi
     else
         echo -e "${YELLOW}  ⚠️  gh CLI not available. Changes pushed to branch ${BRANCH_NAME}. Manual PR needed.${NC}"
+        echo "| MANUAL_PR_NEEDED | Changes pushed to ${BRANCH_NAME} | Create PR manually |" >> "$PROJECT_DIR/references/handoff.md"
     fi
 fi
 
