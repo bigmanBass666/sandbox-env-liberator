@@ -14,7 +14,9 @@ if [ -z "$TOKEN" ]; then
     exit 1
 fi
 
-GIT_CONFIG="/workspace/sandbox-env-setup/.git/config"
+LOCK_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCK_PROJECT_DIR="${LOCK_SCRIPT_DIR}/.."
+GIT_CONFIG="${LOCK_PROJECT_DIR}/.git/config"
 OWNER="bigmanBass666"
 REPO="sandbox-env-liberator"
 

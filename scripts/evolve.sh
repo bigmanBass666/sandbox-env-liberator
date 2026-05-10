@@ -1154,11 +1154,12 @@ else
                 ;;
             *)
                 echo -e "${YELLOW}  ⚠️  No specific strategy for milestone ${CURRENT_MILESTONE}. Using default improvement.${NC}"
-                IMPROVE_EVIDENCE="Default strategy: attempted general improvement for ${POLARIS_FOCUS_DIM}"
-                bash "${SCRIPTS_DIR}/verify-env.sh" 2>/dev/null | grep -i "FAIL\|MISSING" | while read -r missing; do
-                    echo -e "${CYAN}  🔧 Attempting to fix: ${missing}${NC}"
-                done
-                IMPROVE_SUCCESS=true
+                echo -e "${CYAN}  [Generic] Installing commonly useful utility packages...${NC}"
+                GENERIC_PKGS="jq moreutils tree vim-tiny less"
+                apt-get install -y -qq $GENERIC_PKGS 2>/dev/null \
+                    && IMPROVE_SUCCESS=true \
+                    && IMPROVE_EVIDENCE="Generic improvement: installed $GENERIC_PKGS for ${POLARIS_FOCUS_DIM}" \
+                    || { echo -e "${YELLOW}  ⚠️ Generic package install failed${NC}"; IMPROVE_SUCCESS=false; IMPROVE_EVIDENCE="Generic improvement attempted but failed for ${POLARIS_FOCUS_DIM}"; }
                 ;;
         esac
     else
@@ -1201,7 +1202,7 @@ else
             if [ -d "${PROJECT_DIR}/.git" ]; then
                 echo -e "${CYAN}  提交到 main...${NC}"
                 cd "${PROJECT_DIR}"
-                git add -A 2>/dev/null || true
+                git add references/ scripts/ 2>/dev/null || true
                 git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS}" --allow-empty 2>/dev/null || true
                 echo -e "${GREEN}  ✓ 提交成功${NC}"
             fi
@@ -1287,8 +1288,9 @@ while true; do
                 || { echo -e "${YELLOW}  ⚠️ Command failed: CDN connectivity test (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D6)
-                npm install -g -q speed-test 2>/dev/null || true && \
-                IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Additional npm tool installed (loop #$CONTINUE_LOOP_COUNT)"
+                npm install -g -q speed-test 2>/dev/null \
+                && IMPROVE_SUCCESS=true && IMPROVE_EVIDENCE="Additional npm tool installed (loop #$CONTINUE_LOOP_COUNT)" \
+                || { echo -e "${YELLOW}  ⚠️ Command failed: npm speed-test install (loop #$CONTINUE_LOOP_COUNT)${NC}"; IMPROVE_SUCCESS=false; IMPROVE_EVIDENCE="npm speed-test install failed (loop #$CONTINUE_LOOP_COUNT)"; }
                 ;;
             *)
                 apt-get install -y -qq vim-tiny less 2>/dev/null && \
@@ -1385,6 +1387,21 @@ write_handoff() {
     [ "$IMPROVE_SUCCESS" != true ] && [ "$COMMIT_STATUS" = "INCOMPLETE" ] && status="INCOMPLETE"
     [ "${CURR_FAIL:-0}" -gt 3 ] && status="PARTIAL"
     
+    local HANDOFF_UNDONE=""
+    if [ -f "$POLARIS_SCORE_FILE" ]; then
+        for dim_id in 1 2 3 4 5 6; do
+            local dim_milestone=$(sed -n "/### D${dim_id}/,/^### /p" "$POLARIS_SCORE_FILE" 2>/dev/null | grep '\[ \]' | head -1 | sed 's/.*\] //' || true)
+            if [ -n "$dim_milestone" ]; then
+                eval "local dim_score=\$D${dim_id}_SCORE"
+                if [ "$dim_score" -lt 80 ] 2>/dev/null; then
+                    HANDOFF_UNDONE="${HANDOFF_UNDONE}- [ ] **[D${dim_id} ${dim_score}%]** ${dim_milestone}
+"
+                fi
+            fi
+        done
+    fi
+    [ -z "$HANDOFF_UNDONE" ] && HANDOFF_UNDONE="- [ ] **[P1]** Read polaris-score.md for next milestones"
+    
     cat > "$hf.tmp" << HANDEOF
 # Handoff Record
 
@@ -1419,9 +1436,7 @@ Continue loops executed: ${CONTINUE_LOOP_COUNT:-0}
 ## What's Left Undone (for next session)
 
 - [ ] **[P0]** ${POLARIS_NEXT_MILESTONE:-Read polaris-score.md for next milestone}
-- [ ] **[P1]** Validate TIME REPORT shows correct per-phase timing (R17 validation)
-- [ ] **[P2]** Test MCP server injection into mcp_servers.json
-- [ ] **[P3]** Install remaining diagnostic tools if any still missing
+${HANDOFF_UNDONE}
 
 ## Blockers / Risks
 
@@ -1469,7 +1484,7 @@ update_polaris_score
 if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
     if [ -d "${PROJECT_DIR}/.git" ]; then
         cd "${PROJECT_DIR}"
-        git add -A 2>/dev/null || true
+        git add references/ scripts/ 2>/dev/null || true
         git commit -m "evolve: Round ${NEXT_ROUND} - state files" --allow-empty 2>/dev/null || true
     fi
 
@@ -1553,8 +1568,6 @@ echo -e "${BOLD}║   Total time: ${TOTAL_ELAPSED}s                             
 echo -e "${BOLD}╚═══════════════════════════════════════════════════════╝${NC}"
 
 phase_end "9"
-
-print_time_report
 
 if [ -f "${TIMELINE_FILE:-}" ] && [ -s "${TIMELINE_FILE}" ]; then
     TL_ARCHIVE="${REFERENCES_DIR:-.}/timeline-round-${NEXT_ROUND:-unknown}.jsonl"
