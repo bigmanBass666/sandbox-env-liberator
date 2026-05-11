@@ -10,10 +10,21 @@ Worker 完成了一轮或多轮新工作，请执行 CSO 审查流程：
 ## 1. 感知（按顺序）
 
 - `git log worker --oneline` — 最近做了哪些 commit
-- `references/polaris-score.md` — 分数变化
+- `references/polaris-score.md` — 分数变化 + **当前 Round 编号**
 - `references/handoff.md` — 当前状态与 Blockers
-- `references/evolution-log.md` — Worker 自述摘要
-- `references/worklogs/` — 遥测数据：读取最新 round-N.md，包含 Worker 的完整推理链与内部决策过程
+- `references/evolution-log.md` — Worker 自述摘要（**重点读遥测盲区内的轮次**）
+- `references/worklogs/` — 遥测数据：读取最新 round-N.md
+
+### 轮差检测（并行模型关键信号）
+
+对比 polaris-score 的 Round 与 worklog 最新编号：
+```
+当前 Round = 47, worklog 最新 = round-45 → 轮差 = 2（正常，Worker 在并行跑）
+```
+- **轮差 0**: 遥测完整，正常审查
+- **轮差 1-2**: 小幅滞后（并行模型常态），evolution-log 补充覆盖盲区
+- **轮差 3+**: 明显滞后，建议先快速扫过盲区内的 evolution-log 再做判断
+- **轮差越大 → Worker 跑得越快 → Tooling Push 前需更谨慎**
 
 ## 2. 判断
 
@@ -33,6 +44,8 @@ Worker 完成了一轮或多轮新工作，请执行 CSO 审查流程：
 ## 4. 同步
 
 如果改了工具文件，评估是否需要 Main→Worker Tooling Push：
+- **轮差小（0-2）**: 可直接同步
+- **轮差大（3+）**: 建议先确认 Worker 不在执行中途，或先暂停再同步
 
 ```
 git checkout worker && git pull origin main --no-rebase --no-edit
