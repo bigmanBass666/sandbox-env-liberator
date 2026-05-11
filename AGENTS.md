@@ -55,14 +55,39 @@ Bootstrap: `bash scripts/bootstrap.sh [--role worker|reviewer|cso]`
 
 Full policy: `.agents/permissions/policy.yaml`
 
-## Git Workflow
+## Branch Sync Protocol
 
-| Role | Branch | Commit Method | Review Gate |
-|------|--------|---------------|-------------|
-| CSO | main | `git push origin main` | 用户对话 = 实时 review |
-| Worker | worker | `git push origin worker` | CSO merge worker → main |
+### Two-Layer Model
 
-- **main** = source of truth。CSO 直推前必须 `git fetch` + `git pull`
+| Layer | Branch | Role | Typical Files |
+|-------|--------|------|---------------|
+| **Tooling** | `main` | CSO 改进 Polaris 系统本身 | `scripts/`, `prompts/`, `.agents/`, `.trae/`, `AGENTS.md`, `.gitignore` |
+| **Working** | `worker` | Worker 执行进化，维护数据 | `references/polaris-score.md`, `handoff.md`, `evolution-log.md`, `timeline-*.jsonl`, `worklogs/` |
+
+### Main → Worker (Tooling Push)
+
+CSO 完成系统改进后手动触发，仅同步白名单路径：
+
+```
+git checkout worker && git pull origin main --no-rebase --no-edit
+# 验证: git diff HEAD~1 -- references/ 应为空（数据文件未被覆盖）
+git push origin worker && git checkout main
+```
+
+**Whitelist**: `scripts/`, `prompts/`, `.agents/`, `.trae/`, `AGENTS.md`, `.gitignore`
+
+### Worker → Main (Data Review)
+
+CSO 审查后选择性采纳，**不自动同步**：
+
+| File Type | Condition | Action |
+|-----------|-----------|--------|
+| `references/domains/` | 新能力实质性新增 | cherry-pick / manual copy |
+| `references/adr/` | 新架构决策 | cherry-pick |
+| `references/worklogs/` | CSO 要求归档 | manual copy |
+| polaris-score / handoff / log | ❌ 永远不同步 | CSO 只读审查 |
+
+- **main** = source of truth（工具层）。CSO 直推前必须 `git fetch` + `git pull`
 - 详见 `.agents/context/architecture.md`
 
 ## File System Index
