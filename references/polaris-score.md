@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T12:11:10Z
-Round: 52 (CSO)
+Last Updated: 2026-05-11T18:30:00Z
+Round: 53 (CSO merged)
 Total: 58%
 
 ## Scoring Principles (评分原则)
@@ -15,7 +15,7 @@ Total: 58%
 > | **New Capability** | 本轮安装/配置/启用了之前不存在的能力 | 正常加分 |
 > | **Measurement Correction** | 能力一直存在但之前未被发现/未测量 | 更新分数到正确值，History 标注 `(measurement correction)`，Delta 不计入正增长 |
 > | **Discovery Bonus** | 首次发现已有能力（一次性奖励） | 最多 +5% discovery bonus |
->
+
 > **反模式示例**："镜像源 R14 就配好了，R19 只是重新跑了一遍 curl 测速" → Measurement Correction，不是 +20% New Capability。
 
 ## Dimensions
@@ -117,31 +117,43 @@ Total: 58%
 - Utilization: **89%** (169s effective / 189s total)
 - **Target (>50%) EXCEEDED!**
 
-## History
+## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
-| R52 (CSO) | **58%** | 40 | 60 | **60** | 80 | 50 | **60** | P0 data correction: D6 scoring bug fix (+20), D3 worker sync (+15), D1 milestone redefinition |
-| R45 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R53 (CSO merge) | **58%** | 40 | 60 | **60** | 80 | 50 | **60** | Tooling Push v2: P0 correction synced to worker (D6+20, D3+15, D1 milestone) |
+| R52 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
+| R51 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
+| R50 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (state update only) |
+| R49 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (format fix only) |
+| R48 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (SKIPPED ×2 parse bug) |
+| R47 | 53% | 40 | 60 | **60** | 80 | 50 | 40 | **D3: Redis v7.0.15 + PostgreSQL 16 installed** (+15 New Capability) |
+| R46 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | SKIPPED (History format fixed) |
+| R45 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R44 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | D1: IPv6=blocked, WS_40005=reachable, CDN tested (4 loops) |
 | R43 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R42 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R40 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R39 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R34 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-|-------|-------|----|----|----|----|----|----|-------|
-| R33 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
-| R32 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
-| R31 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
-| R30 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
-| R29 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
-| R28 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R27 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R26 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R25 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R24 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R23 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R22 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R21 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R20 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R19 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
-| R16 | 45% | 20% | 60% | 40% | 80% | 50% | 20% | streak=1 |
+| R42 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R41 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R40 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R39 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R38 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R37 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R36 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R35 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R34 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+|-------|-------|----|----|----|----|----|----|----|-------|
+| R33 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R32 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R31 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R30 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R29 | 53% | 40 | 60 | 45 | 80 | 50 | **40** | streak=1 | D6: 89% efficiency achieved! Time utilization > 50% |
+| R28 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R27 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R26 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R25 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R24 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R23 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R22 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R21 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R20 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R19 | 50% | 40 | 60 | 45 | 80 | 50 | 20% | streak=1 |
+| R16 | 45% | 20% | 60 | 40 | 80 | 50 | 20% | streak=1 |
