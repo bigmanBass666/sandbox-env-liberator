@@ -2,7 +2,7 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T11:44:24Z
+Last Updated: 2026-05-11T11:44:26Z
 Round: 44
 Total: 53%
 
@@ -121,25 +121,26 @@ Total: 53%
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
 | R44 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R43 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R42 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R40 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R39 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R34 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R44 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R43 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R42 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R40 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R39 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
+| R34 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
 |-------|-------|----|----|----|----|----|----|-------|
-| R33 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
-| R32 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
-| R31 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
-| R30 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
-| R29 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | TIME REPORT 89% efficient, associative array bug fixed |
-| R28 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R27 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R26 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R25 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R24 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R23 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R22 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R21 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R20 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | Polaris integration active |
-| R19 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | rsproxy.cn 253KB/s, npmmirror 340KB/s, D1突破100KB/s里程碑 *(measurement correction)* |
-| R16 | 45% | 20% | 60% | 40% | 80% | 50% | 20% | Time tracking bug fix, MCP deep dive |
+| R33 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
+| R32 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
+| R31 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
+| R30 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
+| R29 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
+| R28 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R27 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R26 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R25 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R24 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R23 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R22 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R21 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R20 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R19 | 50% | 40% | 60% | 45% | 80% | 50% | 20% | streak=1 |
+| R16 | 45% | 20% | 60% | 40% | 80% | 50% | 20% | streak=1 |
