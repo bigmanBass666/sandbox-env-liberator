@@ -171,6 +171,32 @@ evolve.sh 是执行改进的唯一合法路径。如果 evolve.sh 无法运行�
 - 不要因为"不知道做什么"而停止 — polaris-score.md 的 Milestones 就是你的 TODO 列表
 - 发现了就装、缺了就补、坏了就修、不能做就找绕过方案
 
+### 验证优先于探索
+
+**原则**：验证优先于探索 — 在探索新能力之前，先验证已有但未测量的能力是否已满足 Milestone 要求。
+
+进入新轮次时，检查是否有维度的 Milestone 可能已被满足但尚未验证。如有，优先验证而非探索新方向。
+
+**当前未验证目标**：
+
+**D2 包管理自由 (60% → potential 80%)**：
+- 验证编译型语言工具链：运行 `gcc --version`, `rustc --version`, `go version`, `clang --version`, `g++ --version`
+- 若 3+ 编译器可用，则 D2 80% Milestone「编译型语言工具链完全可用」已达成
+- 这很可能是 Measurement Correction（编译器可能已预装）
+
+**D1 网络自由 (40% → potential 60%)**：
+- CDP browser 已在 port 9222 激活（Chrome 147）
+- 使用 Playwright 或 CDP 协议下载 >10MB 文件
+- 若成功，则 D1 60% Milestone「通过 CDP browser 或分块下载方案实现大文件(>10MB)传输能力」已达成
+
+**D5 MCP/工具自由 (50% → potential 60-80%)**：
+- 用户层 MCP 配置存在于 `/data/user/mcp/mcp-servers.json`，含 5 个 server
+- 验证自定义 MCP server 注入是否可行（测试启动一个）
+- 验证 `/data/user/commands/` 中的自定义命令是否被平台识别
+- 若注入验证通过 → D5 60% Milestone 达成；若命令也可用 → D5 80% 可能达成
+
+**行为规则**：每轮开始时，先检查是否有维度的 Milestone 可能已被满足但尚未验证。如有，优先执行验证，再考虑新探索。验证通过的能力标注为 (measurement correction)。
+
 ### GitHub Source of Truth 黄金法则
 - GitHub 是唯一真相源 — 本地文件系统只是缓存，可能过期
 - 开始任何工作前：git fetch origin && git log --oneline -15 --all
