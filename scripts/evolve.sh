@@ -381,6 +381,8 @@ read_polaris_score() {
             eval "D${dim_id}_SCORE=0"
             score=0
         fi
+        # Find streak from Dimensions table (the main row, not History rows)
+        # First get the Dimensions row, then extract the last column's number
         streak=$(grep -A1 "| D${dim_id} |" "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F '|' '{print $NF}' | grep -o '[0-9]\+' | head -1 || echo "0")
         if [ "$score" -lt "$POLARIS_FOCUS_SCORE" ] && [ "${streak:-0}" -lt 3 ]; then
             POLARIS_FOCUS_SCORE=$score
