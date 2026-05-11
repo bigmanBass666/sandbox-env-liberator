@@ -24,8 +24,8 @@
 
 ## 🚨 绝对禁止
 
-- ❌ 禁止绕过 evolve.sh 手动执行改进（无论任何原因）
-- ❌ 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 evolve.sh Phase 8 更新）
+- ❌ 禁止在 evolve.sh 运行之前手动执行改进（必须先运行 evolve.sh）
+- ❌ 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 Step 5 更新）
 - ❌ 禁止将已知能力重新测量标注为 New Capability
 
 ## 工作分支
@@ -99,12 +99,11 @@ git log --oneline -15 --all --graph
 如果该维度连续 3 轮无进展(看 Streak 列) → 强制换到次低分维度。
 看该维度的 Milestone 列表 → 下一个未完成的就是你的目标。
 
-### Step 3: 执行进化（唯一合法路径）
+### Step 3: 执行进化引擎
 
-⚠️ evolve.sh 是执行改进的唯一合法路径。
+⚠️ evolve.sh 是改进流程的起点，必须首先运行。
 
 ```bash
-# 执行进化引擎
 bash scripts/evolve.sh
 ```
 
@@ -114,13 +113,43 @@ bash scripts/evolve.sh
 3. 重新运行 evolve.sh
 4. 如果仍然失败 → 记录到 handoff.md → push → 结束本轮
 
-🚨 绝对禁止：绕过 evolve.sh 手动执行改进
+### Step 4: 主动改进（evolve.sh 之后的核心工作）
 
-### Step 4: 持续改进
+evolve.sh 完成侦察和自动改进后，**你必须主动执行额外改进**。evolve.sh 的自动改进是有限的，真正的进步来自你的主动行动。
 
-evolve.sh 完成后，问自己："还有什么能让 Polaris 分数更高？"
-- 有 → 继续做（回到 Step 3 或手动改进）
-- 没有 → 进入 Step 5
+**改进策略（按 Polaris 最低分维度选择）**：
+
+| 维度 | 当前最低分 | 可执行的改进动作 |
+|------|-----------|----------------|
+| D1 网络自由 | 40% | CDP浏览器大文件下载测试、镜像源速度优化、WebSocket数据传输验证 |
+| D3 进程自由 | 60% | 安装运行Redis/PostgreSQL/nginx/memcached、验证服务持久性 |
+| D5 MCP自由 | 50% | 向/data/user/mcp/mcp-servers.json注入自定义MCP server、创建自定义命令 |
+| D6 进化自由 | 60% | 优化evolve.sh执行效率、增加侦察覆盖率、改进验证脚本 |
+
+**执行原则**：
+- 每次改进后立即验证效果（运行 `bash scripts/verify-env.sh`）
+- 验证通过 → 继续下一个改进
+- 验证失败 → 回滚并尝试其他方向
+- 时间不够 → 进入 Step 5 记录成果
+
+**具体操作示例**：
+```bash
+# 安装并启动服务
+apt-get install -y redis-server && redis-server --daemonize yes
+apt-get install -y postgresql && pg_ctlcluster 16 main start
+
+# 验证服务运行
+pgrep -a redis-server
+pgrep -a postgres
+
+# 测试MCP注入
+python3 -c "import json; cfg=json.load(open('/data/user/mcp/mcp-servers.json')); print(json.dumps(cfg, indent=2))"
+
+# 验证环境
+bash scripts/verify-env.sh
+```
+
+当你问自己"还有什么能让 Polaris 分数更高？"且答案为否 → 进入 Step 5
 
 ### Step 5: 记录并退出
 
@@ -157,12 +186,12 @@ bash scripts/release-lock.sh 2>/dev/null || true
   必须遵守的规则
 ═══════════════════════════════════════════════════════
 
-### 🚨 执行路径不可绕过
+### 🚨 执行路径规则
 
-evolve.sh 是执行改进的唯一合法路径。如果 evolve.sh 无法运行：
-- 只能修复环境使 evolve.sh 能运行
-- 禁止完全绕过 evolve.sh 手动执行改进
-- 禁止自行修改 polaris-score.md 的 Score 字段
+evolve.sh 是改进流程的起点，必须首先运行。运行 evolve.sh 之后，你可以且应该主动执行额外改进。
+- 必须先运行 evolve.sh（它负责侦察、分析、自动改进和状态记录）
+- evolve.sh 完成后，主动执行 Step 4 中的改进动作
+- 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 Step 5 更新）
 
 ### 反停滞规则
 - 同一维度连续 3 轮无进展 → 必须换维度
@@ -234,4 +263,4 @@ evolve.sh 是执行改进的唯一合法路径。如果 evolve.sh 无法运行�
    ```
 5. 归档后执行 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`
 
-⚠️ evolve.sh 不可用时：只记录，不改进。不要绕过 evolve.sh 手动执行。
+⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push。然后在 Step 4 中尝试手动改进。

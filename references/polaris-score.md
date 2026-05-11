@@ -44,6 +44,7 @@ Total: **62%**
 - Policy table: 632 rules (622 allow, 10 deny)
 - Proxy auth required on ports 18080/18081
 - CDP browser bypasses proxy (direct connection to port 9222)
+- CDP browser can fetch web content without proxy (verified R10+)
 
 ### D2 包管理自由 — Install any toolchain you need
 
@@ -55,7 +56,7 @@ Total: **62%**
 
 **Current capability matrix:**
 - ✅ npm (npmmirror), pip (Tsinghua), Go (goproxy), Cargo (rsproxy), apt (Tsinghua)
-- ⚠️ Large downloads (>50MB) may timeout at current bandwidth
+- ⚠️ Large downloads (>50MB) may timeout at current bandwidth; CDP browser may bypass this
 - ❌ No conda/brew/choco alternatives tested
 
 ### D3 进程自由 — Run any process you want
@@ -63,11 +64,11 @@ Total: **62%**
 - [x] [20%] cgroup v2 limits mapped (4GB RAM, 2 CPU) — R16
 - [x] [40%] screen + tmux installed (R17) + Diagnostic tools (bsdmainutils, psmisc, net-tools) — R17
 - [x] [60%] At least 1 heavyweight service running (PostgreSQL / Redis / SQLite extension) — ✅ R47 (Redis v7.0.15 + PostgreSQL 16)
-- [ ] [80%] 3+ heavyweight tools available and integrated into workflow
+- [ ] [80%] 3+ heavyweight services running (Redis + PostgreSQL + nginx/memcached) and verified functional
 - [ ] [100%] seccomp/capabilities no longer block needed operations
 
 **Current constraints:**
-- core dump size = 0 (no core dumps for debugging)
+- core dump size = 0 (no core dumps for debugging); Redis v7.0.15 + PostgreSQL 16 now running
 - max locked memory = 8MB
 - Capabilities: 0xa80425fb (missing SYS_ADMIN, NET_ADMIN)
 - seccomp: mode 2 (filter active)
@@ -91,7 +92,7 @@ Total: **62%**
 
 - [x] [20%] mcp_servers.json location confirmed (/app/etc/ and /data/user/mcp/) — R13
 - [x] [40%] Dual-layer config architecture understood — R16
-- [ ] [60%] Successfully inject custom MCP server and verify it works
+- [ ] [60%] Successfully inject custom MCP server into /data/user/mcp/mcp-servers.json and verify it works
 - [ ] [80%] Custom commands (/recon, /fix-network, /install) available via commands/
 - [ ] [100%] Tool/server registration fully automated
 

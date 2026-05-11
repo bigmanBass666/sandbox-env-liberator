@@ -64,8 +64,8 @@
 |-----------|--------|-------|
 | Background processes | ✅ | Detached processes survive |
 | nohup | ✅ | Available |
-| screen | ❌ | Not installed (apt install available) |
-| tmux | ❌ | Not installed (apt install available) |
+| screen | ✅ | apt install available (v4.09.01) |
+| tmux | ✅ | apt install available (v3.4) |
 | strace/ptrace | ✅ | Full process tracing |
 | Docker | ❌ | Not available |
 | Podman | ❌ | Not available |
@@ -107,8 +107,8 @@
 |-----------|--------|-------|
 | git | ✅ | v2.43.0, network accessible |
 | SQLite3 | ✅ | Functional |
-| PostgreSQL | ❌ | Not installed |
-| Redis | ❌ | Not installed |
+| PostgreSQL | ✅ | v16 installed (R47) |
+| Redis | ✅ | v7.0.15 installed (R47) |
 | Node.js | ✅ | v24.15.0 |
 | Python | ✅ | v3.14.4 |
 | Go | ✅ | v1.25.1 |
@@ -125,7 +125,7 @@
 | gradle | ✅ | v8.14.4 |
 | maven | ✅ | v3.9.10 |
 | bazel | ✅ | Available |
-| webpack/vite/esbuild | ❌ | Not installed (npm install available) |
+| webpack/vite/esbuild | ⚠️ | esbuild v0.28.0 installed (R15), webpack/vite available via npm |
 | Cloud CLIs | ❌ | None installed |
 | Container tools | ❌ | None installed |
 | SSH client | ✅ | Available |
@@ -242,17 +242,17 @@ Capabilities详情:
 ## Priority Bottlenecks
 
 ### P0 (Blocks basic work)
-1. **Browser not installed** → Fix: `npm install -g playwright && npx playwright install chromium`
+1. **Browser via CDP (port 9222) available, Playwright install not needed** → Fix: `npm install -g playwright && npx playwright install chromium`
 2. **Browser missing deps** → Fix: `apt-get install -y libxkbcommon0 libxcomposite1 ...` or `node fix-network.js`
 
 ### P1 (Severely degrades efficiency)
-3. **No screen/tmux** → Fix: `apt-get install -y screen tmux`
+3. **No conda/brew** → Fix: Install via Miniconda script or Homebrew installer
 4. **No frontend build tools** → Fix: `npm install -g webpack vite esbuild`
 5. **No cloud CLIs** → Fix: Download binaries via Node.js fetch
 
 ### P2 (Specific scenarios)
 6. **No Docker** → No fix (kernel-level restriction)
-7. **No databases** → Fix: `apt-get install -y postgresql redis-server`
+7. **PostgreSQL 16 + Redis 7.0.15 installed** → Available for use
 8. **Limited /dev/shm** → Workaround: use /tmp instead
 
 ### P3 (Nice to have)
