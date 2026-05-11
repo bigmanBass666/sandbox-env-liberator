@@ -1017,6 +1017,8 @@ echo ""
 # 7. EXECUTION PHASE (with atomic commit support)
 # ============================================================
 phase_start "7"
+COMMIT_STATUS="${COMMIT_STATUS:-PLAN_ONLY}"
+IMPROVE_SUCCESS="${IMPROVE_SUCCESS:-false}"
 if [ "$DRY_RUN" = true ]; then
     echo -e "${BOLD}${YELLOW}━━━ DRY-RUN: 跳过执行阶段 ━━━${NC}"
     echo -e "${YELLOW}  计划已生成，但未执行任何改进${NC}"
@@ -1222,6 +1224,9 @@ CONTINUE_LOOP_COUNT=0
 MAX_CONTINUE_LOOPS=3
 MIN_CONTINUE_SECONDS=300
 
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${YELLOW}  DRY-RUN: skipping continue-loop${NC}"
+else
 while true; do
     ELAPSED_NOW=$(( $(date +%s) - START_TIME ))
     REMAINING=$(( TIME_BUDGET - ELAPSED_NOW ))
@@ -1304,6 +1309,7 @@ while true; do
         echo -e "${GREEN}  ✅ Loop #$CONTINUE_LOOP_COUNT complete: $IMPROVE_EVIDENCE${NC}" || \
         echo -e "${YELLOW}  ⚠️  Loop #$CONTINUE_LOOP_COUNT attempted${NC}"
 done
+fi
 
 [ "$CONTINUE_LOOP_COUNT" -gt 0 ] && \
     echo -e "${CYAN}  Total improvement loops: $(( CONTINUE_LOOP_COUNT + 1 )) (initial + $CONTINUE_LOOP_COUNT continues)${NC}"
