@@ -1410,13 +1410,21 @@ const { chromium } = require('playwright');
             echo -e "${GREEN}  ✓ 验证通过：PASS=${POST_VERIFY_PASS}（基线=${SANITIZED_VERIFY_PASS}）${NC}"
 
             if [ -d "${PROJECT_DIR}/.git" ]; then
-                echo -e "${CYAN}  提交到 main...${NC}"
-                cd "${PROJECT_DIR}"
-                git add references/ scripts/ 2>/dev/null || true
-                git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS}" --allow-empty 2>/dev/null || true
-                echo -e "${GREEN}  ✓ 提交成功${NC}"
+                STAGED_FILES=$(git diff --staged --name-only 2>/dev/null)
+                if [ -z "$STAGED_FILES" ] && [ "${DELTA_PASS:-0}" -eq 0 ]; then
+                    echo -e "${YELLOW}  ⏭️  NOOP: No real changes this round, skipping commit${NC}"
+                    COMMIT_STATUS="NOOP"
+                else
+                    echo -e "${CYAN}  提交到 main...${NC}"
+                    cd "${PROJECT_DIR}"
+                    git add references/ scripts/ 2>/dev/null || true
+                    git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS}" --allow-empty 2>/dev/null || true
+                    echo -e "${GREEN}  ✓ 提交成功${NC}"
+                    COMMIT_STATUS="COMMITTED"
+                fi
+            else
+                COMMIT_STATUS="COMMITTED"
             fi
-            COMMIT_STATUS="COMMITTED"
         fi
     else
         COMMIT_STATUS="SKIPPED"
@@ -1778,6 +1786,13 @@ if [ -d "${PROJECT_DIR}/.git" ]; then
     if [ "${COMMIT_STATUS:-}" = "COMMITTED" ]; then
         git add scripts/ 2>/dev/null || true
         git commit -m "evolve: Round ${NEXT_ROUND} - PASS=${POST_VERIFY_PASS:-?}" --allow-empty 2>/dev/null || true
+    elif [ "${COMMIT_STATUS:-}" = "NOOP" ]; then
+        STAGED_FILES_2=$(git diff --staged --name-only 2>/dev/null)
+        if [ -n "$STAGED_FILES_2" ]; then
+            git commit -m "evolve: Round ${NEXT_ROUND} - NOOP - state update" --allow-empty 2>/dev/null || true
+        else
+            echo -e "${YELLOW}  ⏭️  NOOP: No staged state changes, skipping state commit${NC}"
+        fi
     else
         git commit -m "evolve: Round ${NEXT_ROUND} - ${COMMIT_STATUS:-PLAN_ONLY} - state update" --allow-empty 2>/dev/null || true
     fi
