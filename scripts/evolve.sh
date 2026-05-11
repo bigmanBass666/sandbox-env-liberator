@@ -1803,7 +1803,7 @@ if [ "$DRY_RUN" = true ]; then
 else
     echo -e "${BOLD}║   Commit: ${COMMIT_STATUS_LOG}                              ║${NC}"
 fi
-echo -e "${BOLD}║   Total time: ${TOTAL_ELAPSED}s                                  ║${NC}"
+echo -e "${BOLD}║   Total time: ${TOTAL_ELAPSED:-0}s                                  ║${NC}"
 echo -e "${BOLD}╚═══════════════════════════════════════════════════════╝${NC}"
 
 phase_end "9"
