@@ -359,12 +359,12 @@ read_polaris_score() {
         echo "WARNING: Found $BAD_ROWS malformed History row(s) in polaris-score.md"
     fi
     
-    D1_SCORE=$(grep '| D1 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
-    D2_SCORE=$(grep '| D2 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
-    D3_SCORE=$(grep '| D3 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
-    D4_SCORE=$(grep '| D4 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
-    D5_SCORE=$(grep '| D5 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
-    D6_SCORE=$(grep '| D6 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
+    D1_SCORE=$(grep '| D1 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
+    D2_SCORE=$(grep '| D2 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
+    D3_SCORE=$(grep '| D3 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
+    D4_SCORE=$(grep '| D4 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
+    D5_SCORE=$(grep '| D5 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
+    D6_SCORE=$(grep '| D6 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F'|' '{gsub(/[^0-9]/,"",$4); print $4+0}' || echo "0")
     
     D1_SCORE=${D1_SCORE:-0}; D2_SCORE=${D2_SCORE:-0}; D3_SCORE=${D3_SCORE:-0}
     D4_SCORE=${D4_SCORE:-0}; D5_SCORE=${D5_SCORE:-0}; D6_SCORE=${D6_SCORE:-0}
@@ -382,7 +382,26 @@ read_polaris_score() {
             POLARIS_FOCUS_DIM="D${dim_id}"
         fi
     done
-    
+
+    # Fallback: if no dimension was selected, pick the one with lowest score (ignore streak)
+    if [ -z "$POLARIS_FOCUS_DIM" ]; then
+        echo -e "${YELLOW}  ⚠️  No dimension selected by primary logic, using fallback (lowest score)${NC}"
+        POLARIS_FOCUS_SCORE=999
+        for dim_id in 1 2 3 4 5 6; do
+            eval "score=\$D${dim_id}_SCORE"
+            if [ "$score" -lt "$POLARIS_FOCUS_SCORE" ] && [ "$score" -gt 0 ]; then
+                POLARIS_FOCUS_SCORE=$score
+                POLARIS_FOCUS_DIM="D${dim_id}"
+            fi
+        done
+        # Ultimate fallback: if all scores are 0, just pick D1
+        if [ -z "$POLARIS_FOCUS_DIM" ]; then
+            echo -e "${RED}  ❌ All scores parsed as 0, falling back to D1${NC}"
+            POLARIS_FOCUS_DIM="D1"
+            POLARIS_FOCUS_SCORE="${D1_SCORE:-0}"
+        fi
+    fi
+
     local dim_names=(D1_网络自由 D2_包管理自由 D3_进程自由 D4_文件系统自由 D5_MCP工具自由 D6_自主进化)
     local focus_name=""
     case "$POLARIS_FOCUS_DIM" in
@@ -401,6 +420,7 @@ read_polaris_score() {
     echo -e "${BOLD}${MAGENTA}🧭  POLARIS FOCUS: ${focus_name} — Score: ${POLARIS_FOCUS_SCORE}% (lowest)${NC}"
     [ -n "$POLARIS_NEXT_MILESTONE" ] && echo -e "${MAGENTA}   Next milestone: ${POLARIS_NEXT_MILESTONE}${NC}"
     echo -e "${MAGENTA}   All scores: D1=${D1_SCORE}% D2=${D2_SCORE}% D3=${D3_SCORE}% D4=${D4_SCORE}% D5=${D5_SCORE}% D6=${D6_SCORE}%${NC}"
+    echo -e "${CYAN}  📊 Raw parsed values: D1=$D1_SCORE D2=$D2_SCORE D3=$D3_SCORE D4=$D4_SCORE D5=$D5_SCORE D6=$D6_SCORE${NC}"
     return 0
 }
 
