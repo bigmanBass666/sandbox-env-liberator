@@ -5,6 +5,9 @@
 # Outputs structured results for capability matrix generation
 # ============================================================
 
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPTS_DIR/lib/config.sh" 2>/dev/null || true
+
 RECON_DIR="/tmp/sandbox-recon"
 mkdir -p "$RECON_DIR"
 
@@ -51,7 +54,7 @@ info "DNS server: ${DNS_SERVER:-unknown}"
 
 echo "--- 1.2 CLI Network (curl/wget) ---"
 CURL_OK=0
-if curl -s --connect-timeout 5 https://httpbin.org/ip -o /tmp/sandbox-recon/curl_test 2>/dev/null && [ -s /tmp/sandbox-recon/curl_test ]; then
+if curl -s --connect-timeout $NETWORK_TIMEOUT_SHORT https://httpbin.org/ip -o /tmp/sandbox-recon/curl_test 2>/dev/null && [ -s /tmp/sandbox-recon/curl_test ]; then
     pass "curl: WORKING"
     CURL_OK=1
 else
@@ -59,7 +62,7 @@ else
 fi
 
 WGET_OK=0
-if wget -q --timeout=5 https://httpbin.org/ip -O /tmp/sandbox-recon/wget_test 2>/dev/null && [ -s /tmp/sandbox-recon/wget_test ]; then
+if wget -q --timeout=$NETWORK_TIMEOUT_SHORT https://httpbin.org/ip -O /tmp/sandbox-recon/wget_test 2>/dev/null && [ -s /tmp/sandbox-recon/wget_test ]; then
     pass "wget: WORKING"
     WGET_OK=1
 else
@@ -68,7 +71,7 @@ fi
 
 echo "--- 1.3 Node.js fetch() ---"
 NODE_FETCH=$(node -e "
-fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout(8000)})
+fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout($((NETWORK_TIMEOUT_LONG*1000)))})
   .then(r=>r.json())
   .then(d=>console.log('OK:'+d.origin))
   .catch(e=>console.log('FAIL:'+e.message.substring(0,60)))
@@ -84,7 +87,7 @@ PY_NET=$(python3 -c "
 import urllib.request, ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 try:
-    r=urllib.request.urlopen('https://httpbin.org/ip',timeout=5)
+    r=urllib.request.urlopen('https://httpbin.org/ip',timeout=$NETWORK_TIMEOUT_MEDIUM)
     print('OK:'+r.read().decode()[:30])
 except Exception as e:
     print('FAIL:'+str(e)[:60])
@@ -99,7 +102,7 @@ echo "--- 1.5 Go net/http ---"
 cat > /tmp/go_net_check.go << 'GOEOF'
 package main
 import ("fmt";"net/http";"io";"time")
-func main(){c:=&http.Client{Timeout:5*time.Second};r,err:=c.Get("https://httpbin.org/ip");if err!=nil{fmt.Println("FAIL:"+err.Error()[:60]);return};defer r.Body.Close();b,_:=io.ReadAll(r.Body);fmt.Println("OK:"+string(b)[:30])}
+func main(){c:=&http.Client{Timeout:${NETWORK_TIMEOUT_MEDIUM}*time.Second};r,err:=c.Get("https://httpbin.org/ip");if err!=nil{fmt.Println("FAIL:"+err.Error()[:60]);return};defer r.Body.Close();b,_:=io.ReadAll(r.Body);fmt.Println("OK:"+string(b)[:30])}
 GOEOF
 GO_NET=$(go run /tmp/go_net_check.go 2>&1)
 rm -f /tmp/go_net_check.go
@@ -155,14 +158,14 @@ const targets=[
 ];
 let done=0;
 targets.forEach(([h,p,n])=>{
-  const s=net.createConnection({host:h,port:p,timeout:5000},()=>{
+  const s=net.createConnection({host:h,port:p,timeout:$((NETWORK_TIMEOUT_MEDIUM*1000))},()=>{
     console.log('OUT_OK|'+n+'|'+h+':'+p);
     s.destroy();done++;if(done===targets.length)process.exit(0);
   });
   s.on('error',()=>{console.log('OUT_FAIL|'+N+'|'+h+':'+p);s.destroy();done++;if(done===targets.length)process.exit(0)});
   s.on('timeout',()=>{console.log('OUT_TIMEOUT|'+n+'|'+h+':'+p);s.destroy();done++;if(done===targets.length)process.exit(0)});
 });
-setTimeout(()=>process.exit(0),8000);
+setTimeout(()=>process.exit(0),$((NETWORK_TIMEOUT_LONG*1000)));
 " 2>&1 | sort | while read line; do
     name=$(echo "$line" | cut -d'|' -f2)
     target=$(echo "$line" | cut -d'|' -f3)

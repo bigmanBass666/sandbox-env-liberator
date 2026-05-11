@@ -191,18 +191,19 @@ bash scripts/release-lock.sh 2>/dev/null || true
 
 ## 日志归档规范
 
-当 CSO 提供 Round N 的执行日志要求归档时：
+当 CSO 提供执行日志要求归档时：
 
-1. **文件路径**: `references/worklogs/round-N.md`（N 为纯数字）
-2. **禁止** 在 `references/` 根目录直接创建 `round*.md` 文件
-3. **头部模板**:
+1. **自行判断 Round 编号**：从 `references/handoff.md` 的 `| Round |` 字段或 `references/polaris-score.md` 的 `Round:` 行读取当前轮次 N
+2. **文件路径**: `references/worklogs/round-N.md`（N 为纯数字，从上述来源读取）
+3. **禁止** 在 `references/` 根目录直接创建 `round*.md` 文件
+4. **头部模板**:
    ```markdown
    # Round N Work Log
-   
-   > **Round**: N | **Timestamp**: ISO8601 | **Status**: COMMITTED/PLAN_ONLY | **Duration**: Xs
-   
+
+   > **Round**: N（从 handoff 读取） | **Timestamp**: ISO8601 | **Status**: COMMITTED/PLAN_ONLY（从 handoff 读取） | **Duration**: Xs（从 handoff 读取）
+
    ---
-   
+
    [CSO 提供的日志内容]
    ```
-4. 归档后执行 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`
+5. 归档后执行 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`

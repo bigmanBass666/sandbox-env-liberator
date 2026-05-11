@@ -57,6 +57,21 @@ LOCK_HELD=false
 declare -A PHASE_START_TIMES
 declare -A PHASE_END_TIMES
 
+# 错误处理 wrapper：区分 fatal 和 non-fatal 错误
+run_with_severity() {
+    local cmd="$1"
+    local label="${2:-unknown}"
+
+    if ! eval "$cmd" 2>&1; then
+        local rc=$?
+        case $rc in
+            124) echo "WARNING [$label]: timed out (exit=$rc)" ;;
+              2)   echo "WARNING [$label]: not found (exit=$rc), skipping" ;;
+              *)   echo "ERROR [$label]: failed with exit=$rc"; return $rc ;;
+        esac
+    fi
+}
+
 check_time() {
     local elapsed=$(( $(date +%s) - START_TIME ))
     local remaining=$(( TIME_BUDGET - elapsed ))
@@ -122,6 +137,8 @@ echo ""
 # ============================================================
 # 0. DISTRIBUTED LOCK ACQUISITION
 # ============================================================
+LAST_ROUND="${LAST_ROUND:-0}"
+NEXT_ROUND=$((LAST_ROUND + 1))
 echo -e "${CYAN}━━━ Phase 0: 分布式锁获取 ━━━${NC}"
 phase_start "0"
 
@@ -251,6 +268,7 @@ else
     LAST_ROUND=0
     echo -e "${YELLOW}  No evolution log found, starting at Round 0${NC}"
 fi
+NEXT_ROUND=$((LAST_ROUND + 1))
 
 PREV_RECON_STATE="${EVOLVE_STATE_DIR}/prev_recon_state.txt"
 PREV_VERIFY_STATE="${EVOLVE_STATE_DIR}/prev_verify_state.txt"
@@ -327,6 +345,20 @@ read_polaris_score() {
         return 1
     fi
     
+    BAD_ROWS=0
+    while IFS= read -r line; do
+        if echo "$line" | grep -q '^|.*R[0-9].*|'; then
+            COLS=$(echo "$line" | grep -o '|' | wc -l)
+            if [ "$COLS" -lt 9 ]; then
+                echo "WARNING: Malformed History row ($COLS cols, expected ≥9): ${line:0:60}..."
+                BAD_ROWS=$((BAD_ROWS + 1))
+            fi
+        fi
+    done < "$POLARIS_SCORE_FILE"
+    if [ "$BAD_ROWS" -gt 0 ]; then
+        echo "WARNING: Found $BAD_ROWS malformed History row(s) in polaris-score.md"
+    fi
+    
     D1_SCORE=$(grep '| D1 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
     D2_SCORE=$(grep '| D2 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
     D3_SCORE=$(grep '| D3 |' "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | grep -oP '\|\s*\K\d+' | head -1 | tr -d '[:space:]' || echo "0")
@@ -385,7 +417,7 @@ echo -e "${CYAN}━━━ Phase 2: Current Environment Snapshot ━━━${NC}"
 phase_start "2"
 
 echo -e "${CYAN}  Running full-recon.sh...${NC}"
-FULL_RECON_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/full-recon.sh" 2>&1) || true
+FULL_RECON_OUTPUT=$(run_with_severity 'timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/full-recon.sh"' 'full-recon')
 FULL_RECON_SUMMARY=$(echo "$FULL_RECON_OUTPUT" | grep -E "✅ PASS:|❌ FAIL:|⚠️  WARN:|ℹ️  INFO:" | tail -4)
 echo -e "${GREEN}  full-recon.sh complete${NC}"
 echo "$FULL_RECON_SUMMARY" | sed 's/^/    /'
@@ -396,7 +428,7 @@ if ! check_recon_time; then
 else
     echo ""
     echo -e "${CYAN}  Running deep-recon.sh...${NC}"
-    DEEP_RECON_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/deep-recon.sh" 2>&1) || true
+    DEEP_RECON_OUTPUT=$(run_with_severity 'timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/deep-recon.sh"' 'deep-recon')
     DEEP_RECON_SUMMARY=$(echo "$DEEP_RECON_OUTPUT" | grep -E "✅ PASS:|❌ FAIL:|⚠️  WARN:|ℹ️  INFO:" | tail -4)
     echo -e "${GREEN}  deep-recon.sh complete${NC}"
     echo "$DEEP_RECON_SUMMARY" | sed 's/^/    /'
@@ -415,7 +447,7 @@ if ! check_time; then
 else
     echo ""
     echo -e "${CYAN}  Running verify-env.sh...${NC}"
-    VERIFY_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh" 2>&1) || true
+    VERIFY_OUTPUT=$(run_with_severity 'timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh"' 'verify-env')
     VERIFY_PASS=$(echo "$VERIFY_OUTPUT" | grep -oP 'Passed:\s+\K\d+' 2>/dev/null || true)
     VERIFY_FAIL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Failed:\s+\K\d+' 2>/dev/null || true)
     VERIFY_TOTAL=$(echo "$VERIFY_OUTPUT" | grep -oP 'Total checks:\s+\K\d+' 2>/dev/null || true)
@@ -908,7 +940,6 @@ echo ""
 # 6. OUTPUT FORMATTED PLAN
 # ============================================================
 phase_start "6"
-NEXT_ROUND=$((LAST_ROUND + 1))
 
 echo ""
 echo -e "${BOLD}╔═══════════════════════════════════════════════════════╗${NC}"
@@ -1009,6 +1040,22 @@ fi
 echo -e "  1. 首要: ${FOCUS_PRIMARY}"
 echo -e "  2. 探索: ${FOCUS_EXPLORE}"
 echo -e "  3. 反思: ${FOCUS_REFLECT}"
+
+PLAN_ONLY_LOG="${PROJECT_DIR}/references/evolution-log.md"
+if [ -f "$PLAN_ONLY_LOG" ]; then
+    RECENT_COMMITS=$(grep "^- Commit:" "$PLAN_ONLY_LOG" | tail -5)
+    CONSECUTIVE_PLAN_ONLY=0
+    while IFS= read -r line; do
+        if echo "$line" | grep -q "PLAN_ONLY"; then
+            CONSECUTIVE_PLAN_ONLY=$((CONSECUTIVE_PLAN_ONLY + 1))
+        else
+            break
+        fi
+    done <<< "$RECENT_COMMITS"
+    if [ "$CONSECUTIVE_PLAN_ONLY" -ge 3 ]; then
+        echo -e "${YELLOW}WARNING: 连续 ${CONSECUTIVE_PLAN_ONLY} 轮 PLAN_ONLY 无实际改进，建议 CSO 审查进化方向${NC}"
+    fi
+fi
 
 phase_end "6"
 echo ""
@@ -1224,34 +1271,35 @@ const { chromium } = require('playwright');
                 || { echo -e "${YELLOW}  ⚠️ Command failed: persistence test write${NC}"; IMPROVE_SUCCESS=false; }
                 ;;
             D5)
-                echo -e "${CYAN}  [D5 Task] MCP server injection test...${NC}"
-                MCP_SERVERS_DIR="/data/user/mcp"
-                MCP_SERVERS_FILE="${MCP_SERVERS_DIR}/mcp-servers.json"
-                mkdir -p "${MCP_SERVERS_DIR}"
-                
-                if [ ! -f "$MCP_SERVERS_FILE" ]; then
-                    echo '[]' > "$MCP_SERVERS_FILE"
-                    echo -e "${GREEN}  ✓ Created $MCP_SERVERS_FILE${NC}"
-                fi
-                
-                TEST_MCP_SERVER="test-evolution-worker-$(date +%s)"
-                MCP_INJECT_RESULT=$(node -e "
-const fs = require('fs');
-const servers = JSON.parse(fs.readFileSync('${MCP_SERVERS_FILE}', 'utf8'));
-const testEntry = { name: '${TEST_MCP_SERVER}', command: 'echo', args: ['test'] };
-servers.push(testEntry);
-fs.writeFileSync('${MCP_SERVERS_FILE}', JSON.stringify(servers, null, 2));
-console.log('SUCCESS');
-" 2>&1)
-                
-                if echo "$MCP_INJECT_RESULT" | grep -q "SUCCESS"; then
-                    echo -e "${GREEN}  ✅ MCP injection test successful: added '${TEST_MCP_SERVER}'${NC}"
-                    IMPROVE_SUCCESS=true
-                    IMPROVE_EVIDENCE="MCP server injection verified: ${TEST_MCP_SERVER} added to ${MCP_SERVERS_FILE}"
+                echo -e "${CYAN}  [D5 Task] MCP/工具自由 - 注入自定义 MCP server 并验证${NC}"
+
+                local MCP_TEST_SERVER='{"name":"test-inject-server","command":"echo","args":["MCP test server"],"env":{}}'
+                local MCP_CONFIG="${HOME}/.config/mcp-servers.json"
+                local MCP_BACKUP="/tmp/mcp-servers-backup.$(date +%s)"
+
+                if [ -f "$MCP_CONFIG" ]; then
+                    cp "$MCP_CONFIG" "$MCP_BACKUP"
+                    local EXISTING_SERVERS=$(cat "$MCP_CONFIG")
+                    echo "${EXISTING_SERVERS%]}${MCP_TEST_SERVER}" > "$MCP_CONFIG"
                 else
-                    echo -e "${YELLOW}  ⚠️ MCP injection test failed: ${MCP_INJECT_RESULT}${NC}"
+                    echo "[${MCP_TEST_SERVER}]" > "$MCP_CONFIG"
+                fi
+
+                if python3 -c "import json; json.load(open('$MCP_CONFIG'))" 2>/dev/null; then
+                    IMPROVE_SUCCESS=true
+                    IMPROVE_EVIDENCE="[NEW_CAP] D5: Successfully injected test MCP server into $MCP_CONFIG and verified JSON validity"
+                    echo -e "${GREEN}  ✅ D5 MCP injection successful${NC}"
+                else
                     IMPROVE_SUCCESS=false
-                    IMPROVE_EVIDENCE="MCP injection failed: ${MCP_INJECT_RESULT}"
+                    IMPROVE_EVIDENCE="[FAILED] D5: MCP config injection produced invalid JSON at $MCP_CONFIG"
+                    echo -e "${RED}  ❌ D5 MCP injection failed: invalid JSON${NC}"
+                fi
+
+                if [ -f "$MCP_BACKUP" ]; then
+                    mv "$MCP_BACKUP" "$MCP_CONFIG"
+                    rm -f "/tmp/mcp-servers-backup."* 2>/dev/null
+                else
+                    rm -f "$MCP_CONFIG" 2>/dev/null
                 fi
                 ;;
             D6)
@@ -1313,7 +1361,7 @@ console.log('SUCCESS');
 
     if [ "$IMPROVE_SUCCESS" = true ]; then
         echo -e "${CYAN}  运行验证...${NC}"
-        POST_VERIFY_OUTPUT=$(timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh" 2>&1) || true
+        POST_VERIFY_OUTPUT=$(run_with_severity 'timeout $TIMEOUT_SECS bash "$SCRIPTS_DIR/verify-env.sh"' 'post-verify-env')
         POST_VERIFY_PASS=$(echo "$POST_VERIFY_OUTPUT" | grep -oP 'Passed:\s+\K\d+' 2>/dev/null || true)
         POST_VERIFY_PASS=${POST_VERIFY_PASS:-0}
 
@@ -1504,6 +1552,10 @@ update_anti_stagnation_streak() {
 
 update_anti_stagnation_streak
 
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${YELLOW}  DRY-RUN: skipping state file writes (handoff, polaris-score, evolution-log, git commit)${NC}"
+    # Note: timeline archive is after phase_end "8" and will still execute
+else
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 
 if [ "${EVOLVE_ROLE:-worker}" = "cso" ]; then
@@ -1548,7 +1600,6 @@ if grep -q "^## Round ${NEXT_ROUND} -" "$EVOLUTION_LOG" 2>/dev/null; then
     echo -e "${YELLOW}  ⚠️  Round ${NEXT_ROUND} already in log — replacing entry${NC}"
     sed -i "/^## Round ${NEXT_ROUND} -/,/^## Round\|^# /{ /^## Round ${NEXT_ROUND} -/!{ /^## Round\|^#/!d; /^## Round\|^#/b; }; d }" "$EVOLUTION_LOG" 2>/dev/null || true
 fi
-echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
 
 if [ -f "$TIMELINE_FILE" ] && [ -s "$TIMELINE_FILE" ]; then
     TIMELINE_TABLE=$(awk -F'"' '
@@ -1569,8 +1620,8 @@ if [ -f "$TIMELINE_FILE" ] && [ -s "$TIMELINE_FILE" ]; then
 
 ### Timeline
 ${TIMELINE_TABLE}"
-    echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
 fi
+echo "$LOG_ENTRY" >> "$EVOLUTION_LOG"
 
 echo -e "${GREEN}  Evolution state saved to ${EVOLVE_STATE_DIR}/${NC}"
 echo -e "${GREEN}  Evolution log appended to ${EVOLUTION_LOG}${NC}"
@@ -1663,7 +1714,22 @@ update_polaris_score() {
     [ ! -f "$pf" ] && return 1
     
     local new_round_line="| R${NEXT_ROUND} | ${D1_SCORE:-?} | ${D2_SCORE:-?} | ${D3_SCORE:-?} | ${D4_SCORE:-?} | ${D5_SCORE:-?} | ${D6_SCORE:-?} | Polaris integration active |"
-    
+
+    HISTORY_COLS=$(echo "$new_round_line" | grep -o '|' | wc -l)
+    if [ "$HISTORY_COLS" -ne 9 ]; then
+        echo "ERROR: History row has $HISTORY_COLS columns, expected 9. Skipping."
+        echo "  Row content: $new_round_line"
+        return 1
+    fi
+
+    HISTORY_TOTAL=$(echo "$new_round_line" | cut -d'|' -f3 | tr -d ' ')
+    if ! echo "$HISTORY_TOTAL" | grep -qE '^[0-9]+%$'; then
+        if ! echo "$HISTORY_TOTAL" | grep -qE '^[0-9]+$'; then
+            echo "ERROR: History Total column malformed: $HISTORY_TOTAL"
+            return 1
+        fi
+    fi
+
     if grep -q "| Round \| D1 \| D2 \| D3 \| D4 \| D5 \| D6 \| Notes \|" "$pf"; then
         sed -i "/^| Round |/a\\${new_round_line}" "$pf" 2>/dev/null || true
     fi
@@ -1724,6 +1790,7 @@ else
     echo -e "${GREEN}  ✅ Worker mode: pushed state files to worker branch${NC}"
     echo -e "${CYAN}  📋 CSO will merge worker → main when ready${NC}"
 fi
+fi  # end DRY_RUN guard for Phase 8 state writes
 
 phase_end "8"
 

@@ -1,6 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPTS_DIR/lib/config.sh" 2>/dev/null || true
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -69,10 +72,10 @@ echo ""
 # === Domain 1: Network ===
 echo "━━━ Domain 1: Network ━━━"
 check "DNS resolution" "nslookup google.com 2>&1 | grep -q 'Address'"
-check "curl HTTP" "curl -s --connect-timeout 5 https://httpbin.org/ip -o /dev/null"
-check "wget HTTP" "wget -q --timeout=5 https://httpbin.org/ip -O /dev/null"
-check "Node.js fetch" "node -e \"fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout(8000)}).then(r=>{if(r.ok)process.exit(0);else process.exit(1)}).catch(()=>process.exit(1))\""
-check "Python urllib" "python3 -c \"import urllib.request; urllib.request.urlopen('https://httpbin.org/ip',timeout=5)\""
+check "curl HTTP" "curl -s --connect-timeout $NETWORK_TIMEOUT_SHORT https://httpbin.org/ip -o /dev/null"
+check "wget HTTP" "wget -q --timeout=$NETWORK_TIMEOUT_SHORT https://httpbin.org/ip -O /dev/null"
+check "Node.js fetch" "node -e \"fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout($((NETWORK_TIMEOUT_LONG*1000)))}).then(r=>{if(r.ok)process.exit(0);else process.exit(1)}).catch(()=>process.exit(1))\""
+check "Python urllib" "python3 -c \"import urllib.request; urllib.request.urlopen('https://httpbin.org/ip',timeout=$NETWORK_TIMEOUT_MEDIUM)\""
 check "apt-get update" "apt-get update -qq 2>/dev/null"
 echo ""
 
@@ -151,7 +154,7 @@ echo ""
 # === Domain 6: Dev Toolchain ===
 echo "━━━ Domain 6: Dev Toolchain ━━━"
 check "git available" "which git"
-check "git network access" "timeout 10 git ls-remote https://github.com/octocat/Hello-World.git HEAD 2>&1 | grep -qE '^[0-9a-f]{40}'"
+check "git network access" "timeout $NETWORK_TIMEOUT_MEDIUM git ls-remote https://github.com/octocat/Hello-World.git HEAD 2>&1 | grep -qE '^[0-9a-f]{40}'"
 check "SQLite3 available" "which sqlite3"
 check "Node.js available" "which node"
 check "Python3 available" "which python3"
@@ -205,8 +208,8 @@ echo ""
 
 # === Domain 12: Performance Baseline ===
 echo "━━━ Domain 12: Performance Baseline ━━━"
-check_perf "Network latency (httpbin.org/ip)" "timeout 15 node -e \"const t=Date.now(); fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout(12000)}).then(r=>{if(r.ok)console.log((Date.now()-t)+'ms');else process.exit(1)}).catch(()=>process.exit(1))\""
-check_perf "Download speed" "timeout 30 node -e \"const t=Date.now(); fetch('https://httpbin.org/bytes/65536',{signal:AbortSignal.timeout(25000)}).then(r=>r.arrayBuffer()).then(b=>{const ms=Date.now()-t; const kbs=Math.round(64/ms*1000); console.log(kbs+' KB/s')}).catch(()=>process.exit(1))\""
+check_perf "Network latency (httpbin.org/ip)" "timeout 15 node -e \"const t=Date.now(); fetch('https://httpbin.org/ip',{signal:AbortSignal.timeout($((NETWORK_TIMEOUT_LONG*1000)))}).then(r=>{if(r.ok)console.log((Date.now()-t)+'ms');else process.exit(1)}).catch(()=>process.exit(1))\""
+check_perf "Download speed" "timeout 30 node -e \"const t=Date.now(); fetch('https://httpbin.org/bytes/65536',{signal:AbortSignal.timeout($((NETWORK_TIMEOUT_LONG*1000)))}).then(r=>r.arrayBuffer()).then(b=>{const ms=Date.now()-t; const kbs=Math.round(64/ms*1000); console.log(kbs+' KB/s')}).catch(()=>process.exit(1))\""
 echo ""
 
 # === Summary ===

@@ -120,10 +120,6 @@ Total: 53%
 ## History
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
-| R49 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R48 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R47 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
-| R46 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R45 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R44 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R44 | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
