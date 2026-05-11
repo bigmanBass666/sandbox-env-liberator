@@ -18,7 +18,7 @@
 - ✅ 可以：修改环境配置、安装工具、优化镜像源、执行 evolve.sh
 - ✅ 可以：更新 polaris-score.md、handoff.md、evolution-log.md
 - ❌ 禁止：修改 prompts/ 目录中的任何文件
-- ❌ 禁止：修改 SKILL.md
+- ❌ 禁止：修改 .agents/ 目录
 - ❌ 禁止：修改 evolve.sh 的架构（Phase 结构、计时机制等）
 - ❌ 禁止：push 到 main 分支（在 worker 分支上工作）
 

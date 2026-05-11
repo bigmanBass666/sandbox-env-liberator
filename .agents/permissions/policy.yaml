@@ -1,0 +1,27 @@
+roles:
+  worker:
+    allow:
+      read: ["**"]
+      write: ["scripts/*", "references/*", "config/*"]
+    deny:
+      write: ["prompts/*", "SKILL.md", "AGENTS.md", ".agents/*", "evolve.sh"]
+    branch: worker
+    push: "git push origin worker"
+
+  cso:
+    allow:
+      read: ["**"]
+      write: ["**"]
+    deny:
+      write: []
+    branch: main
+    push: "git push origin main"
+
+  reviewer:
+    allow:
+      read: ["**"]
+      write: []
+    deny:
+      write: ["**"]
+    branch: none
+    push: never
