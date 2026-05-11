@@ -50,6 +50,7 @@ references/
   evolution-log.md   — 进化历史日志
   schedule-setup.md  — 定时任务配置参考
   timeline-round-N.jsonl — 每轮时间线归档
+  worklogs/          — per-round 工作日志归档（round-N.md）
   domains/           — 10域参考知识（详见下方域摘要表）
     00-capability-matrix.md  — 能力矩阵总览
     01-network.md ~ 10-security-isolation.md — 各域详细知识
@@ -125,6 +126,12 @@ Full permission policy: `.agents/permissions/policy.yaml`
 - Variable naming: UPPER_SNAKE_CASE for globals, lower_snake_case for locals
 - Error handling: `2>/dev/null || true` for non-critical operations
 - All timestamps from `$(date +%s)` — never hardcode or AI-generate timestamps
+
+### Per-Round Work Logs
+- Path: `references/worklogs/round-N.md`
+- Format: Standard markdown with header metadata (Round, Timestamp, Status, Duration)
+- Created by: Worker upon CSO request (manual workflow)
+- Forbidden: Creating `round*.md` directly in `references/` root
 
 ## Testing
 
