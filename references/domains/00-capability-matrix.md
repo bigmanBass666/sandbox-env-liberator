@@ -1,6 +1,19 @@
 # Capability Matrix
 
-Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
+## Summary
+
+| Domain | Status | Key Blocker |
+|--------|--------|-------------|
+| Network | ✅ Mostly open | Direct TCP blocked (proxy required) |
+| Filesystem | ✅ Full access | Limited disk space (~7.6GB) |
+| Process | ✅ Mostly open | No Docker, limited CPU/memory |
+| Packages | ✅ All managers work | None |
+| Browser | ⚠️ Needs setup | Must install + fix deps |
+| Toolchain | ✅ Rich pre-installed | Some tools need npm/apt |
+| MCP | ✅ Full access | None |
+| Persistence | ✅ Files persist | /tmp may be cleared |
+| Platform Services | ✅ Rich internal services | Proxy may need auth (407) |
+| Security & Isolation | ⚠️ Container restricted | Missing CAP_SYS_ADMIN, seccomp filtered |
 
 ## Legend
 - ✅ Available
@@ -203,7 +216,7 @@ Based on reconnaissance of Ubuntu 24.04 cloud sandbox environment.
 | 9092 | sentinel | Webhook gateway (restic-restore trigger) |
 | 9222 | Chrome DevTools Protocol (CDP) | ✅ |
 | 10249 | HTTP API | ✅ |
-| 13080 | Health API ({\"status\":\"ok\"}) | ✅ |
+| 13080 | Health API ({"status":"ok"}) | ✅ |
 | 16000 | 预览代理 | ✅ |
 | 18080 | HTTP代理（出站） | ✅ |
 | 18081 | HTTPS代理（出站） | ✅ |

@@ -1,8 +1,74 @@
-# Platform Services Deep Dive (Rounds 10-13)
+# Domain 9: Platform Internal Services
+
+**Key Insight**: The sandbox platform exposes numerous internal services on various ports. Understanding these services enables advanced workflows like remote desktop access, browser automation via CDP, and proxy authentication.
+
+**VNC Service (Port 5900)**:
+- Protocol: RFB 003.008
+- Use case: Remote desktop access to sandbox GUI
+- Connection: VNC client → `127.0.0.1:5900`
+
+**CDP Endpoint (Port 8088)**:
+- Path: `/v1/cdp`
+- Use case: Browser remote control via Chrome DevTools Protocol
+- Environment variable: `CRAWLER_CDP_ENDPOINT` points to this endpoint
+
+**WebSocket Service (Port 40005)**:
+- Supports HTTP Upgrade: websocket
+- Use case: Additional communication channel for real-time data
+
+**HTTP Proxy (Port 18080/18081)**:
+- Outbound HTTP/HTTPS proxy
+- May require authentication (407 response)
+- Credentials may exist in environment variables or `/app/etc/` configuration
+
+**Preview Proxy (Port 16000)**:
+- Environment variable: `PREVIEW_PROXY_PUBLIC_PORT`
+- Use case: Web application preview
+
+**Health Check Endpoints**:
+- Port 13080: `/health`
+- Port 19090: `/health`
+
+**Supervisor Process Management**:
+- Configuration: `/app/supervisord.conf`
+- Manages multiple child processes (agent-tool-host, chrome, VNC, etc.)
+
+**Kubernetes Environment**:
+- Environment variable: `KUBERNETES_SERVICE_HOST`
+- Service Account: `/var/run/secrets/kubernetes.io/serviceaccount/`
+
+**Node.js Preload Module**:
+- Path: `/app/mcp_proxy_bootstrap/preload.cjs`
+- Environment variable: `NODE_OPTIONS`
+- Affects runtime behavior of all Node.js processes
+
+**Complete Port Mapping Table**:
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 80 | HTTP | agent-tool-host |
+| 5900 | VNC | RFB 003.008 remote desktop |
+| 8088 | CDP | Browser remote control endpoint (/v1/cdp) |
+| 8999 | HTTP | agent-tool-host service |
+| 9090 | browser_ctrl | Prometheus metrics (3 workers) |
+| 9091 | egress | Network egress controller (2 workers) |
+| 9092 | sentinel | /workspace/restic-restore endpoint |
+| 9222 | CDP | Chrome DevTools Protocol |
+| 10249 | HTTP | API (404) |
+| 13080 | HTTP | Health API ({"status":"ok"}) |
+| 16000 | HTTP | Preview proxy |
+| 18080 | HTTP | Outbound proxy |
+| 18081 | HTTPS | Outbound proxy |
+| 19090 | HTTP | API + /health |
+| 19091 | HTTP | agent-tool-host |
+| 40005 | WS | WebSocket |
+| 51008 | Binary | Unknown protocol |
+
+## Deep Dive
 
 > Deep analysis of internal platform services discovered through port probing and Prometheus metrics scraping.
 
-## CDP Browser Service (Port 9222)
+### CDP Browser Service (Port 9222)
 
 - **Protocol**: Chrome DevTools Protocol (WebSocket upgrade on HTTP GET /json/version)
 - **Browser**: Chromium/125.0.6422.142
@@ -11,9 +77,9 @@
 - **Key finding**: Persists across sessions — no need to install or launch Chromium manually. The browser is managed by `browser_ctrl` (port 9090).
 - **Available targets**: Full page navigation, DOM inspection, JavaScript execution, network interception via CDP commands.
 
-## Egress Sidecar (Port 9091) — Network Tunnel Proxy
+### Egress Sidecar (Port 9091) — Network Tunnel Proxy
 
-### Architecture
+#### Architecture
 
 ```
 App → egress(sidecar:9091) → External ProxyServer via HTTP CONNECT tunnels
@@ -21,7 +87,7 @@ App → egress(sidecar:9091) → External ProxyServer via HTTP CONNECT tunnels
 
 All outbound network traffic from the sandbox container is forced through this sidecar proxy. It establishes HTTP CONNECT tunnels to an external ProxyServer, which then makes the actual outbound connections.
 
-### Runtime Profile (from Prometheus metrics)
+#### Runtime Profile (from Prometheus metrics)
 
 | Metric | Value |
 |--------|-------|
@@ -29,7 +95,7 @@ All outbound network traffic from the sandbox container is forced through this s
 | Alive tasks | 12 |
 | Active tunnels | 3 |
 
-### Policy System
+#### Policy System
 
 | Policy Rule | Count |
 |-------------|-------|
@@ -40,7 +106,7 @@ All outbound network traffic from the sandbox container is forced through this s
 
 The policy system uses a tiered allow/deny model with privileged variants for elevated operations.
 
-### Traffic Statistics
+#### Traffic Statistics
 
 | Metric | Value |
 |--------|-------|
@@ -53,7 +119,7 @@ The policy system uses a tiered allow/deny model with privileged variants for el
 
 **Bandwidth insight**: The ~14:1 download-to-upload ratio explains why uploads feel significantly slower than downloads. The ~20KB/s effective upload limit is imposed by either the external ProxyServer or tunnel protocol overhead, not by the egress sidecar itself.
 
-### Tunnel Error Breakdown
+#### Tunnel Error Breakdown
 
 | Error Type | Shutdown | Read | Write |
 |------------|----------|------|-------|
@@ -61,19 +127,19 @@ The policy system uses a tiered allow/deny model with privileged variants for el
 
 d2u_error (downstream-to-upstream) errors dominate the error landscape, with connection shutdowns being the most common failure mode. These are expected in a tunnel proxy handling many short-lived connections.
 
-### API Surface
+#### API Surface
 
 - **No admin/config API exposed** on port 9091
 - No `/metrics`, `/health`, or debug endpoints found
 - Operates as a transparent proxy — no direct configuration possible from within the sandbox
 
-## Sentinel Webhook Gateway (Port 9092)
+### Sentinel Webhook Gateway (Port 9092)
 
-### Service Type
+#### Service Type
 
 Webhook/API Gateway embedded in `agent-tool-host` (pid 821). This is **not** a REST API server — it's an async webhook trigger system that fires events to the external platform.
 
-### Discovered Endpoints
+#### Discovered Endpoints
 
 | Method | Path | Purpose | Observed Calls |
 |--------|------|---------|----------------|
@@ -81,33 +147,33 @@ Webhook/API Gateway embedded in `agent-tool-host` (pid 821). This is **not** a R
 | POST | `/workspace/restic-restore` | Fire-and-forget restore trigger | 1 |
 | * | *any other* | Not found | → 404 |
 
-### Behavior Analysis
+#### Behavior Analysis
 
 - **`/hook/dispatch`**: Primary ingress point for webhook events from the platform. High call count (32) indicates this is the main event routing endpoint.
 - **`/workspace/restic-restore`**: Triggers a restic backup restoration on the platform side. Returns HTTP 200 immediately with empty body — classic fire-and-forget async pattern. The actual restoration happens externally; no status polling mechanism available from within the sandbox.
 - **All other paths return 404**: Sentinel has a minimal, purpose-built surface area.
 
-### Exposed Metrics
+#### Exposed Metrics
 
 | Metric Name | Type | Description |
 |-------------|------|-------------|
 | `sentinel_http_requests_total` | Counter | Total HTTP requests handled |
 | `sentinel_http_request_duration_seconds` | Histogram | Request latency distribution |
 
-## browser_ctrl (Port 9090) — Browser Controller
+### browser_ctrl (Port 9090) — Browser Controller
 
-### Role
+#### Role
 
 Chrome DevTools Protocol browser controller. Manages the lifecycle of the CDP browser instance on port 9222.
 
-### Key Characteristics
+#### Key Characteristics
 
 - Exposes Prometheus metrics for browser control operations
 - Embedded in agent-tool-host (pid 822)
 - Coordinates browser launch, page creation, and CDP session management
 - No direct REST API — controlled internally by the agent framework
 
-## Port Mapping Summary (Updated)
+### Port Mapping Summary (Updated)
 
 | Port | Service | Role |
 |------|---------|------|
@@ -116,9 +182,9 @@ Chrome DevTools Protocol browser controller. Manages the lifecycle of the CDP br
 | 9092 | sentinel | Webhook gateway (restic-restore trigger) |
 | 9222 | Chrome CDP | Browser automation endpoint |
 
-## Key Architectural Insights
+### Key Architectural Insights
 
-### 1. Agent-Centric Monolith
+#### 1. Agent-Centric Monolith
 
 `agent-tool-host` (pid 821/822) embeds **all** internal platform services:
 - Sentinel (webhook gateway) — port 9092
@@ -127,58 +193,58 @@ Chrome DevTools Protocol browser controller. Manages the lifecycle of the CDP br
 
 These are not separate processes or containers — they're tokio/async tasks within a single binary. This explains why they share the same PID namespace and why killing one would affect all.
 
-### 2. Egress Is the Bandwidth Bottleneck
+#### 2. Egress Is the Bandwidth Bottleneck
 
 All network traffic (HTTP, HTTPS, git, npm, pip, curl, etc.) routes through the egress sidecar on port 9091. The ~20KB/s upload limit and ~14:1 download:upload ratio are properties of the external ProxyServer + CONNECT tunnel architecture, not configurable from within the sandbox.
 
 **Practical implication**: Large file uploads (git push large repos, npm publish, etc.) will be slow. Plan accordingly.
 
-### 3. CDP Browser Persists Across Sessions
+#### 3. CDP Browser Persists Across Sessions
 
 The Chromium browser on port 9222 is pre-launched and managed by the platform. It survives sandbox restarts and does not require installation of Playwright browsers or system Chromium packages. Use it directly via CDP WebSocket or the Playwright MCP connector.
 
-### 4. Sentinel Uses Async Fire-and-Forget Pattern
+#### 4. Sentinel Uses Async Fire-and-Forget Pattern
 
 Operations like `/workspace/restic-restore` return immediately with HTTP 200. There is no job ID, no status endpoint, no completion callback. The platform handles execution asynchronously. This pattern means:
 - Cannot poll for restore completion
 - Cannot cancel in-flight operations
 - Must rely on file system observation to detect when restores finish
 
-### 5. Policy-Based Access Control in Egress
+#### 5. Policy-Based Access Control in Egress
 
 The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6 denied). This suggests domain-based or destination-based filtering at the tunnel layer, which may explain why some external hosts are reachable while others timeout even though DNS resolves correctly.
 
-## Platform Configuration Files
+### Platform Configuration Files
 
-### /app/etc/ide_dynamic_config_basic.json
+#### /app/etc/ide_dynamic_config_basic.json
 - Feature gates: enableCmdBlocking=true, enableCheckImageContent=true, enableCueflow=false
 - AI features: mcpToolLimit=40, mcpTokenLimit=8000, customPromptTokenLimit=10000
 - Auto-accept enabled with diff view
 - Snapshot V2 enabled
 
-### /app/etc/mcp_servers.json
+#### /app/etc/mcp_servers.json
 - Currently empty: `{"mcpServers": {}}`
 - This is where MCP server configurations would be registered
 
-### /etc/profile.d/sandbox-env.sh
+#### /etc/profile.d/sandbox-env.sh
 - Dynamic LD_LIBRARY_PATH for extracted libs and Playwright Chrome
 - Auto-adds ~/.local/bin, ~/go/bin, ~/.cargo/bin to PATH
 - Sets PLAYWRIGHT_BROWSERS_PATH
 
-### /etc/profile.d/trae-env.sh
+#### /etc/profile.d/trae-env.sh
 - Full language runtime initialization: pyenv, nvm, cargo, mise, phpenv, swiftly
 - Calls /usr/local/bin/setup_universal.sh if exists
 - TRAE_ENV_INITIALIZED guard prevents double init
 
-### Key Environment Variables
+#### Key Environment Variables
 - HTTP_PROXY/HTTPS_PROXY=http://127.0.0.1:18080 (all traffic through egress proxy)
 - no_proxy/NO_PROXY=localhost,127.0.0.1,.svc,.cluster.local,::1
 - NODE_OPTIONS=--require /app/mcp_proxy_bootstrap/preload.cjs (MCP proxy bootstrap)
 - PREVIEW_PROXY_PUBLIC_PORT=16000
 
-## MCP Proxy Bootstrap Mechanism (Round 13)
+### MCP Proxy Bootstrap Mechanism (Round 13)
 
-### preload.cjs Analysis (29 lines)
+#### preload.cjs Analysis (29 lines)
 
 - **Purpose**: Make undici/global fetch use HTTP(S)_PROXY environment variables
 - **Injection**: Via `NODE_OPTIONS=--require /app/mcp_proxy_bootstrap/preload.cjs`
@@ -187,7 +253,7 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 - **Debug mode**: Set `MCP_PROXY_DEBUG` env var to see log output
 - **Key insight**: This is NOT an MCP protocol interceptor — it's just a proxy configurator for Node.js fetch. It has no awareness of MCP messages, tool calls, or server lifecycle.
 
-### supervisord.conf Environment Variables
+#### supervisord.conf Environment Variables
 
 | Variable | Value | Purpose |
 |----------|-------|---------|
@@ -200,22 +266,22 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 | `BROWSER_SNAPSHOT_DIR` | `/data/tool/browser_snapshots` | Browser snapshot storage |
 | `MCP_LOG_DIR` | `/var/log/tool/mcp` | MCP log directory |
 
-### setup_universal.sh Language Version Control
+#### setup_universal.sh Language Version Control
 
 - Controlled by environment variables: `TRAE_ENV_PYTHON_VERSION`, `TRAE_ENV_NODE_VERSION`, `TRAE_ENV_RUST_VERSION`, `TRAE_ENV_GO_VERSION`, `TRAE_ENV_RUBY_VERSION`, `TRAE_ENV_PHP_VERSION`, `TRAE_ENV_JAVA_VERSION`, `TRAE_ENV_SWIFT_VERSION`
 - Each version manager (pyenv/nvm/rustup/mise/phpenv/swiftly) checks if the requested version is already installed
 - Falls back to the default version if the requested version is not found
 
-### mcp_servers.json Injection Test Result
+#### mcp_servers.json Injection Test Result
 
 - **File is WRITABLE** (root:root, rw-r--r--)
 - Successfully wrote test MCP server config to the file
 - `agent-tool-host` (pid 821) would need restart/reload to pick up changes
 - **Key finding**: MCP server configuration IS injectable at the file level — the file permissions allow writes, but the running process does not hot-reload the config
 
-## MCP Server Dual-Layer Configuration (Round 16)
+### MCP Server Dual-Layer Configuration (Round 16)
 
-### Architecture Discovery: Two-Level MCP Config
+#### Architecture Discovery: Two-Level MCP Config
 
 | Level | Path | Size | Content | Role |
 |-------|------|------|---------|------|
@@ -224,7 +290,7 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 
 **Key insight**: The system-level config is an empty shell. The user-level config at `/data/user/mcp/` is where all actual MCP server definitions live. Both files have mode 644 (writable by root).
 
-### Active MCP Servers (from user-level config)
+#### Active MCP Servers (from user-level config)
 
 | Server | Command | Env Vars | Purpose |
 |--------|---------|----------|---------|
@@ -233,7 +299,7 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 | **Sequential Thinking** | `npx -y @modelcontextprotocol/server-sequential-thinking` | — | Chain-of-thought reasoning |
 | **context7** | `npx -y @upstash/context7-mcp@latest` | `DEFAULT_MINIMUM_TOKENS=10000` | Code context retrieval |
 
-### MCP Server Memory Footprint
+#### MCP Server Memory Footprint
 
 | Process | PID | RSS (MB) | VSZ (MB) | Notes |
 |---------|-----|----------|----------|-------|
@@ -243,15 +309,15 @@ The egress sidecar maintains a policy table with 632 rules (377+245 allowed, 4+6
 | mcp-server-sequential-thinking | 901 | ~90 | ~1,497 | Reasoning engine |
 | **Total** | | **~460** | | 11.5% of 4GB RAM limit |
 
-### Implications
+#### Implications
 
 1. **Custom MCP injection**: Edit `/data/user/mcp/mcp-servers.json` → restart agent-tool-host → new server available
 2. **Memory budget**: Each new MCP server costs ~90-180MB RAM. With 4GB limit, room for ~20 more servers (but CPU is limited to 2 cores)
 3. **Playwright MCP redundancy**: We already have CDP browser on port 9222. The Playwright MCP server (180MB) may be redundant — potential memory saving opportunity
 
-## Process Domain Deep Analysis (Round 16)
+### Process Domain Deep Analysis (Round 16)
 
-### Container Init Chain
+#### Container Init Chain
 
 ```
 tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
@@ -263,7 +329,7 @@ tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
                                                     └── 4× MCP servers (npx-spawned)
 ```
 
-### cgroup v2 Limits
+#### cgroup v2 Limits
 
 | Resource | Limit | Value | Notes |
 |----------|-------|-------|-------|
@@ -271,7 +337,7 @@ tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
 | CPU | `cpu.max` | 200000 / 100000 (2 cores) | Standard container allocation |
 | Cgroup path | — | `0::/` | cgroup v2 unified hierarchy |
 
-### ulimit Configuration
+#### ulimit Configuration
 
 | Resource | Limit | Assessment |
 |----------|-------|------------|
@@ -285,7 +351,7 @@ tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
 | address space | unlimited | ✅ |
 | real-time priority | 0 | ⚠️ No RT scheduling |
 
-### Listening Ports (17 total, all from agent-tool-host)
+#### Listening Ports (17 total, all from agent-tool-host)
 
 | Port | Service | Bind Address |
 |------|---------|-------------|
@@ -306,7 +372,7 @@ tini (PID 1) → supervisord (PID 820) → agent-tool-host (PID 821)
 | 19091 | Internal | `*:*` |
 | 5900 | VNC | 127.0.0.1 / [::1] |
 
-### Supervisor Status
+#### Supervisor Status
 
 ```
 agent-tool-host    RUNNING   pid 821, uptime 3:46:13
@@ -314,13 +380,13 @@ agent-tool-host    RUNNING   pid 821, uptime 3:46:13
 
 Only ONE managed process. Everything else is internal to agent-tool-host.
 
-## Commands System (Round 16)
+### Commands System (Round 16)
 
-### /data/user/commands/ Structure
+#### /data/user/commands/ Structure
 
 Single command defined: `evolve.md`
 
-### Command Definition Format
+#### Command Definition Format
 
 ```yaml
 ---

@@ -1,6 +1,62 @@
-# Network Workarounds Reference
+# Domain 1: Network
 
-## Network Architecture in Cloud Sandboxes
+**Key Insight**: Cloud sandboxes route traffic through an HTTP proxy (typically `127.0.0.1:18080`). Direct TCP connections are usually blocked, but HTTP/HTTPS through the proxy works.
+
+**Network Channels (by reliability)**:
+
+| Channel | Reliability | When to Use |
+|---------|------------|-------------|
+| Node.js `fetch()` | ⭐⭐⭐⭐⭐ | Primary download channel |
+| Python `urllib` | ⭐⭐⭐⭐ | Alternative when Node.js unavailable |
+| `curl`/`wget` | ⭐⭐⭐⭐ | Works when proxy is configured |
+| `apt-get` | ⭐⭐⭐⭐ | System packages (respects proxy) |
+| `git clone` | ⭐⭐⭐⭐ | Version control |
+| Go `net/http` | ⭐⭐⭐ | Works but slower startup |
+| Playwright `page.goto()` | ⭐⭐⭐ | Last resort: browser as proxy |
+| Direct TCP sockets | ⭐ | Usually blocked |
+
+**Proxy Configuration** (auto-detected and configured by fix-network.js):
+
+```bash
+# Environment (usually pre-set)
+export http_proxy=http://127.0.0.1:18080
+export https_proxy=http://127.0.0.1:18080
+export no_proxy=localhost,127.0.0.1,.svc,.cluster.local,::1
+
+# npm
+npm config set proxy http://127.0.0.1:18080
+npm config set https-proxy http://127.0.0.1:18080
+
+# git
+git config --global http.proxy http://127.0.0.1:18080
+git config --global https.proxy http://127.0.0.1:18080
+
+# apt
+echo 'Acquire::http::Proxy "http://127.0.0.1:18080";' > /etc/apt/apt.conf.d/99proxy
+```
+
+**Mirror Configuration** (for faster downloads):
+
+```bash
+# npm
+npm config set registry https://registry.npmmirror.com
+
+# pip
+mkdir -p ~/.pip && cat > ~/.pip/pip.conf << EOF
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+trusted-host = pypi.tuna.tsinghua.edu.cn
+EOF
+
+# Go
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+
+**When ALL networking fails**: Use `WebFetch` MCP tool or Playwright MCP to fetch content through the platform's network channel.
+
+## Workarounds Reference
+
+### Network Architecture in Cloud Sandboxes
 
 Cloud sandboxes typically use a proxy-based network architecture:
 - **Inbound**: No direct inbound connections (except via platform-provided URLs)
@@ -8,7 +64,7 @@ Cloud sandboxes typically use a proxy-based network architecture:
 - **DNS**: Internal resolver (e.g., `172.30.1.10`)
 - **Direct TCP**: Often blocked or heavily filtered
 
-## Network Channels (Ranked by Reliability)
+### Network Channels (Ranked by Reliability)
 
 | Channel | Reliability | Speed | Use Case |
 |---------|------------|-------|----------|
@@ -22,41 +78,41 @@ Cloud sandboxes typically use a proxy-based network architecture:
 | Direct TCP sockets | ⭐ | N/A | Usually blocked |
 | `git clone` | ⭐⭐⭐⭐ | Medium | Works via proxy |
 
-## Proxy Configuration
+### Proxy Configuration
 
-### Environment Variables
+#### Environment Variables
 ```bash
 export http_proxy=http://127.0.0.1:18080
 export https_proxy=http://127.0.0.1:18080
 export no_proxy=localhost,127.0.0.1,.svc,.cluster.local,::1
 ```
 
-### npm Proxy
+#### npm Proxy
 ```bash
 npm config set proxy http://127.0.0.1:18080
 npm config set https-proxy http://127.0.0.1:18080
 ```
 
-### git Proxy
+#### git Proxy
 ```bash
 git config --global http.proxy http://127.0.0.1:18080
 git config --global https.proxy http://127.0.0.1:18080
 ```
 
-### apt Proxy
+#### apt Proxy
 ```bash
 echo 'Acquire::http::Proxy "http://127.0.0.1:18080";' > /etc/apt/apt.conf.d/99proxy
 echo 'Acquire::https::Proxy "http://127.0.0.1:18080";' >> /etc/apt/apt.conf.d/99proxy
 ```
 
-## Mirror Configuration
+### Mirror Configuration
 
-### npm Registry
+#### npm Registry
 ```bash
 npm config set registry https://registry.npmmirror.com
 ```
 
-### pip Mirror
+#### pip Mirror
 ```bash
 mkdir -p ~/.pip
 cat > ~/.pip/pip.conf << EOF
@@ -66,14 +122,14 @@ trusted-host = pypi.tuna.tsinghua.edu.cn
 EOF
 ```
 
-### Go Proxy
+#### Go Proxy
 ```bash
 go env -w GOPROXY=https://goproxy.cn,direct
 ```
 
-## Downloading Files When CLI Networking Fails
+### Downloading Files When CLI Networking Fails
 
-### Method 1: Node.js fetch (Recommended)
+#### Method 1: Node.js fetch (Recommended)
 ```javascript
 const fs = require('fs');
 async function download(url, dest) {
@@ -85,13 +141,13 @@ async function download(url, dest) {
 }
 ```
 
-### Method 2: Python urllib
+#### Method 2: Python urllib
 ```python
 import urllib.request
 urllib.request.urlretrieve('https://example.com/file', '/tmp/file')
 ```
 
-### Method 3: Browser as Proxy (Playwright)
+#### Method 3: Browser as Proxy (Playwright)
 ```javascript
 const { chromium } = require('playwright');
 const browser = await chromium.launch({ headless: true });
@@ -102,7 +158,7 @@ require('fs').writeFileSync('/tmp/file', content);
 await browser.close();
 ```
 
-## Port Availability
+### Port Availability
 
 Common ports that may be locally listening:
 - **80**: HTTP (platform services)
@@ -111,13 +167,13 @@ Common ports that may be locally listening:
 
 Outbound connectivity is typically proxy-only. Direct TCP connections to external hosts usually timeout.
 
-## WebSocket 通道
+### WebSocket 通道
 
 - 端口40005提供WebSocket服务
 - Node.js原生WebSocket可用
 - 可作为额外通信通道
 
-## 代理认证处理
+### 代理认证处理
 
 代理可能返回407 Proxy Authentication Required。
 
@@ -134,7 +190,7 @@ export http_proxy=http://user:pass@127.0.0.1:18080
 export https_proxy=http://user:pass@127.0.0.1:18081
 ```
 
-## 5通道自动降级下载
+### 5通道自动降级下载
 
 1. curl (首选CLI工具)
 2. wget (备选CLI工具)
@@ -148,7 +204,7 @@ const { downloadWithFallback, downloadWithRetry } = require('/workspace/sandbox-
 await downloadWithRetry('https://example.com/file', '/tmp/file');
 ```
 
-## CDP Browser Connection (浏览器直连绕过)
+### CDP Browser Connection (浏览器直连绕过)
 
 **Problem**: Downloading Chromium binary (~170MB) fails in restricted networks or takes too long.
 
@@ -183,7 +239,7 @@ const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
 
 **Service context**: The CDP browser is managed by **browser_ctrl** on port 9090 (Prometheus metrics, 3 workers). Do not close the browser — other tools may depend on it.
 
-## IPv6
+### IPv6
 
 IPv6 resolution may work even when IPv4 direct connections don't. Test with:
 ```bash

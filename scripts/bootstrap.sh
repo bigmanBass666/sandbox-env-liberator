@@ -79,9 +79,9 @@ if [ -d "$PROJECT_DIR" ]; then
         log_pass "Repository exists at $PROJECT_DIR (pulling latest...)"
         git pull origin main 2>/dev/null || log_warn "git pull failed (may be offline or up-to-date)"
         if [ "$ROLE" = "worker" ]; then
-            git checkout night-evolve 2>/dev/null || git checkout -b night-evolve origin/main 2>/dev/null || true
-            git pull origin night-evolve 2>/dev/null || true
-            if git branch --show-current | grep -q "night-evolve"; then
+            git checkout worker 2>/dev/null || git checkout -b worker origin/main 2>/dev/null || true
+            git pull origin worker 2>/dev/null || true
+            if git branch --show-current | grep -q "worker"; then
                 log_pass "Working branch: $(git branch --show-current)"
             fi
         else

@@ -1,0 +1,11 @@
+acs_version: "1.0"
+project:
+  name: "sandbox-env-liberator"
+  description: "Polaris 自主进化系统 — 彻底解放 sandbox 的所有限制"
+layers:
+  context: true
+  skills: false
+  commands: false
+  agents: true
+  permissions: true
+compatible_with: [trae, claude-code, cursor]

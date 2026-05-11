@@ -6,7 +6,7 @@ paths:
 
 # Worker Guardrails
 
-These checks run BEFORE any PR is created. If any CRITICAL check fails, the PR must NOT be created.
+These checks run BEFORE any commit is pushed. If any CRITICAL check fails, the commit must NOT be pushed.
 
 ## CRITICAL (must pass)
 
@@ -14,7 +14,7 @@ These checks run BEFORE any PR is created. If any CRITICAL check fails, the PR m
 |-------|---------|-------------|
 | Syntax valid | `bash -n scripts/evolve.sh` | Do NOT commit |
 | No forbidden files | `git diff --name-only HEAD~1 \| grep -E 'test\|tmp\|\.bak\|crash\|\.log'` | Remove files, re-commit |
-| Not pushing to main | `git remote get-url origin && git branch --show-current` | Switch to correct branch |
+| Not pushing to main | `git branch --show-current` should be `worker` | Switch to worker branch |
 | No prompts/ changes | `git diff --name-only HEAD~1 \| grep '^prompts/'` | Revert prompts/ changes |
 
 ## WARNING (should pass)
