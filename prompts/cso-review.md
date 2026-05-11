@@ -13,18 +13,38 @@ Worker 完成了一轮或多轮新工作，请执行 CSO 审查流程：
 - `references/polaris-score.md` — 分数变化 + **当前 Round 编号**
 - `references/handoff.md` — 当前状态与 Blockers
 - `references/evolution-log.md` — Worker 自述摘要（**重点读遥测盲区内的轮次**）
-- `references/worklogs/` — 遥测数据：读取最新 round-N.md
+- `references/worklogs/` — 遥测数据（按信号驱动选择，见下文）
 
 ### 轮差检测（并行模型关键信号）
 
 对比 polaris-score 的 Round 与 worklog 最新编号：
 ```
-当前 Round = 47, worklog 最新 = round-45 → 轮差 = 2（正常，Worker 在并行跑）
+当前 Round = 52, worklog 最新 = round-45 → 轮差 = 7（盲区：Round 46~52）
 ```
 - **轮差 0**: 遥测完整，正常审查
-- **轮差 1-2**: 小幅滞后（并行模型常态），evolution-log 补充覆盖盲区
-- **轮差 3+**: 明显滞后，建议先快速扫过盲区内的 evolution-log 再做判断
-- **轮差越大 → Worker 跑得越快 → Tooling Push 前需更谨慎**
+- **轮差 1-2**: 小幅滞后（并行模型常态），evolution-log 补盲区
+- **轮差 3+**: 明显滞后，先做 evolution-log 快速扫描锁定关键轮次
+
+### Worklog 选择策略（两层过滤）
+
+**不要盲目全读**。Worker 一夜可能跑 8-10 轮，遥测数据量大。按以下流程筛选：
+
+**第一层：evolution-log 轻量扫描**（必做）
+- 扫描盲区内每轮的摘要行（Round / 维度 / Delta / 状态 / 关键事件）
+- 标记有异常信号的轮次
+
+**第二层：信号驱动的 worklog 读取**
+
+| 信号 | 优先级 | 读 worklog？ | 原因 |
+|------|--------|-------------|------|
+| 分数退步 | 🔴 高 | **必须读** | 真回归还是 measurement correction？推理链哪里出问题 |
+| STALLED / INCOMPLETE / CRASHED | 🔴 高 | **必须读** | 卡在哪？为什么卡？prompt 是否需调整 |
+| 分数大幅正增长（+10 以上）| 🟢 中 | **建议读** | 确认真实新能力 vs 评分宽松，发现路径是否可复制 |
+| 连续同维度 ≥3 轮 | 🟡 中 | **建议读最后一轮** | 是否在无效循环？Anti-Stagnation 有无生效 |
+| 首次探索某维度 | 🟢 中 | **建议读** | Worker 对该维度的初始理解是否正确 |
+| 正常小幅增长（+1~+8）| ⚪ 低 | **可跳过** | evolution-log 摘要够用 |
+
+**固定读取**: 始终读最新可用的 worklog（作为基线对比），加上所有标记为 🔴/🟢/🟡 的轮次
 
 ## 2. 判断
 
