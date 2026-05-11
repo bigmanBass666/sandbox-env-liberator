@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T19:38:16Z
-Round: 46
+Last Updated: 2026-05-11T20:03:03Z
+Round: 47
 Total: **65%**
 
 ## Scoring Principles (评分原则)
@@ -122,6 +122,7 @@ Total: **65%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R47 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
 | R55 (CSO) | **65%** | **50** | 80 | 60 | 80 | **60** | 60 | D1 +10% (CDP content fetch measurement correction), D5 +10% (MCP injection verified). evolve.sh Phase 7 multi-tier, Worker prompt v2 |
 | R46 | 61% | 40 | 80 | 60 | 80 | 50 | 60 | Polaris integration active |
 | R54 (CSO) | **62%** | 40 | **80** | 60 | 80 | 50 | 60 | D2 measurement correction: gcc/rustc/go/clang/g++ verified (+20%) |
@@ -131,7 +132,7 @@ Total: **65%**
 | R50 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (state update only) |
 | R49 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (format fix only) |
 | R48 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (SKIPPED ×2 parse bug) |
-| R47 | 53% | 40 | 60 | **60** | 80 | 50 | 40 | **D3: Redis v7.0.15 + PostgreSQL 16 installed** (+15 New Capability) |
+| R47 | 53% | 40 | 60 | **60** | 80 | 50 | 40 | streak=1 |
 | R46 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
 | R45 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
 | R44 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
