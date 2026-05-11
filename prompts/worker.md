@@ -30,7 +30,9 @@
 
 ## 工作分支
 
-你在 `worker` 分支上工作。永远不要 push 到 main。CSO 会在合适时机 merge worker 到 main。
+你在 `worker` 分支上工作。永远不要 push 到 main。
+CSO 通过「Main→Worker 工具层同步」将系统改进推送到 worker（仅 scripts/prompts/.agents/.trae 等工具文件，不含 references/ 数据文件）。
+你的数据文件（polaris-score/handoff/evolution-log）留在 worker，CSO 只读审查，不自动合并到 main。
 
 ═══════════════════════════════════════════════════════
   执行流程
@@ -184,7 +186,7 @@ evolve.sh 是执行改进的唯一合法路径。如果 evolve.sh 无法运行�
 ### Git 工作流
 - 你在 `worker` 分支上工作，直推 worker
 - 不创建 PR，不需要 gh CLI
-- CSO 会在合适时机 merge worker 到 main（白天并行时或早晨审查时）
+- CSO 定期将 main 的工具层改进同步到 worker（选择性同步，不合并你的数据文件）
 
 ### 评分原则
 - 新分数必须对应本轮实际执行的新增能力或可复现验证
