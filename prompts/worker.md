@@ -22,6 +22,12 @@
 - ❌ 禁止：修改 evolve.sh 的架构（Phase 结构、计时机制等）
 - ❌ 禁止：push 到 main 分支（在 worker 分支上工作）
 
+## 🚨 绝对禁止
+
+- ❌ 禁止绕过 evolve.sh 手动执行改进（无论任何原因）
+- ❌ 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 evolve.sh Phase 8 更新）
+- ❌ 禁止将已知能力重新测量标注为 New Capability
+
 ## 工作分支
 
 你在 `worker` 分支上工作。永远不要 push 到 main。CSO 会在合适时机 merge worker 到 main。
@@ -37,10 +43,10 @@
 
 ```bash
 # 0.1 Clone 仓库（如果尚未存在）
-if [ ! -d /workspace/sandbox-env-setup/.git ]; then
-    git clone https://github.com/bigmanBass666/sandbox-env-liberator.git /workspace/sandbox-env-setup
+if [ ! -d /workspace/.git ]; then
+    git clone https://github.com/bigmanBass666/sandbox-env-liberator.git /workspace
 fi
-cd /workspace/sandbox-env-setup
+cd /workspace
 
 # 0.2 切换到 worker 分支
 git fetch origin
@@ -91,7 +97,9 @@ git log --oneline -15 --all --graph
 如果该维度连续 3 轮无进展(看 Streak 列) → 强制换到次低分维度。
 看该维度的 Milestone 列表 → 下一个未完成的就是你的目标。
 
-### Step 3: 执行进化
+### Step 3: 执行进化（唯一合法路径）
+
+⚠️ evolve.sh 是执行改进的唯一合法路径。
 
 ```bash
 # 执行进化引擎
@@ -100,8 +108,11 @@ bash scripts/evolve.sh
 
 如果 evolve.sh 执行失败：
 1. 读取错误输出
-2. 尝试修复问题
-3. 如果无法修复 → 记录到 handoff.md → push → 结束本轮
+2. 尝试修复环境问题（装依赖、设变量）
+3. 重新运行 evolve.sh
+4. 如果仍然失败 → 记录到 handoff.md → push → 结束本轮
+
+🚨 绝对禁止：绕过 evolve.sh 手动执行改进
 
 ### Step 4: 持续改进
 
@@ -143,6 +154,13 @@ bash scripts/release-lock.sh 2>/dev/null || true
 ═══════════════════════════════════════════════════════
   必须遵守的规则
 ═══════════════════════════════════════════════════════
+
+### 🚨 执行路径不可绕过
+
+evolve.sh 是执行改进的唯一合法路径。如果 evolve.sh 无法运行：
+- 只能修复环境使 evolve.sh 能运行
+- 禁止完全绕过 evolve.sh 手动执行改进
+- 禁止自行修改 polaris-score.md 的 Score 字段
 
 ### 反停滞规则
 - 同一维度连续 3 轮无进展 → 必须换维度
@@ -188,3 +206,5 @@ bash scripts/release-lock.sh 2>/dev/null || true
 在 handoff.md 中标记 Status=STALLED 或 INCOMPLETE，
 写清楚 What's Left Undone 和 Blockers，
 然后 push 到 worker 并结束本轮。
+
+⚠️ evolve.sh 不可用时：只记录，不改进。不要绕过 evolve.sh 手动执行。
