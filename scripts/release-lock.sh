@@ -1,117 +1,108 @@
 #!/bin/bash
-set -uo pipefail
+# release-lock.sh — Release distributed lock by closing the GitHub Issue
+# Usage: bash scripts/release-lock.sh
+set -euo pipefail
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
+LOCK_LABEL="lock"
+REPO_OWNER="${REPO_OWNER:-bigmanBass666}"
+REPO_NAME="${REPO_NAME:-sandbox-env-liberator}"
+RELEASED_LABEL="released"
 
-TOKEN="${GITHUB_PERSONAL_ACCESS_TOKEN:-}"
-if [ -z "$TOKEN" ]; then
-    echo -e "${RED}❌ GITHUB_PERSONAL_ACCESS_TOKEN 未设置${NC}"
-    exit 1
-fi
-
-LOCK_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOCK_PROJECT_DIR="${LOCK_SCRIPT_DIR}/.."
-GIT_CONFIG="${LOCK_PROJECT_DIR}/.git/config"
-OWNER="bigmanBass666"
-REPO="sandbox-env-liberator"
-
-if [ -f "$GIT_CONFIG" ]; then
-    REMOTE_URL=$(grep -A1 '\[remote "origin"\]' "$GIT_CONFIG" 2>/dev/null | grep 'url' | sed 's/.*url.*=.*//' | xargs 2>/dev/null || true)
-    if [ -n "$REMOTE_URL" ]; then
-        EXTRACTED=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com[/:]([^/]+)/([^/.]+)(\.git)?|\1/\2|' 2>/dev/null || true)
-        if [ -n "$EXTRACTED" ] && echo "$EXTRACTED" | grep -q '/'; then
-            OWNER=$(echo "$EXTRACTED" | cut -d'/' -f1)
-            REPO=$(echo "$EXTRACTED" | cut -d'/' -f2)
-        fi
-    fi
-fi
-
-echo -e "${CYAN}🔓 分布式锁释放 - ${OWNER}/${REPO}${NC}"
-
-RELEASE_RESULT=$(node -e "
-const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-const owner = '${OWNER}';
-const repo = '${REPO}';
-const now = new Date().toISOString();
-
-async function run() {
-    const headers = {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'sandbox-evolve-lock'
-    };
-
-    let currentBody = '';
-    try {
-        const getRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/issues/1', {
-            headers: headers,
-            signal: AbortSignal.timeout(15000)
-        });
-        if (getRes.ok) {
-            const issue = await getRes.json();
-            currentBody = issue.body || '';
-        }
-    } catch (e) {
-        // ignore, proceed with empty body
-    }
-
-    const newBody = currentBody + '\\nRELEASED_AT: ' + now + '\\nLOCK_STATUS: released';
-
-    try {
-        const updateRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/issues/1', {
-            method: 'PATCH',
-            headers: headers,
-            body: JSON.stringify({
-                labels: [],
-                state: 'closed',
-                body: newBody
-            }),
-            signal: AbortSignal.timeout(15000)
-        });
-        if (updateRes.ok) {
-            console.log(JSON.stringify({status: 'released'}));
-        } else if (updateRes.status === 404) {
-            console.log(JSON.stringify({status: 'no_issue'}));
-        } else {
-            const errBody = await updateRes.text();
-            console.log(JSON.stringify({status: 'error', message: 'Release failed: ' + updateRes.status + ' ' + errBody}));
-        }
-    } catch (e) {
-        console.log(JSON.stringify({status: 'error', message: 'Network error: ' + e.message}));
-    }
+log_error() {
+    echo "[ERROR] $1" >&2
 }
 
-run();
-" 2>/dev/null)
+log_info() {
+    echo "[INFO] $1"
+}
 
-if [ -z "$RELEASE_RESULT" ]; then
-    echo -e "${RED}❌ 锁释放失败：无响应${NC}"
-    exit 1
-fi
+validate_token() {
+    if [ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]; then
+        log_error "GITHUB_PERSONAL_ACCESS_TOKEN environment variable is not set"
+        return 1
+    fi
+    export GH_TOKEN="${GITHUB_PERSONAL_ACCESS_TOKEN}"
+}
 
-STATUS=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.status);" 2>/dev/null || echo "parse_error")
+find_lock_issue() {
+    local lock_issue
+    lock_issue=$(gh issue list \
+        --repo "${REPO_OWNER}/${REPO_NAME}" \
+        --label "${LOCK_LABEL}" \
+        --state open \
+        --json number,title \
+        --jq '.[] | select(.title | contains("Evolution Worker Lock"))' 2>/dev/null || echo "")
 
-case "$STATUS" in
-    released)
-        echo -e "${GREEN}✅ 锁已成功释放${NC}"
+    if [ -z "$lock_issue" ] || [ "$lock_issue" = "null" ]; then
+        echo ""
+        return 1
+    fi
+
+    echo "$lock_issue"
+}
+
+get_issue_body() {
+    local issue_number="$1"
+    local body
+    body=$(gh issue view "$issue_number" \
+        --repo "${REPO_OWNER}/${REPO_NAME}" \
+        --json body \
+        --jq '.body' 2>/dev/null)
+    echo "$body"
+}
+
+update_and_close_lock() {
+    local issue_number="$1"
+    local end_timestamp
+    end_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    local current_body
+    current_body=$(get_issue_body "$issue_number")
+
+    local new_body
+    new_body="${current_body}
+
+---
+
+**Released At**: ${end_timestamp}
+*Lock automatically released by Evolution Worker.*"
+
+    gh issue edit "$issue_number" \
+        --repo "${REPO_OWNER}/${REPO_NAME}" \
+        --body "$new_body" \
+        --add-label "${RELEASED_LABEL}" >/dev/null 2>&1
+
+    gh issue close "$issue_number" \
+        --repo "${REPO_OWNER}/${REPO_NAME}" >/dev/null 2>&1
+
+    log_info "Successfully closed lock issue #${issue_number}"
+    echo "$issue_number"
+}
+
+main() {
+    validate_token
+
+    log_info "Attempting to release lock..."
+
+    local existing_lock
+    existing_lock=$(find_lock_issue)
+
+    if [ -z "$existing_lock" ]; then
+        log_info "No active lock found, nothing to release"
         exit 0
-        ;;
-    no_issue)
-        echo -e "${YELLOW}⚠️  Issue #1 不存在，无需释放${NC}"
+    fi
+
+    local lock_number
+    lock_number=$(echo "$existing_lock" | grep -oE '"number":[0-9]+' | grep -oE '[0-9]+')
+
+    if [ -n "$lock_number" ]; then
+        log_info "Found active lock issue #${lock_number}"
+        update_and_close_lock "$lock_number"
         exit 0
-        ;;
-    error)
-        MSG=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.message||'unknown error');" 2>/dev/null || echo "unknown error")
-        echo -e "${RED}❌ 锁释放失败: ${MSG}${NC}"
+    else
+        log_error "Failed to parse lock issue number"
         exit 1
-        ;;
-    *)
-        echo -e "${RED}❌ 未知状态: ${STATUS}${NC}"
-        exit 1
-        ;;
-esac
+    fi
+}
+
+main "$@"

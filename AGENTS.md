@@ -47,6 +47,22 @@ Bootstrap: `bash scripts/bootstrap.sh [--role worker|reviewer|cso]`
 | **Worker** | worker | Scheduled (hourly) | 可改 env config/references/；不改 prompts/.agents/evolve.sh |
 | **Reviewer** | — | Manual | 只审不改 |
 
+### Worker Execution
+
+完整 Worker 角色定义: `.agents/agents/worker.md`
+
+```bash
+# Worker 执行入口（自动处理锁、超时、状态记录）
+bash scripts/worker-runner.sh
+
+# 单独获取/释放锁（如需手动控制）
+bash scripts/acquire-lock.sh
+bash scripts/release-lock.sh
+
+# 反停滞检测（自动分析是否需要切换维度）
+bash scripts/check-stagnation.sh
+```
+
 ### Permission Boundaries
 
 - **Worker**: ✅ env config, install tools, run evolve.sh, update references/. ❌ prompts/, .agents/, evolve.sh 架构, push to main
@@ -109,7 +125,9 @@ CSO 审查后选择性采纳，**不自动同步**：
 |--------|---------|
 | `scripts/evolve.sh` | 进化引擎（10 Phase 流水线） |
 | `scripts/bootstrap.sh` | 环境初始化（--role 参数） |
-| `scripts/acquire-lock.sh` / `release-lock.sh` | 分布式锁 |
+| `scripts/worker-runner.sh` | Evolution Worker 主入口（6 阶段流水线） |
+| `scripts/acquire-lock.sh` / `release-lock.sh` | GitHub 分布式锁 |
+| `scripts/check-stagnation.sh` | 反停滞检测（维度切换/深度探索） |
 | `scripts/full-recon.sh` / `deep-recon.sh` | 全量/深度侦察 |
 | `scripts/diagnose.sh` / `health-monitor.sh` | 诊断 & 监控 |
 | `node scripts/fix-network.js` | 网络修复 |
