@@ -2,7 +2,7 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T15:26:59Z
+Last Updated: 2026-05-11T15:27:02Z
 Round: 50
 Total: 53%
 
@@ -15,7 +15,7 @@ Total: 53%
 > | **New Capability** | 本轮安装/配置/启用了之前不存在的能力 | 正常加分 |
 > | **Measurement Correction** | 能力一直存在但之前未被发现/未测量 | 更新分数到正确值，History 标注 `(measurement correction)`，Delta 不计入正增长 |
 > | **Discovery Bonus** | 首次发现已有能力（一次性奖励） | 最多 +5% discovery bonus |
->
+
 > **反模式示例**："镜像源 R14 就配好了，R19 只是重新跑了一遍 curl 测速" → Measurement Correction，不是 +20% New Capability。
 
 ## Dimensions
@@ -117,11 +117,11 @@ Total: 53%
 - Utilization: **89%** (169s effective / 189s total)
 - **Target (>50%) EXCEEDED!**
 
-## History
+## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
-| R50 | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active |
 |-------|-------|------|------|------|------|------|------|-------|
+| R50 | 53% | 40% | 60% | 60% | 80% | 50% | 40% | SKIPPED (History format fixed) |
 | R49 | 53% | 40% | 60% | 60% | 80% | 50% | 40% | SKIPPED (History format fixed) |
 | R48 | 53% | 40% | 60% | 60% | 80% | 50% | 40% | Polaris integration active |
 | R47 | 53% | 40% | 60% | **60%** | 80% | 50% | 40% | **D3: Redis v7.0.15 + PostgreSQL v16 installed** (New Capability) |
@@ -138,7 +138,6 @@ Total: 53%
 | R36 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
 | R35 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
 | R34 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | Polaris integration active |
-|-------|-------|------|------|------|------|------|------|-------|
 | R33 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
 | R32 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |
 | R31 | 53% | 40% | 60% | 45% | 80% | 50% | 40% | streak=1 |

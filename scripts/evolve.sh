@@ -346,8 +346,13 @@ read_polaris_score() {
     fi
     
     BAD_ROWS=0
+    IN_HISTORY_SECTION=0
     while IFS= read -r line; do
-        if echo "$line" | grep -q '^|.*R[0-9].*|'; then
+        if echo "$line" | grep -q '^## History'; then
+            IN_HISTORY_SECTION=1
+            continue
+        fi
+        if [ "$IN_HISTORY_SECTION" -eq 1 ] && echo "$line" | grep -q '^|.*R[0-9].*|'; then
             COLS=$(echo "$line" | grep -o '|' | wc -l)
             if [ "$COLS" -lt 9 ]; then
                 echo "WARNING: Malformed History row ($COLS cols, expected ≥9): ${line:0:60}..."
@@ -376,7 +381,9 @@ read_polaris_score() {
             eval "D${dim_id}_SCORE=0"
             score=0
         fi
-        streak=$(grep -A20 "| D${dim_id} |" "$POLARIS_SCORE_FILE" 2>/dev/null | grep -i 'streak' | grep -oP '\K\d+' | tr -d '[:space:]' || echo "0")
+        # Find streak from Dimensions table (the main row, not History rows)
+        # First get the Dimensions row, then extract the last column's number
+        streak=$(grep -A1 "| D${dim_id} |" "$POLARIS_SCORE_FILE" 2>/dev/null | head -1 | awk -F '|' '{print $NF}' | grep -o '[0-9]\+' | head -1 || echo "0")
         if [ "$score" -lt "$POLARIS_FOCUS_SCORE" ] && [ "${streak:-0}" -lt 3 ]; then
             POLARIS_FOCUS_SCORE=$score
             POLARIS_FOCUS_DIM="D${dim_id}"
