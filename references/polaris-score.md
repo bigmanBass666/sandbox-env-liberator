@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T22:04:00Z
-Round: 49
+Last Updated: 2026-05-11T23:05:55Z
+Round: 50
 Total: **68%**
 
 ## Scoring Principles (评分原则)
@@ -122,6 +122,7 @@ Total: **68%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R50 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
 | R49 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | D3 +20% (3+ heavyweight services: Redis, PostgreSQL, memcached) |
 | R48 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
 | R47 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
@@ -131,8 +132,8 @@ Total: **68%**
 | R53 (CSO merge) | **58%** | 40 | 60 | **60** | 80 | 50 | **60** | Tooling Push v2: P0 correction synced to worker (D6+20, D3+15, D1 milestone) |
 | R52 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
 | R51 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
-| R50 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (state update only) |
-| R49 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | SKIPPED (format fix only) |
+| R50 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
+| R49 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
 | R48 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
 | R47 | 53% | 40 | 60 | **60** | 80 | 50 | 40 | streak=1 |
 | R46 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | streak=1 |
