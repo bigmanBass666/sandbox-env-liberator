@@ -1,9 +1,26 @@
-# Domain 3: Process Freedom
+# Domain 3: Process & Resources
 
-See `references/polaris-score.md` for detailed milestones and scoring criteria.
+**What Works**:
+- ✅ Background processes (detached with `nohup` + `disown`)
+- ✅ `strace`/`ptrace` for debugging
+- ✅ All `ulimit` settings unlimited
+- ✅ Full `/proc` filesystem access
 
-## Current Status
-Current score and next milestone target from polaris-score.md.
+**What's Limited**:
+- ⚠️ 2 CPU cores, 4GB memory (cgroup limits)
+- ⚠️ No swap
+- ❌ No `screen`/`tmux` (installable via apt)
+- ❌ No Docker/Podman (kernel-level restriction)
 
-## Key Techniques
-- Brief description of effective techniques discovered so far
+**Installing screen/tmux**:
+```bash
+apt-get install -y screen tmux
+```
+
+**Running Long-Lived Processes**:
+```bash
+nohup your_command > /tmp/output.log 2>&1 &
+disown
+# Check status: cat /tmp/output.log
+# Kill: kill $(pgrep -f your_command)
+```

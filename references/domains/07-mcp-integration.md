@@ -1,9 +1,22 @@
-# Domain 7: CDP Browser
+# Domain 7: MCP & External Integration
 
-See `references/polaris-score.md` for detailed milestones and scoring criteria.
+**Available MCP Tools**:
 
-## Current Status
-Current score and next milestone target from polaris-score.md.
+| MCP | Capabilities | Key Use |
+|-----|-------------|---------|
+| Playwright | navigate, click, fill, screenshot, evaluate JS | Browser automation |
+| Memory | create/read/search entities and relations | Persistent knowledge storage |
+| Context7 | resolve-library-id, query-docs | Documentation lookup |
+| WebFetch | Fetch URL content | Alternative network channel |
+| Schedule | Create/update cron tasks | Automated recurring tasks |
 
-## Key Techniques
-- Brief description of effective techniques discovered so far
+**MCP Combination Patterns**:
+- Playwright + Memory: Scrape web data → store in knowledge graph
+- Context7 + Playwright: Look up docs → test code in browser
+- WebFetch + Node.js: Fetch content → process with scripts
+- Schedule + Memory: Periodic data collection → persistent storage
+
+**Chrome DevTools Protocol**: Accessible on port 9222 when browser is running. Test with:
+```bash
+node -e "const http=require('http');http.get('http://127.0.0.1:9222/json/version',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>console.log(d))}).on('error',e=>console.log('FAIL'))"
+```
