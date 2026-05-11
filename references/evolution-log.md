@@ -1326,3 +1326,28 @@ Round 2 ████████████████████████
 | CDPBrowser              0s |
 | Integration             0s |
 | Reflection              0s |
+
+## Round 47 - 2026-05-11 14:31:10
+- State: PASS=127, FAIL=6, WARN=3 (inherited from R46)
+- Delta: D3 +15% (45% → 60%)
+- New Capability: Redis v7.0.15, PostgreSQL 16 installed and verified
+- P0: 0, P1: 0, P2: 0, P3: 0, P4: 0
+- Focus: **D3 进程自由** | New Capability (Redis + PostgreSQL)
+- Time elapsed: ~240s (4min)
+- Commit: COMMITTED
+
+### Timeline
+| EnvSetup                | 30s |
+| evolve.sh Round 46      | 65s |
+| History format fix       | 5s  |
+| Redis install+verify     | 40s |
+| PostgreSQL install+verify| 60s |
+| Score update+commit      | 40s |
+
+### Key Actions
+1. Executed evolve.sh Round 46 → SKIPPED (History parse error)
+2. Fixed polaris-score.md History table (8→9 cols)
+3. Installed Redis v7.0.15 via apt → verified SET/GET/List/Hash ops
+4. Installed PostgreSQL 16 via apt → verified connection + version query
+5. Updated D3 score: 45% → 60%
+6. Committed all changes to worker branch
