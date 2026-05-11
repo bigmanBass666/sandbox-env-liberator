@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T23:05:55Z
-Round: 50
+Last Updated: 2026-05-11T23:07:26Z
+Round: 51
 Total: **68%**
 
 ## Scoring Principles (评分原则)
@@ -122,6 +122,7 @@ Total: **68%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R51 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
 | R50 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
 | R49 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | D3 +20% (3+ heavyweight services: Redis, PostgreSQL, memcached) |
 | R48 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
