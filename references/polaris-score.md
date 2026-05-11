@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-11T07:20:27Z
-Round: 43
+Last Updated: 2026-05-11T10:58:00Z
+Round: 44
 Total: 53%
 
 ## Scoring Principles (评分原则)
@@ -120,7 +120,8 @@ Total: 53%
 ## History
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
-| R43 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
+| R44 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | D1: IPv6=blocked, WS_40005=reachable, CDN tested (4 loops) |
+| R43 | 53% | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R42 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R40 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
 | R39 | 40 | 60 | 45 | 80 | 50 | 40 | Polaris integration active |
