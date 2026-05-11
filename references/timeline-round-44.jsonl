@@ -36,3 +36,12 @@
 {"event":"phase_end","round":"44","phase":"8","phase_name":"RecordCommit","ts":1778499866,"elapsed":2}
 {"event":"phase_start","round":"44","phase":"9","phase_name":"ReleaseLock","ts":1778499866,"iso":"2026-05-11T11:44:26Z"}
 {"event":"phase_end","round":"44","phase":"9","phase_name":"ReleaseLock","ts":1778499866,"elapsed":0}
+{"event":"phase_end","round":"?","phase":"57","phase_name":"CDPBrowser","ts":1778499866,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"6","phase_name":"Integration","ts":1778499866,"iso":"2026-05-11T11:44:26Z"}
+{"event":"phase_end","round":"44","phase":"6","phase_name":"Integration","ts":1778499866,"elapsed":0}
+{"event":"phase_start","round":"44","phase":"7","phase_name":"Reflection","ts":1778499866,"iso":"2026-05-11T11:44:26Z"}
+{"event":"phase_end","round":"44","phase":"7","phase_name":"Reflection","ts":1778499866,"elapsed":0}
+{"event":"phase_start","round":"44","phase":"8","phase_name":"RecordCommit","ts":1778499866,"iso":"2026-05-11T11:44:26Z"}
+{"event":"phase_end","round":"44","phase":"8","phase_name":"RecordCommit","ts":1778499869,"elapsed":3}
+{"event":"phase_start","round":"44","phase":"9","phase_name":"ReleaseLock","ts":1778499869,"iso":"2026-05-11T11:44:29Z"}
+{"event":"phase_end","round":"44","phase":"9","phase_name":"ReleaseLock","ts":1778499869,"elapsed":0}
