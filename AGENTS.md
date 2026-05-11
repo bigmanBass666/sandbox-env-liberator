@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**sandbox-env-liberator** — Polaris 自主进化系统。通过定时任务驱动的 Night Evolution Worker 夜间持续工作，CSO 白天审查并改进架构。
+**sandbox-env-liberator** — Polaris 自主进化系统。Worker 持续在 worker 分支自主进化，CSO 在 main 分支改进系统架构，两者通过 Branch Sync Protocol 并行协作。
 **Goal**: 彻底解放 sandbox 所有限制。
 
 ### Polaris 6 Dimensions (Scorecard)
@@ -44,13 +44,13 @@ Bootstrap: `bash scripts/bootstrap.sh [--role worker|reviewer|cso]`
 | Role | Branch | Trigger | Key Boundary |
 |------|--------|---------|-------------|
 | **CSO** | main | Manual | 可改任何系统文件；不改 Worker 数据 |
-| **Worker** | worker | Scheduled (hourly) | 可改 env config/references/；不改 prompts/.agents/evolve.sh |
+| **Worker** | worker | Scheduled (hourly, continuous) | 可改 env config/references/；不改 prompts/.agents/evolve.sh |
 | **Reviewer** | — | Manual | 只审不改 |
 
 ### Permission Boundaries
 
 - **Worker**: ✅ env config, install tools, run evolve.sh, update references/. ❌ prompts/, .agents/, evolve.sh 架构, push to main
-- **CSO**: ✅ any system file, design architecture, merge worker → main. ❌ execute daily evolution rounds
+- **CSO**: ✅ any system file, design architecture, read-only review worker data, selective cherry-pick. ❌ execute daily evolution rounds, modify worker data files
 - **Reviewer**: ✅ review code, run verification. ❌ modify any code
 
 Full policy: `.agents/permissions/policy.yaml`
@@ -89,6 +89,18 @@ CSO 审查后选择性采纳，**不自动同步**：
 
 - **main** = source of truth（工具层）。CSO 直推前必须 `git fetch` + `git pull`
 - 详见 `.agents/context/architecture.md`
+
+### Parallel Safety Rules
+
+CSO 在 Worker 运行时可以安全地进行大多数操作。需要暂停 Worker 的场景：
+
+| 操作类型 | 需要暂停 Worker | 原因 |
+|----------|-----------------|------|
+| 改工具文件 (scripts/prompts/.agents) | ❌ 不需要 | 下轮自动生效 |
+| 改 AGENTS.md / .gitignore | ❌ 不需要 | 下轮自动生效 |
+| Main→Worker Tooling Push | ⚠️ 需要 | git 操作期间分支状态变化 |
+| 审查 Worker 数据文件 | ✅ 建议等待 | 避免读到半写状态 |
+| cherry-pick 能力到 main | ✅ 建议等待 | 确保数据一致性 |
 
 ## File System Index
 
