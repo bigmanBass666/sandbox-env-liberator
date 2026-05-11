@@ -1,0 +1,28 @@
+{"event":"phase_start","round":"?","phase":"0","phase_name":"Lock+Env","ts":1778462802,"iso":"2026-05-11T01:26:42Z"}
+{"event":"phase_end","round":"?","phase":"0","phase_name":"Lock+Env","ts":1778462802,"elapsed":1}
+{"event":"phase_start","round":"?","phase":"0g","phase_name":"GitHub Sync","ts":1778462802,"iso":"2026-05-11T01:26:42Z"}
+{"event":"phase_end","round":"?","phase":"0g","phase_name":"GitHub Sync","ts":1778462803,"elapsed":1}
+{"event":"phase_start","round":"?","phase":"05","phase_name":"MirrorInit","ts":1778462803,"iso":"2026-05-11T01:26:43Z"}
+{"event":"phase_end","round":"?","phase":"05","phase_name":"MirrorInit","ts":1778462803,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"1","phase_name":"Recon","ts":1778462803,"iso":"2026-05-11T01:26:43Z"}
+{"event":"phase_end","round":"?","phase":"1","phase_name":"Recon","ts":1778462803,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"2","phase_name":"DeltaAnalysis","ts":1778462803,"iso":"2026-05-11T01:26:43Z"}
+{"event":"phase_end","round":"?","phase":"2","phase_name":"DeltaAnalysis","ts":1778462949,"elapsed":146}
+{"event":"phase_start","round":"?","phase":"3","phase_name":"Hypotheses","ts":1778462949,"iso":"2026-05-11T01:29:09Z"}
+{"event":"phase_end","round":"?","phase":"3","phase_name":"Hypotheses","ts":1778462950,"elapsed":1}
+{"event":"phase_start","round":"?","phase":"4","phase_name":"Experiments","ts":1778462950,"iso":"2026-05-11T01:29:10Z"}
+{"event":"phase_end","round":"?","phase":"4","phase_name":"Experiments","ts":1778462950,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"5","phase_name":"AntiStagnation","ts":1778462950,"iso":"2026-05-11T01:29:10Z"}
+{"event":"phase_end","round":"?","phase":"5","phase_name":"AntiStagnation","ts":1778462950,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"55","phase_name":"Degeneration","ts":1778462950,"iso":"2026-05-11T01:29:10Z"}
+{"event":"phase_end","round":"?","phase":"55","phase_name":"Degeneration","ts":1778462950,"elapsed":0}
+{"event":"phase_start","round":"?","phase":"57","phase_name":"CDPBrowser","ts":1778462950,"iso":"2026-05-11T01:29:10Z"}
+{"event":"phase_end","round":"?","phase":"57","phase_name":"CDPBrowser","ts":1778462953,"elapsed":3}
+{"event":"phase_start","round":"?","phase":"6","phase_name":"Integration","ts":1778462953,"iso":"2026-05-11T01:29:13Z"}
+{"event":"phase_end","round":"40","phase":"6","phase_name":"Integration","ts":1778462953,"elapsed":0}
+{"event":"phase_start","round":"40","phase":"7","phase_name":"Reflection","ts":1778462953,"iso":"2026-05-11T01:29:13Z"}
+{"event":"phase_end","round":"40","phase":"7","phase_name":"Reflection","ts":1778462953,"elapsed":0}
+{"event":"phase_start","round":"40","phase":"8","phase_name":"RecordCommit","ts":1778462955,"iso":"2026-05-11T01:29:15Z"}
+{"event":"phase_end","round":"40","phase":"8","phase_name":"RecordCommit","ts":1778462955,"elapsed":0}
+{"event":"phase_start","round":"40","phase":"9","phase_name":"ReleaseLock","ts":1778462955,"iso":"2026-05-11T01:29:15Z"}
+{"event":"phase_end","round":"40","phase":"9","phase_name":"ReleaseLock","ts":1778462955,"elapsed":0}
