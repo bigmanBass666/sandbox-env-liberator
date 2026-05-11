@@ -41,3 +41,6 @@ yarn-error.log*
 
 # Don't publish sensitive scripts
 publish-github.js
+
+# Spec mode artifacts (one-time design docs, not versioned)
+.trae/specs/
