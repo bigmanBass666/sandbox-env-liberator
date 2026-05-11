@@ -98,6 +98,9 @@ check "background processes" "node -e \"const{spawn}=require('child_process');co
 check "strace available" "which strace"
 check_warn "screen available" "which screen"
 check_warn "tmux available" "which tmux"
+check_warn "Redis server running" "pgrep -x redis-server"
+check_warn "PostgreSQL running" "pgrep -x postgres"
+check_warn "nginx available" "which nginx"
 echo ""
 
 # === Domain 4: Package Management ===
@@ -168,6 +171,8 @@ echo ""
 # === Domain 7: MCP & External Integration ===
 echo "━━━ Domain 7: MCP & External Integration ━━━"
 check "Chrome DevTools Protocol (port 9222)" "node -e \"const http=require('http');const r=http.get('http://127.0.0.1:9222/json/version',res=>{res.on('data',()=>{});res.on('end',()=>process.exit(0))});r.on('error',()=>process.exit(1));r.setTimeout(2000,()=>{r.destroy();process.exit(1)})\""
+check_warn "MCP config writable" "python3 -c \"import json; json.load(open('/data/user/mcp/mcp-servers.json'))\""
+check_warn "CDP browser content fetch" "timeout 15 node -e \"const{chromium}=require('playwright');(async()=>{const b=await chromium.connectOverCDP('http://127.0.0.1:9222').catch(()=>null);if(!b){process.exit(1);return;}const p=await b.newPage();try{await p.goto('https://example.com',{timeout:8000});process.exit(0);}catch{process.exit(1);}finally{await b.close();}})()\""
 echo ""
 
 # === Domain 8: Persistence ===
