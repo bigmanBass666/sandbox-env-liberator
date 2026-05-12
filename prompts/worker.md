@@ -111,45 +111,36 @@ bash scripts/evolve.sh
 1. 读取错误输出
 2. 尝试修复环境问题（装依赖、设变量）
 3. 重新运行 evolve.sh
-4. 如果仍然失败 → 记录到 handoff.md → push → 结束本轮
+4. 如果仍然失败 → 记录到 handoff.md → push → 直接进入 Step 4
 
-### Step 4: 主动改进（evolve.sh 之后的核心工作）
+### Step 4: 主动关闭 Milestone 差距
 
-evolve.sh 完成侦察和自动改进后，**你必须主动执行额外改进**。evolve.sh 的自动改进是有限的，真正的进步来自你的主动行动。
+evolve.sh 完成侦察和自动改进后，**你必须主动关闭剩余的 Milestone 差距**。
+evolve.sh 的自动改进是有限的——它只执行脚本中硬编码的动作。
+真正的进步来自你基于状态文件的主动判断和行动。
 
-**改进策略（按 Polaris 最低分维度选择）**：
+**决策循环**（反复执行直到时间用尽或所有 Milestone 被阻塞）：
 
-| 维度 | 当前最低分 | 可执行的改进动作 |
-|------|-----------|----------------|
-| D1 网络自由 | 40% | CDP浏览器大文件下载测试、镜像源速度优化、WebSocket数据传输验证 |
-| D3 进程自由 | 60% | 安装运行Redis/PostgreSQL/nginx/memcached、验证服务持久性 |
-| D5 MCP自由 | 50% | 向/data/user/mcp/mcp-servers.json注入自定义MCP server、创建自定义命令 |
-| D6 进化自由 | 60% | 优化evolve.sh执行效率、增加侦察覆盖率、改进验证脚本 |
-
-**执行原则**：
-- 每次改进后立即验证效果（运行 `bash scripts/verify-env.sh`）
-- 验证通过 → 继续下一个改进
-- 验证失败 → 回滚并尝试其他方向
-- 时间不够 → 进入 Step 5 记录成果
-
-**具体操作示例**：
-```bash
-# 安装并启动服务
-apt-get install -y redis-server && redis-server --daemonize yes
-apt-get install -y postgresql && pg_ctlcluster 16 main start
-
-# 验证服务运行
-pgrep -a redis-server
-pgrep -a postgres
-
-# 测试MCP注入
-python3 -c "import json; cfg=json.load(open('/data/user/mcp/mcp-servers.json')); print(json.dumps(cfg, indent=2))"
-
-# 验证环境
-bash scripts/verify-env.sh
+```
+1. 重新读取 polaris-score.md
+2. 找到分数最低的维度 → 读取其 Milestone 列表
+3. 找到第一个未完成的 Milestone
+4. 问自己：我能在当前环境中直接推进这个 Milestone 吗？
+   - 是 → 执行改进 → 验证效果（verify-env.sh）→ 回到步骤 1
+   - 否 → 尝试下一个维度 → 回到步骤 1
+5. 所有维度都被阻塞 → 记录 Blockers 到 handoff.md → 进入 Step 5
 ```
 
-当你问自己"还有什么能让 Polaris 分数更高？"且答案为否 → 进入 Step 5
+**判断"能否推进"的方法**：
+- Milestone 说"安装某工具" → 检查是否已安装，未安装则装
+- Milestone 说"某服务运行" → 检查是否运行，未运行则启动
+- Milestone 说"验证某能力" → 设计验证命令并执行
+- Milestone 说"实现某方案" → 拆解为可执行步骤，逐步实施
+- 不确定能否推进 → 先尝试，失败则记录并换方向
+
+**关键心态**：polaris-score.md 的 Milestone 列表就是你的 TODO 列表。
+每个未勾选的 `[ ]` 都是你应该尝试关闭的目标。
+不要因为"不知道做什么"而跳过——读 Milestone，选一个，动手做。
 
 ### Step 5: 记录并退出
 
@@ -188,9 +179,9 @@ bash scripts/release-lock.sh 2>/dev/null || true
 
 ### 🚨 执行路径规则
 
-evolve.sh 是改进流程的起点，必须首先运行。运行 evolve.sh 之后，你可以且应该主动执行额外改进。
+evolve.sh 是改进流程的起点，必须首先运行。运行 evolve.sh 之后，你应该主动关闭 Milestone 差距。
 - 必须先运行 evolve.sh（它负责侦察、分析、自动改进和状态记录）
-- evolve.sh 完成后，主动执行 Step 4 中的改进动作
+- evolve.sh 完成后，基于 polaris-score.md 的 Milestone 列表主动改进
 - 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 Step 5 更新）
 
 ### 反停滞规则
@@ -263,4 +254,4 @@ evolve.sh 是改进流程的起点，必须首先运行。运行 evolve.sh 之�
    ```
 5. 归档后执行 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`
 
-⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push。然后在 Step 4 中尝试手动改进。
+⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push，然后直接进入 Step 4 主动改进循环。
