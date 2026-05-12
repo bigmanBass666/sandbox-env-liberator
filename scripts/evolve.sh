@@ -2203,3 +2203,28 @@ print_time_report() {
 }
 
 print_time_report
+
+echo ""
+echo -e "${CYAN}🎯 Suggested Next Steps (for Worker AI):${NC}"
+
+LOWEST_DIM=""
+LOWEST_SCORE=999
+for dim in D1 D2 D3 D4 D5 D6; do
+    score_var="${dim}_SCORE"
+    score_val="${!score_var}"
+    if [ -n "$score_val" ] && [ "$score_val" -lt "$LOWEST_SCORE" ] 2>/dev/null; then
+        LOWEST_SCORE="$score_val"
+        LOWEST_DIM="$dim"
+    fi
+done
+
+if [ -n "$LOWEST_DIM" ]; then
+    echo -e "${CYAN}  - Lowest dimension: ${LOWEST_DIM} (${LOWEST_SCORE}%) → read its Milestone in polaris-score.md${NC}"
+fi
+echo -e "${CYAN}  - Quick wins: D4 [80%] test /data/user/ cross-session persistence${NC}"
+echo -e "${CYAN}  - All dimensions at 80%+ have [100%] milestones open → analyze and attempt${NC}"
+
+TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
+if [ "$TOTAL_ELAPSED" -lt $(( TIME_BUDGET * 30 / 100 )) ]; then
+    echo -e "${YELLOW}⚠️ evolve.sh 仅用了 ${TOTAL_ELAPSED}s / ${TIME_BUDGET}s。Step 4 才是你的核心工作阶段——请继续。${NC}"
+fi
