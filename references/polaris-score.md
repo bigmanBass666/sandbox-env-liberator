@@ -2,9 +2,9 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-12T03:08:33Z
-Round: 55
-Total: **68%**
+Last Updated: 2026-05-12T16:08:00Z
+Round: 56
+Total: **70%**
 
 ## Scoring Principles (评分原则)
 
@@ -26,7 +26,7 @@ Total: **68%**
 | D2 | 包管理自由 | **80%** | 5 mirrors (npm/pip/Go/Cargo/apt), p7zip, esbuild, meson, node-gyp, gcc 13.3, g++ 13.3, rustc 1.92, go 1.25, clang 17.0 | R54 (CSO) | 0 |
 | D3 | 进程自由 | **80%** | 4GB RAM / 2 CPU / ulimit generous / screen + tmux installed, Redis v7.0.15 running, PostgreSQL 16 running, memcached 1.6.24 running (3+ heavyweight services) | R49 | 0 |
 | D4 | 文件系统自由 | 80% | 1.5TB total, 9% used, /workspace writable, /data/user/ discovered | R15 | 1 |
-| D5 | MCP/工具自由 | 60% | Dual-layer config, 5 servers running, custom MCP server injection verified into /data/user/mcp/mcp-servers.json | R55 (CSO) | 0 |
+| D5 | MCP/工具自由 | **70%** | Dual-layer config, 5 servers running, custom MCP injection + 3 custom commands (/recon, /fix-network, /install) created in /data/user/commands/ | R56 | 0 |
 | D6 | 自主进化自由 | **60%** | Flywheel operational, TIME REPORT now 89% efficient (169s/189s), associative array timing fixed | R29 | 0 |
 
 ## Milestones
@@ -94,7 +94,7 @@ Total: **68%**
 - [x] [20%] mcp_servers.json location confirmed (/app/etc/ and /data/user/mcp/) — R13
 - [x] [40%] Dual-layer config architecture understood — R16
 - [x] [60%] Successfully inject custom MCP server into /data/user/mcp/mcp-servers.json and verify it works — ✅ R55 (CSO)
-- [ ] [80%] Custom commands (/recon, /fix-network, /install) available via commands/
+- [x] [80%] Custom commands (/recon, /fix-network, /install) available via commands/ — ✅ R56 (3 commands created)
 - [ ] [100%] Tool/server registration fully automated
 
 **MCP server inventory (R16):**
@@ -122,6 +122,7 @@ Total: **68%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R56 | 70% | 50 | 80 | 80 | 80 | **70** | 60 | D5 +10% (3 custom commands: /recon, /fix-network, /install created) |
 | R55 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
 | R54 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
 | R53 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
