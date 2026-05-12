@@ -2138,8 +2138,6 @@ if [ -f "${TIMELINE_FILE:-}" ] && [ -s "${TIMELINE_FILE}" ]; then
     echo -e "${CYAN}  📋 Timeline archived to ${TL_ARCHIVE}${NC}"
 fi
 
-print_time_report
-
 print_time_report() {
     local _prev_ts=0
     local _monotonic_ok=true
@@ -2205,11 +2203,3 @@ print_time_report() {
 }
 
 print_time_report
-
-TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
-UTILIZATION_PCT=$(( TOTAL_ELAPSED * 100 / TIME_BUDGET ))
-if [ "$UTILIZATION_PCT" -lt 50 ]; then
-    echo -e "${YELLOW}⚠️ evolve.sh 仅用了 ${TOTAL_ELAPSED}s / ${TIME_BUDGET}s (${UTILIZATION_PCT}%)。你还有大量时间！请继续 Step 4 主动关闭 Milestone 差距。${NC}"
-else
-    echo -e "${GREEN}✅ evolve.sh 已使用 ${TOTAL_ELAPSED}s / ${TIME_BUDGET}s (${UTILIZATION_PCT}%)。请检查是否还有时间继续 Step 4。${NC}"
-fi
