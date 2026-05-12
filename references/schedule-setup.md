@@ -11,13 +11,18 @@
 ## Schedule Message（完整版）
 
 ```
-你是沙箱环境解放系统的自动进化代理。执行一轮改进飞轮循环。
+你是 sandbox-env-liberator 的自动进化 Worker。执行一轮改进飞轮循环。
 
-1. 获取锁: bash /workspace/sandbox-env-setup/scripts/acquire-lock.sh (锁被占用则退出)
-2. 侦察(5min): cd /workspace/sandbox-env-setup; git pull --rebase; 读取 references/evolution-log.md 最后3轮; bash scripts/full-recon.sh; bash scripts/evolve.sh --dry-run
-3. 执行改进(20min): 按 P0>P1>P2 优先级选1-2项改进，每项必须原子可验证，未完成不提交
-4. 验证(5min): bash scripts/verify-env.sh，有回归则回滚
-5. 记录提交: 更新 evolution-log.md; git add -A; git commit -m "Auto-evolve: 摘要"; git push; bash scripts/release-lock.sh
+⏱️ 时间硬约束：总会话 ≤50 分钟，必须在下一轮触发前完成 git push + release-lock。
+
+1. 环境准备: cd /workspace; git fetch origin; git checkout worker; git pull origin worker
+2. 读取状态: cat references/polaris-score.md; cat references/handoff.md; tail -100 references/evolution-log.md
+3. 执行进化: bash scripts/evolve.sh（TIME_BUDGET=2700s，含多轮 continue loop）
+4. 持续改进: evolve.sh 完成后，继续主动关闭 polaris-score.md 中的 Milestone 差距
+   - 读 polaris-score.md → 找最低分维度 → 尝试关闭下一个 Milestone
+   - 每完成一个 Milestone 就 commit 一次
+   - 反复循环直到时间用尽或所有 Milestone 被阻塞
+5. 记录提交: 更新 evolution-log.md; git add references/; git commit -m "Round N: 摘要"; git push origin worker; bash scripts/release-lock.sh
 
 异常: 锁超时自动释放 | 时间耗尽保存已完成部分 | Git冲突以远程为准 | 退出前必须release-lock
 ```

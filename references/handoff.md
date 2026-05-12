@@ -32,8 +32,6 @@ Improvement success: true
 - [ ] **[P0]** 大文件(>100MB)可靠下载并验证完整性
 - [ ] **[D1 60%]** 大文件(>100MB)可靠下载并验证完整性
 - [ ] **[D5 70%]** Tool/server registration fully automated
-- [ ] **[D6 60%]** Single-round time utilization > 70%
-
 
 ## Blockers / Risks
 
@@ -42,6 +40,7 @@ Improvement success: true
 | Network bandwidth | LOW | ~38KB/s via egress tunnel | Mirrors configured, large downloads avoided |
 | Playwright MCP memory | MED | 180MB RSS for single process | Consider if CDP browser suffices |
 | screen/tmux regression | LOW | Lost periodically | persist-config.sh reinstalls |
+| Time utilization | MED | Worker only uses ~10min of 60min interval | evolve.sh continue loop being upgraded |
 
 ## Discoveries Worth Following Up
 

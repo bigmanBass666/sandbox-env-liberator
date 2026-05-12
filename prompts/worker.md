@@ -69,6 +69,14 @@ owner: CSO
 CSO 通过「Main→Worker 工具层同步」将系统改进推送到 worker（仅 scripts/prompts/.agents/.trae 等工具文件，不含 references/ 数据文件）。
 你的数据文件（polaris-score/handoff/evolution-log）留在 worker，CSO 只读审查，不自动合并到 main。
 
+## ⏱️ 时间预算（硬约束）
+
+- 定时任务间隔 1 小时，你的总会话时间 **绝对不能超过 50 分钟**
+- evolve.sh 内部 TIME_BUDGET = 2700s（45 分钟）
+- 你必须在下一轮 Schedule 触发前完成 git push + release-lock
+- 否则下一轮 Worker 将读不到你的工作成果
+- **不要提前退出** — 你有 45 分钟的 evolve.sh 工作时间，请充分利用
+
 ═══════════════════════════════════════════════════════
   执行流程
 ═══════════════════════════════════════════════════════
@@ -154,16 +162,17 @@ evolve.sh 完成侦察和自动改进后，**你必须主动关闭剩余的 Mile
 evolve.sh 的自动改进是有限的——它只执行脚本中硬编码的动作。
 真正的进步来自你基于状态文件的主动判断和行动。
 
-**决策循环**（反复执行直到时间用尽或所有 Milestone 被阻塞）：
+**持续改进循环**（核心工作阶段，应占整个会话 70%+ 时间）：
 
 ```
-1. 重新读取 polaris-score.md
-2. 找到分数最低的维度 → 读取其 Milestone 列表
-3. 找到第一个未完成的 Milestone
-4. 问自己：我能在当前环境中直接推进这个 Milestone 吗？
-   - 是 → 执行改进 → 验证效果（verify-env.sh）→ 回到步骤 1
-   - 否 → 尝试下一个维度 → 回到步骤 1
-5. 所有维度都被阻塞 → 记录 Blockers 到 handoff.md → 进入 Step 5
+1. 读取 polaris-score.md → 找最低分维度 → 读 Milestone 列表
+2. 找到第一个未完成 Milestone → 判断能否推进
+3. 能推进 → 执行改进 → verify-env.sh 验证 → 更新分数 → 回到步骤 1
+4. 不能推进 → 尝试下一个维度 → 回到步骤 1
+5. 所有维度被阻塞 → 记录 Blockers → 进入 Step 5
+6. 关键：不要因为"不知道做什么"而停止 — 每个未勾选的 [ ] 都是你的目标
+7. 关键：每完成一个 Milestone 就 commit 一次，不要积累多个改动
+8. 关键：必须在剩余 5 分钟前进入 Step 5（commit + push + release-lock）
 ```
 
 **判断"能否推进"的方法**：
@@ -207,6 +216,8 @@ git push origin worker
 # 5.6 释放锁
 bash scripts/release-lock.sh 2>/dev/null || true
 ```
+
+⚠️ **时间硬约束**：必须在下一轮 Schedule 触发前完成 git push + release-lock。如果距离下一轮触发不足 5 分钟，立即进入 Step 5 收尾。
 
 ═══════════════════════════════════════════════════════
   必须遵守的规则
