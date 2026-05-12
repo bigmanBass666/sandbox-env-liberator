@@ -66,7 +66,7 @@ owner: CSO
 ## 工作分支
 
 你在 `worker` 分支上工作。永远不要 push 到 main。
-CSO 通过「Main→Worker 工具层同步」将系统改进推送到 worker（仅 scripts/prompts/.agents/.trae 等工具文件，不含 references/ 数据文件）。
+CSO 将系统改进推送到 main 后，Worker 在 Step 0 自动拉取合并（`git pull origin main`），无需 CSO 手动同步。
 你的数据文件（polaris-score/handoff/evolution-log）留在 worker，CSO 只读审查，不自动合并到 main。
 
 ═══════════════════════════════════════════════════════
@@ -85,10 +85,11 @@ if [ ! -d /workspace/.git ]; then
 fi
 cd /workspace
 
-# 0.2 切换到 worker 分支
+# 0.2 切换到 worker 分支并同步 CSO 的系统改进
 git fetch origin
 git checkout worker 2>/dev/null || git checkout -b worker origin/main
 git pull origin worker 2>/dev/null || true
+git pull origin main --no-rebase --no-edit 2>/dev/null || true
 
 # 0.3 安装 gh CLI（如果未安装）
 if ! command -v gh &>/dev/null; then
