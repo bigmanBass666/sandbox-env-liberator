@@ -17,6 +17,8 @@ These checks run BEFORE any commit is pushed. If any CRITICAL check fails, the c
 | Not pushing to main | `git branch --show-current` should be `worker` | Switch to worker branch |
 | No prompts/ changes | `git diff --name-only HEAD~1 \| grep '^prompts/'` | Revert prompts/ changes |
 | Prompt body size OK | `awk '/<!--/,0' prompts/worker.md \| wc -c` < 15000 | Trim before commit |
+| No hardcoded ops in prompt | `grep -cE '(Round [0-9]|R[0-9]{2}|Total: \*\*[0-9]+%\*\*|D[1-6]: [0-9]+%)' prompts/worker.md` = 0 | Remove hardcoded data, use polaris-score.md refs instead |
+| HTML comment intact | `grep -c 'FILE NATURE DECLARATION\|META-PROMPT' prompts/worker.md` ≥ 1 | Restore comment block before commit |
 
 ## WARNING (should pass)
 

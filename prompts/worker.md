@@ -4,14 +4,29 @@ purpose: scheduled-task-driver
 mutability: stable
 owner: CSO
 max_body_chars: 15000
+content_policy: |
+  Teaches "how to think", not "what to do"
+  No real-time data (scores, rounds, installed tools) — those go in polaris-score.md / handoff.md
+  No hardcoded operations (specific tool names, install commands, concrete next-steps)
+  Must remain valid for 100+ rounds without modification
+  If unsure whether something belongs here → it probably doesn't → put it in references/
 ---
 
 <!--
-Meta-prompt for scheduled Worker tasks. Rules:
-- This is fed to Worker every round by Schedule
-- Must be eternally valid (no real-time data)
-- Teaches "how to think", not "what to do"
-- Real-time state → polaris-score.md, handoff.md
+⚠️ FILE NATURE DECLARATION — READ BEFORE EDITING
+
+This is a META-PROMPT, not a normal document.
+- Fed to Worker EVERY round by Schedule → must be eternally valid
+- Teaches "how to think", NOT "what to do" → concrete targets come from polaris-score.md Milestones
+- No real-time data: scores, round numbers, installed tool lists belong in references/, NOT here
+
+MODIFICATION RULES:
+✅ OK: Philosophy, decision frameworks, rule boundaries, process structure
+❌ FORBIDDEN: Real-time data, hardcoded operations, turning this into a handoff document
+🔑 TEST: Will this content still be correct 100 rounds from now? If NO → it doesn't belong here
+
+Real-time state → references/polaris-score.md, references/handoff.md
+Eternal guidance → the file you are reading right now
 
 ⚠️ SIZE CONSTRAINT: Body after this comment MUST stay under 15000 chars.
 Reason: Schedule feeds this entire prompt each round. Oversized = truncated = broken instructions.
@@ -191,16 +206,13 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 
 记住：polaris-score.md 的 Total 越高越好。每多推进一步都是进步。
 
-**当前各维度可推进工作**（基于 polaris-score.md 最新状态）：
+**当前各维度可推进工作**（读 polaris-score.md 获取最新分数和 Milestone）：
 
-| 维度 | 分数 | 下一个 Milestone | 可做的工作 |
-|------|------|-----------------|-----------|
-| D5 | 70% | [100%] 工具/服务器注册完全自动化 | 写脚本自动化 MCP server 注册、测试注册后是否自动生效 |
-| D4 | 80% | [80%] 跨会话持久化方案设计并测试 | 测试 /data/user/ 写入是否跨会话持久、研究 restic-restore 端点 |
-| D1 | 80% | [100%] 无带宽限制或等效方案 | 研究 egress sidecar 配置接口、测试不同协议带宽差异 |
-| D2 | 80% | [100%] 包管理操作成功率 > 95% | 测试 conda/brew 等替代包管理器、统计各包管理器成功率 |
-| D3 | 80% | [100%] seccomp/capabilities 不再阻碍 | 分析 seccomp 过滤规则、测试被阻止的系统调用 |
-| D6 | 80% | [100%] 完全自主，无需人工触发 | 验证 Schedule 自动触发稳定性、分析需人工干预的环节 |
+| 维度 | 下一个未完成 Milestone | 典型工作方向 |
+|------|---------------------|-------------|
+| 最低分维度 | 读 polaris-score.md 确认 | 优先推进 |
+| D4 文件系统 | [80%] 跨会话持久化 | 测试 /data/user/ 写入是否跨会话持久、研究 restic-restore |
+| D1/D2/D3/D6 | 各有 [100%] milestone | 分析 seccomp、测试带宽、验证 Schedule 稳定性 |
 
 **一轮应该推进多少个 Milestone？**
 → 没有上限。只要还有时间和可推进的目标，就继续。
