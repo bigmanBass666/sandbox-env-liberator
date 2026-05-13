@@ -16,6 +16,7 @@ These checks run BEFORE any commit is pushed. If any CRITICAL check fails, the c
 | No forbidden files | `git diff --name-only HEAD~1 \| grep -E 'test\|tmp\|\.bak\|crash\|\.log'` | Remove files, re-commit |
 | Not pushing to main | `git branch --show-current` should be `worker` | Switch to worker branch |
 | No prompts/ changes | `git diff --name-only HEAD~1 \| grep '^prompts/'` | Revert prompts/ changes |
+| Prompt body size OK | `awk '/<!--/,0' prompts/worker.md \| wc -c` < 15000 | Trim before commit |
 
 ## WARNING (should pass)
 

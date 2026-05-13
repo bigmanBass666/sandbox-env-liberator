@@ -3,6 +3,7 @@ type: meta-prompt
 purpose: scheduled-task-driver
 mutability: stable
 owner: CSO
+max_body_chars: 15000
 ---
 
 <!--
@@ -11,6 +12,10 @@ Meta-prompt for scheduled Worker tasks. Rules:
 - Must be eternally valid (no real-time data)
 - Teaches "how to think", not "what to do"
 - Real-time state → polaris-score.md, handoff.md
+
+⚠️ SIZE CONSTRAINT: Body after this comment MUST stay under 15000 chars.
+Reason: Schedule feeds this entire prompt each round. Oversized = truncated = broken instructions.
+Verify after any edit: awk '/<!--/,0' prompts/worker.md | wc -c
 -->
 
 # Evolution Worker Prompt
