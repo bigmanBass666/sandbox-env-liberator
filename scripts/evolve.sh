@@ -889,6 +889,8 @@ if [ -f "$EVOLUTION_LOG" ]; then
 
         for kw in browser network chrome chromium dns proxy firewall 磁盘 disk memory cpu service port; do
             COUNT=$(echo "$RECENT_CHANGES" | grep -ci "$kw" 2>/dev/null || echo 0)
+            # Make COUNT a single integer, strip any whitespace/newlines
+            COUNT=$(echo "$COUNT" | tr -d '\n' | xargs echo || echo 0)
             if [ "$COUNT" -ge 3 ]; then
                 echo "${kw}:${COUNT}" >> "$KEYWORD_COUNTS"
                 DEGENERATION_WARNING=true
