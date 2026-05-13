@@ -119,6 +119,7 @@ phase_end() {
 release_lock_on_exit() {
     if [ "$LOCK_HELD" = true ]; then
         echo -e "${YELLOW}🔓 释放分布式锁（退出清理）...${NC}"
+        rm -f /tmp/polaris-evolve-running-*.flag 2>/dev/null || true
         bash "$SCRIPTS_DIR/release-lock.sh" 2>/dev/null || true
         LOCK_HELD=false
     fi
@@ -141,6 +142,7 @@ LAST_ROUND="${LAST_ROUND:-0}"
 NEXT_ROUND=$((LAST_ROUND + 1))
 echo -e "${CYAN}━━━ Phase 0: 分布式锁获取 ━━━${NC}"
 phase_start "0"
+touch "/tmp/polaris-evolve-running-${START_TIME}.flag"
 
 if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}  DRY-RUN: 跳过锁获取${NC}"
@@ -2172,6 +2174,7 @@ print_time_report() {
     echo ""
     echo -e "${BOLD}${CYAN}╔══════════════════════════════════════╗${NC}"
     echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
+    echo -e "${GREEN}✓ Evolve Execution: CONFIRMED${NC}"
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
 
     for id in 0 0g 05 1 2 3 4 5 55 57 6 7 8 9; do

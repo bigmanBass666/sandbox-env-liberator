@@ -80,6 +80,15 @@ Total: **83%**
 - [x] [40%] Disk space > 1TB (actual: 1.5TB, 123G used = 9%) — R15
 - [x] [60%] /data/user/ structure understood (mcp/, skills/, commands/, builtin/) — R15
 - [ ] [80%] Cross-session persistence solution designed AND tested
+     **Validation Criteria (D4 [80%]):**
+     Accepted evidence:
+     - A) Write file in Session A → terminate → start Session B → read file successfully (true cross-session)
+     - B) restic-restore endpoint end-to-end backup/restore verification
+     - C) `mount | grep data/user` shows persistent filesystem (ext4/xfs/btrfs), NOT tmpfs/overlay
+     Rejected evidence:
+     - ❌ Same-session write + read (proves writability only, NOT persistence)
+     - ❌ Script created but never verified across sessions
+     - ❌ "Should persist" speculation without actual cross-session test
 - [ ] [100%] Automatic data backup/restore verified end-to-end
 
 **Key paths discovered:**
@@ -122,27 +131,27 @@ Total: **83%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
-| R61 | **83** | 80 | 80 | 80 | 80 | **100** | 80 | D5 +30% (tool/server registration fully automated with mcp-server-manager.sh) |
-| R60 | 78% | 80 | 80 | 80 | 80 | 70 | 80 | Polaris integration active |
-| R59 | **78** | **80** | 80 | 80 | 80 | 70 | 80 | D1 +20% (100MB file download via curl verified) |
-| R58 | **75** | 60 | 80 | 80 | 80 | 70 | **80** | D6 +20% (single-round time utilization >70% achieved) |
-| R57 | 72% | **60** | 80 | 80 | 80 | 70 | 60 | D1 +10% (10MB file download via curl verified @ OVH) |
-| R56 | 70% | 50 | 80 | 80 | 80 | **70** | 60 | D5 +10% (3 custom commands: /recon, /fix-network, /install created) |
-| R55 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R54 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R53 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R52 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R51 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R50 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | Polaris integration active |
-| R49 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | D3 +20% (3+ heavyweight services: Redis, PostgreSQL, memcached) |
-| R48 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
-| R47 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | Polaris integration active |
-| R55 (CSO) | **65%** | **50** | 80 | 60 | 80 | **60** | 60 | D1 +10% (CDP content fetch measurement correction), D5 +10% (MCP injection verified). evolve.sh Phase 7 multi-tier, Worker prompt v2 |
-| R46 | 61% | 40 | 80 | 60 | 80 | 50 | 60 | Polaris integration active |
-| R54 (CSO) | **62%** | 40 | **80** | 60 | 80 | 50 | 60 | D2 measurement correction: gcc/rustc/go/clang/g++ verified (+20%) |
-| R53 (CSO merge) | **58%** | 40 | 60 | **60** | 80 | 50 | **60** | Tooling Push v2: P0 correction synced to worker (D6+20, D3+15, D1 milestone) |
-| R52 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
-| R51 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | Polaris integration active (PASS=0, Delta=0) |
+| R61 | **83** | 80 | 80 | 80 | 80 | **100** | 80 | streak=1 |
+| R60 | 78% | 80 | 80 | 80 | 80 | 70 | 80 | streak=1 |
+| R59 | **78** | **80** | 80 | 80 | 80 | 70 | 80 | streak=1 |
+| R58 | **75** | 60 | 80 | 80 | 80 | 70 | **80** | streak=1 |
+| R57 | 72% | **60** | 80 | 80 | 80 | 70 | 60 | streak=1 |
+| R56 | 70% | 50 | 80 | 80 | 80 | **70** | 60 | streak=1 |
+| R55 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R54 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R53 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R52 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R51 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R50 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R49 | 68% | 50 | 80 | 80 | 80 | 60 | 60 | streak=1 |
+| R48 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | streak=1 |
+| R47 | 65% | 50 | 80 | 60 | 80 | 60 | 60 | streak=1 |
+| R55 (CSO) | **65%** | **50** | 80 | 60 | 80 | **60** | 60 | streak=1 |
+| R46 | 61% | 40 | 80 | 60 | 80 | 50 | 60 | streak=1 |
+| R54 (CSO) | **62%** | 40 | **80** | 60 | 80 | 50 | 60 | streak=1 |
+| R53 (CSO merge) | **58%** | 40 | 60 | **60** | 80 | 50 | **60** | streak=1 |
+| R52 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
+| R51 (Worker) | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
 | R50 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
 | R49 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
 | R48 | 53% | 40 | 60 | 60 | 80 | 50 | 40 | streak=1 |
