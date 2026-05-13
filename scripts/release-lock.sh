@@ -62,6 +62,23 @@ async function run() {
 
     const newBody = currentBody + '\\nRELEASED_AT: ' + now + '\\nLOCK_STATUS: released';
 
+    // Time gate check
+    const lockTimeMatch = currentBody.match(/LOCK_ACQUIRED_AT:\s*(\S+)/);
+    if (lockTimeMatch) {
+        const lockTime = new Date(lockTimeMatch[1]);
+        const elapsedSec = Math.round((Date.now() - lockTime.getTime()) / 1000);
+        if (elapsedSec < 900) {
+            console.log(JSON.stringify({
+                status: 'rejected',
+                reason: 'minimum_time_not_met',
+                elapsed_seconds: elapsedSec,
+                minimum_seconds: 900,
+                message: 'Round duration ' + elapsedSec + 's < minimum 900s (15min). Continue working before releasing lock.'
+            }));
+            return;
+        }
+    }
+
     try {
         const updateRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/issues/1', {
             method: 'PATCH',
@@ -97,6 +114,13 @@ fi
 STATUS=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.status);" 2>/dev/null || echo "parse_error")
 
 case "$STATUS" in
+    rejected)
+        ELAPSED_SEC=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(String(j.elapsed_seconds||0));" 2>/dev/null || echo "0")
+        echo -e "${RED}❌ 锁释放被拒绝：工作时间不足 15 分钟${NC}"
+        echo -e "${RED}   已用时: ${ELAPSED_SEC}s (${ELAPSED_SEC} 秒)，最低要求: 900s (15 分钟)${NC}"
+        echo -e "${BOLD}   → 请回到 Step 4 继续工作，满足最低时间要求后再释放锁${NC}"
+        exit 1
+        ;;
     released)
         echo -e "${GREEN}✅ 锁已成功释放${NC}"
         exit 0

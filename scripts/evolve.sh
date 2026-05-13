@@ -119,7 +119,6 @@ phase_end() {
 release_lock_on_exit() {
     if [ "$LOCK_HELD" = true ]; then
         echo -e "${YELLOW}🔓 释放分布式锁（退出清理）...${NC}"
-        rm -f /tmp/polaris-evolve-running-*.flag 2>/dev/null || true
         bash "$SCRIPTS_DIR/release-lock.sh" 2>/dev/null || true
         LOCK_HELD=false
     fi
@@ -142,7 +141,6 @@ LAST_ROUND="${LAST_ROUND:-0}"
 NEXT_ROUND=$((LAST_ROUND + 1))
 echo -e "${CYAN}━━━ Phase 0: 分布式锁获取 ━━━${NC}"
 phase_start "0"
-touch "/tmp/polaris-evolve-running-${START_TIME}.flag"
 
 if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}  DRY-RUN: 跳过锁获取${NC}"
@@ -2174,7 +2172,6 @@ print_time_report() {
     echo ""
     echo -e "${BOLD}${CYAN}╔══════════════════════════════════════╗${NC}"
     echo -e "${BOLD}${CYAN}║   ⏱️  ROUND TIME REPORT                   ║${NC}"
-    echo -e "${GREEN}✓ Evolve Execution: CONFIRMED${NC}"
     echo -e "${BOLD}${CYAN}╠══════════════════════════════════════╣${NC}"
 
     for id in 0 0g 05 1 2 3 4 5 55 57 6 7 8 9; do
@@ -2203,31 +2200,21 @@ print_time_report() {
         printf "║   %-25s %-18s ║\n" "TIMELINE EVENTS" "${_tl_count}"
     fi
     echo -e "${BOLD}${CYAN}╚══════════════════════════════════════╝${NC}"
+
+    ELAPSED_NOW=$(( $(date +%s) - START_TIME ))
+    if [ "$ELAPSED_NOW" -lt 300 ]; then
+        REMAINING_BUDGET=$(( TIME_BUDGET - ELAPSED_NOW ))
+        echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║  ⚠️  WARNING: LOW TIME UTILIZATION DETECTED                  ║${NC}"
+        echo -e "${RED}║                                                              ║${NC}"
+        echo -e "${RED}║  evolve.sh only used ${ELAPSED_NOW}s out of ${TIME_BUDGET}s budget    ║${NC}"
+        echo -e "${RED}║  Remaining budget: ${REMAINING_BUDGET}s (~$(( REMAINING_BUDGET / 60 )) min)           ║${NC}"
+        echo -e "${RED}║                                                              ║${NC}"
+        echo -e "${RED}║  🚨 You MUST continue working in Step 4!                   ║${NC}"
+        echo -e "${RED}║  → Do NOT commit yet. Minimum 25min substantive work       ║${NC}"
+        echo -e "${RED}║  → Complete ≥2 Milestones before entering Step 5          ║${NC}"
+        echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    fi
 }
 
 print_time_report
-
-echo ""
-echo -e "${CYAN}🎯 Suggested Next Steps (for Worker AI):${NC}"
-
-LOWEST_DIM=""
-LOWEST_SCORE=999
-for dim in D1 D2 D3 D4 D5 D6; do
-    score_var="${dim}_SCORE"
-    score_val="${!score_var}"
-    if [ -n "$score_val" ] && [ "$score_val" -lt "$LOWEST_SCORE" ] 2>/dev/null; then
-        LOWEST_SCORE="$score_val"
-        LOWEST_DIM="$dim"
-    fi
-done
-
-if [ -n "$LOWEST_DIM" ]; then
-    echo -e "${CYAN}  - Lowest dimension: ${LOWEST_DIM} (${LOWEST_SCORE}%) → read its Milestone in polaris-score.md${NC}"
-fi
-echo -e "${CYAN}  - Quick wins: D4 [80%] test /data/user/ cross-session persistence${NC}"
-echo -e "${CYAN}  - All dimensions at 80%+ have [100%] milestones open → analyze and attempt${NC}"
-
-TOTAL_ELAPSED=$(( $(date +%s) - START_TIME ))
-if [ "$TOTAL_ELAPSED" -lt $(( TIME_BUDGET * 30 / 100 )) ]; then
-    echo -e "${YELLOW}⚠️ evolve.sh 仅用了 ${TOTAL_ELAPSED}s / ${TIME_BUDGET}s。Step 4 才是你的核心工作阶段——请继续。${NC}"
-fi
