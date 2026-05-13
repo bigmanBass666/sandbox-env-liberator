@@ -54,8 +54,28 @@ list_servers() {
 add_server() {
     local name="$1"
     local command="$2"
+    local env_vars=""
     shift 2
-    local args=("$@")
+
+    # Separate args and env vars (--env KEY=VALUE)
+    local args=()
+    while [ $# -gt 0 ]; do
+        if [ "$1" = "--env" ]; then
+            shift
+            if [ $# -gt 0 ]; then
+                if [ -n "$env_vars" ]; then
+                    env_vars="${env_vars},"
+                fi
+                local key="${1%%=*}"
+                local value="${1#*=}"
+                env_vars="${env_vars}\"${key}\":\"${value}\""
+                shift
+            fi
+        else
+            args+=("$1")
+            shift
+        fi
+    done
 
     # Build args array as JSON
     local args_json
@@ -68,7 +88,11 @@ add_server() {
     fi
 
     # Add server to config
-    jq ".mcpServers.\"${name}\" = { command: \"${command}\", args: ${args_json} }" "${MCP_CONFIG}" > "${MCP_CONFIG}.tmp"
+    if [ -n "$env_vars" ]; then
+        jq ".mcpServers.\"${name}\" = { command: \"${command}\", args: ${args_json}, env: {${env_vars}} }" "${MCP_CONFIG}" > "${MCP_CONFIG}.tmp"
+    else
+        jq ".mcpServers.\"${name}\" = { command: \"${command}\", args: ${args_json} }" "${MCP_CONFIG}" > "${MCP_CONFIG}.tmp"
+    fi
     mv "${MCP_CONFIG}.tmp" "${MCP_CONFIG}"
     log "Server '${name}' added successfully!"
 }
@@ -110,6 +134,7 @@ Commands:
 
 Examples:
   $0 add my-server python3 -m my_mcp_server
+  $0 add my-server-with-env python3 -m my_mcp_server --env KEY1=value1 --env KEY2=value2
   $0 list
   $0 show my-server
   $0 remove my-server
