@@ -80,6 +80,15 @@ Total: **83%**
 - [x] [40%] Disk space > 1TB (actual: 1.5TB, 123G used = 9%) — R15
 - [x] [60%] /data/user/ structure understood (mcp/, skills/, commands/, builtin/) — R15
 - [ ] [80%] Cross-session persistence solution designed AND tested
+    **Validation Criteria (D4 [80%]):**
+    Accepted evidence:
+    - A) Write file in Session A → terminate → start Session B → read file successfully (true cross-session)
+    - B) restic-restore endpoint end-to-end backup/restore verification
+    - C) `mount | grep data/user` shows persistent filesystem (ext4/xfs/btrfs), NOT tmpfs/overlay
+    Rejected evidence:
+    - ❌ Same-session write + read (proves writability only, NOT persistence)
+    - ❌ Script created but never verified across sessions
+    - ❌ "Should persist" speculation without actual cross-session test
 - [ ] [100%] Automatic data backup/restore verified end-to-end
 
 **Key paths discovered:**

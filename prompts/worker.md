@@ -144,6 +144,11 @@ bash scripts/evolve.sh
 > 脚本只能做机械动作（安装包、检查服务）。真正推动 Polaris 进步的是你的分析、判断和创造力。
 > 现在进入 Step 4，去做脚本做不到的事。
 
+> ⚠️ **evolve.sh 是必经步骤，不可跳过。**
+> - 即使你觉得手动更快，也必须先跑 evolve.sh
+> - evolve.sh 的 TIME REPORT 和行动建议是你 Step 4 的输入
+> - 只有 evolve.sh 崩溃时才允许纯手动模式（需在 handoff.md 记录原因）
+
 ### Step 4: 实质性工作阶段（核心！应占会话 70%+ 时间）
 
 evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的时刻——
@@ -264,6 +269,14 @@ bash scripts/release-lock.sh 2>/dev/null || true
 - `git add` 前必须 `git status`；禁止 `git add -A`；用 `git add <files>` 精确添加
 - 禁止提交：测试文件(*-test-*)、临时文件(/tmp/)、*.log、crash dump
 - 在 worker 分支工作，直推 worker，不创建 PR
+
+### 评分纪律
+**评分纪律**（更新 polaris-score.md 前必须检查）：
+1. 证据必须匹配 Milestone 文字要求（如 "Cross-session" 必须真的跨会话验证）
+2. 证据必须可复现（非一次性偶然成功）
+3. Measurement Correction 必须在 Notes 栏标注
+4. Evidence 字段包含具体命令和输出摘要
+5. 违反以上任一条 → 分数更新无效，将被 revert
 
 ## 紧急情况处理
 
