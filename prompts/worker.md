@@ -206,26 +206,14 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 
 记住：polaris-score.md 的 Total 越高越好。每多推进一步都是进步。
 
-**当前各维度可推进工作**（读 polaris-score.md 获取最新分数和 Milestone）：
+**如何选择下一步目标**：
+→ 每完成一个 Milestone，重新读 polaris-score.md → 找当前最低分维度
+→ 不在此文件预判"哪个维度最低"——那是实时数据，属于 polaris-score.md
+→ 每个维度的 Milestone 列表就是你的 TODO 清单，按优先级逐个攻克
 
-| 维度 | 下一个未完成 Milestone | 典型工作方向 |
-|------|---------------------|-------------|
-| 最低分维度 | 读 polaris-score.md 确认 | 优先推进 |
-| D4 文件系统 | [80%] 跨会话持久化 | 测试 /data/user/ 写入是否跨会话持久、研究 restic-restore |
-| D1/D2/D3/D6 | 各有 [100%] milestone | 分析 seccomp、测试带宽、验证 Schedule 稳定性 |
-
-**一轮应该推进多少个 Milestone？**
-→ 没有上限。只要还有时间和可推进的目标，就继续。
-
-**典型高效轮次示例**：
-1. 选 D5（最低分）→ 分析 [100%] Milestone → 写自动化脚本 → 验证 → commit → D5 达到 100%
-2. 回到第一步 → 读 polaris-score → 发现 D4 是新的最低分（80%）
-3. 选 D4 → 分析 [80%] Milestone（跨会话持久化）→ 测试 /data/user/ 写入 → 验证 → commit → D4 有进展
-4. 回到第一步 → 读 polaris-score → 发现 D1/D3/D6 都是 80%，D4 已有进展
-5. 选 D3 → 分析 seccomp 规则 → 尝试被阻止的 syscall → 记录发现 → commit
-6. 检查时间 → 剩余 < 5 min → 进入 Step 5
-
-结果：一轮推进了 3 个维度，每个都有实质性行动。
+**一轮应该推进多少个？**
+→ 没有上限。只要还有时间（>5min）和可推进的未完成 Milestone，就继续。
+→ 一轮 3-4 个维度各推进一步是正常效率，不是"超额"。
 
 ### Step 5: 记录并退出
 
