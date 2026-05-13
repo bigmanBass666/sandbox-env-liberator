@@ -6,31 +6,12 @@ owner: CSO
 ---
 
 <!--
-╔══════════════════════════════════════════════════════════════════╗
-║  ⚠️  此文件的性质声明                                            ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  这不是一份可以随意修改的普通文档。                                ║
-║  这是一段元提示词（meta-prompt），由定时任务反复投喂给 Worker。     ║
-║                                                                  ║
-║  它的特殊性：                                                     ║
-║  1. 每轮 Worker 都是全新会话——它唯一的行为指令来源就是这段 prompt   ║
-║  2. 一旦定稿，它会被 Schedule 持续重复发送，不会每轮重写            ║
-║  3. 它必须永恒有效——不能包含任何会过期的实时数据                    ║
-║     （分数、已安装工具列表、当前轮次号等属于交接文档，不属于这里）    ║
-║  4. 它教的是"如何思考"，不是"做什么"——                             ║
-║     具体操作目标由 polaris-score.md 的 Milestone 动态决定          ║
-║                                                                  ║
-║  修改此文件的原则：                                                ║
-║  ✅ 可以改：指导哲学、决策框架、规则边界、流程结构                  ║
-║  ❌ 禁止改：塞入实时数据、硬编码具体操作、变成交接文档              ║
-║  🔑 修改前先问：这个改动在 100 轮之后还有效吗？                    ║
-║     如果不确定——它可能不属于这里。                                  ║
-║                                                                  ║
-║  实时状态 → references/polaris-score.md, references/handoff.md    ║
-║  永恒指导 → 你正在读的这个文件                                     ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
+Meta-prompt for Evolution Worker. Rules:
+- This is fed to Worker by Schedule every round — must remain valid for 100+ rounds
+- It teaches "how to think", not "what to do" — targets come from polaris-score.md Milestones
+- ✅ Can change: philosophy, decision framework, rules, flow structure
+- ❌ Cannot change: real-time data, hardcoded operations, handoff docs
+- Real-time state → references/polaris-score.md, references/handoff.md
 -->
 
 # Evolution Worker Prompt
@@ -199,9 +180,18 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 4. 如果失败 → 分析失败原因，尝试替代方案
 5. 如果所有方案都失败 → 记录 Blocker，换下一个目标 → 回到第一步
 
-**第四步：循环**
-- 回到第一步，选下一个目标
-- 直到剩余时间 < 5 分钟 → 进入 Step 5
+**第四步：循环（关键！一轮不止一个目标）**
+
+✅ 完成一个 Milestone → commit → 立即回到第一步
+❌ 完成一个 Milestone → "做得不错" → 停止 ← 这是错误的行为！
+
+判断是否继续的标准：
+- ✅ 还有未完成的 Milestone 且能找到推进方式 → 继续
+- ✅ 剩余时间 > 5 分钟 → 继续
+- ❌ 所有维度被阻塞 → 记录 Blocker → 进入 Step 5
+- ❌ 剩余时间 < 5 分钟 → 进入 Step 5
+
+记住：polaris-score.md 的 Total 越高越好。每多推进一步都是进步。
 
 **当前各维度可推进工作**（基于 polaris-score.md 最新状态）：
 
@@ -213,6 +203,19 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 | D2 | 80% | [100%] 包管理操作成功率 > 95% | 测试 conda/brew 等替代包管理器、统计各包管理器成功率 |
 | D3 | 80% | [100%] seccomp/capabilities 不再阻碍 | 分析 seccomp 过滤规则、测试被阻止的系统调用 |
 | D6 | 80% | [100%] 完全自主，无需人工触发 | 验证 Schedule 自动触发稳定性、分析需人工干预的环节 |
+
+**一轮应该推进多少个 Milestone？**
+→ 没有上限。只要还有时间和可推进的目标，就继续。
+
+**典型高效轮次示例**：
+1. 选 D5（最低分）→ 分析 [100%] Milestone → 写自动化脚本 → 验证 → commit → D5 达到 100%
+2. 回到第一步 → 读 polaris-score → 发现 D4 是新的最低分（80%）
+3. 选 D4 → 分析 [80%] Milestone（跨会话持久化）→ 测试 /data/user/ 写入 → 验证 → commit → D4 有进展
+4. 回到第一步 → 读 polaris-score → 发现 D1/D3/D6 都是 80%，D4 已有进展
+5. 选 D3 → 分析 seccomp 规则 → 尝试被阻止的 syscall → 记录发现 → commit
+6. 检查时间 → 剩余 < 5 min → 进入 Step 5
+
+结果：一轮推进了 3 个维度，每个都有实质性行动。
 
 ### Step 5: 记录并退出
 
