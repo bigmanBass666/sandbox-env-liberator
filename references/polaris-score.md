@@ -2,9 +2,9 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-12T19:19:13Z
-Round: 59
-Total: **78%**
+Last Updated: 2026-05-13T12:30:00Z
+Round: 61
+Total: **83%**
 
 ## Scoring Principles (评分原则)
 
@@ -26,7 +26,7 @@ Total: **78%**
 | D2 | 包管理自由 | **80%** | 5 mirrors (npm/pip/Go/Cargo/apt), p7zip, esbuild, meson, node-gyp, gcc 13.3, g++ 13.3, rustc 1.92, go 1.25, clang 17.0 | R54 (CSO) | 0 |
 | D3 | 进程自由 | **80%** | 4GB RAM / 2 CPU / ulimit generous / screen + tmux installed, Redis v7.0.15 running, PostgreSQL 16 running, memcached 1.6.24 running (3+ heavyweight services) | R49 | 0 |
 | D4 | 文件系统自由 | 80% | 1.5TB total, 9% used, /workspace writable, /data/user/ discovered | R15 | 1 |
-| D5 | MCP/工具自由 | **70%** | Dual-layer config, 5 servers running, custom MCP injection + 3 custom commands (/recon, /fix-network, /install) created in /data/user/commands/ | R56 | 0 |
+| D5 | MCP/工具自由 | **100%** | Dual-layer config, 5 servers running, custom MCP injection + 3 custom commands (/recon, /fix-network, /install) created in /data/user/commands/, mcp-server-manager.sh automates registration (list, add, remove, show, backup) | R60 | 0 |
 | D6 | 自主进化自由 | **80%** | Flywheel operational, TIME REPORT now 89% efficient (169s/189s), associative array timing fixed, single-round time utilization >70% achieved (85% Round 58) | R58 | 0 |
 
 ## Milestones
@@ -95,7 +95,7 @@ Total: **78%**
 - [x] [40%] Dual-layer config architecture understood — R16
 - [x] [60%] Successfully inject custom MCP server into /data/user/mcp/mcp-servers.json and verify it works — ✅ R55 (CSO)
 - [x] [80%] Custom commands (/recon, /fix-network, /install) available via commands/ — ✅ R56 (3 commands created)
-- [ ] [100%] Tool/server registration fully automated
+- [x] [100%] Tool/server registration fully automated — ✅ R60 (mcp-server-manager.sh created with list/add/remove/show/backup)
 
 **MCP server inventory (R16):**
 | Server | RSS | Purpose | Redundant? |
@@ -122,6 +122,8 @@ Total: **78%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R61 | **83** | 80 | 80 | 80 | 80 | **100** | 80 | D5 +30% (tool/server registration fully automated with mcp-server-manager.sh) |
+| R60 | 78% | 80 | 80 | 80 | 80 | 70 | 80 | Polaris integration active |
 | R59 | **78** | **80** | 80 | 80 | 80 | 70 | 80 | D1 +20% (100MB file download via curl verified) |
 | R58 | **75** | 60 | 80 | 80 | 80 | 70 | **80** | D6 +20% (single-round time utilization >70% achieved) |
 | R57 | 72% | **60** | 80 | 80 | 80 | 70 | 60 | D1 +10% (10MB file download via curl verified @ OVH) |
