@@ -207,6 +207,38 @@ RESTOREEOF
 chmod +x "$RESTORE_SCRIPT"
 fix "Created $RESTORE_SCRIPT"
 
+# === Restore heavy services (Redis, PostgreSQL, memcached) ===
+fix "Checking heavy services..."
+
+if command -v redis-server &>/dev/null; then
+    if ! pgrep -x redis-server > /dev/null; then
+        fix "Starting Redis..."
+        redis-server --daemonize yes 2>/dev/null && sleep 1 && redis-cli ping > /dev/null 2>&1 && pass "Redis started" || fix "Redis start failed"
+    else
+        pass "Redis already running"
+    fi
+fi
+
+if command -v pg_ctl &>/dev/null || command -v postgres &>/dev/null; then
+    if ! pgrep -f "postgres.*main" > /dev/null; then
+        fix "Starting PostgreSQL..."
+        service postgresql start 2>/dev/null || pg_ctlcluster 16 main start 2>/dev/null || pg_ctlcluster 15 main start 2>/dev/null
+        sleep 2
+        pg_isready -h localhost -p 5432 > /dev/null 2>&1 && pass "PostgreSQL started" || fix "PostgreSQL start failed"
+    else
+        pass "PostgreSQL already running"
+    fi
+fi
+
+if command -v memcached &>/dev/null; then
+    if ! pgrep -x memcached > /dev/null; then
+        fix "Starting memcached..."
+        memcached -d -p 11211 -u root 2>/dev/null && sleep 1 && echo "stats" | nc -w1 localhost 11211 2>/dev/null | head -1 | grep -q "STAT" && pass "memcached started" || fix "memcached start failed"
+    else
+        pass "memcached already running"
+    fi
+fi
+
 # === Create startup marker ===
 echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > /root/.sandbox-last-setup
 pass "Created setup timestamp marker"
@@ -218,4 +250,5 @@ echo "╚═══════════════════════�
 echo ""
 echo "To restore in a new session:"
 echo "  source /usr/local/bin/sandbox-env-setup.sh"
+echo "  bash /usr/local/bin/persist-config.sh"
 echo "  # Or just start a new shell (auto-sourced from .bashrc/.zshrc)"
