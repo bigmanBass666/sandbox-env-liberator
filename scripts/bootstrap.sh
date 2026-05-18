@@ -139,6 +139,15 @@ for pkg in $ESSENTIAL_PKGS; do
     fi
 done
 
+log_step "Install git pre-commit hook"
+if [ -f scripts/pre-commit-check.sh ]; then
+    cp scripts/pre-commit-check.sh .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    log_pass "pre-commit hook installed (validates worker.md compliance)"
+else
+    log_warn "pre-commit-check.sh not found — skipping hook install"
+fi
+
 log_step "Run verify-env.sh baseline"
 if [ -f scripts/verify-env.sh ]; then
     BASELINE_OUTPUT=$(bash scripts/verify-env.sh 2>&1 || true)
