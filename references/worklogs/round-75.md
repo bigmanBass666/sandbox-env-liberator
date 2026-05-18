@@ -19,6 +19,7 @@
 - Extended persist-config.sh to automatically start lighttpd and beanstalkd, plus ensure lighttpd uses port 8080
 - Verified all 5 services are running via verify-env.sh
 - Created this round-75 work log
+- Created references/5-services-setup.md: Full documentation of the 5 services setup procedure!
 
 ## Changes Made
 
@@ -37,6 +38,6 @@
 
 ## What's Left Undone
 
-- [ ] **[P3]** Document 5+ services setup procedure (as per handoff.md from round 74)
+- [x] **[P3]** Document 5+ services setup procedure (as per handoff.md from round 74) ✅
 - [ ] **[P3]** Monitor service stability across sessions
 - [ ] **[P2]** Optimize verify-env.sh timeout handling

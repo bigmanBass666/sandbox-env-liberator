@@ -26,10 +26,12 @@ Main focus: Completing the "Extend persist-config.sh to automate service install
 - Verified all 5 services running via verify-env.sh
 - Created round-75 work log
 - Updated handoff.md
+- Created references/5-services-setup.md: Full documentation for 5 services setup!
+
 
 ## What's Left Undone (for next session)
 
-- [ ] **[P3]** Document 5+ services setup procedure
+- [x] **[P3]** Document 5+ services setup procedure ✅
 - [ ] **[P2]** Optimize verify-env.sh timeout handling
 - [ ] **[P3]** Monitor service stability across sessions
 
