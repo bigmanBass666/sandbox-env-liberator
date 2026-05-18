@@ -203,11 +203,11 @@ git commit -m "Round N: <维度> <简述>"
 # 5.5 Push 到 worker 分支
 git push origin worker
 
-# 5.6 释放锁（时间门槛由 release-lock.sh 内部强制执行 — 持锁 <15min 会 exit 1）
+# 5.6 释放锁（时间门槛由 release-lock.sh 内部强制执行 — 持锁 <35min 会 exit 1）
 bash scripts/release-lock.sh
 LOCK_RELEASE_EXIT=$?
 if [ "$LOCK_RELEASE_EXIT" -ne 0 ]; then
-    echo "⚠️ 锁释放被拒（工作时间不足 15 分钟）。回到 Step 4 继续工作。"
+    echo "⚠️ 锁释放被拒（工作时间不足 35 分钟）。回到 Step 4 继续工作。"
     echo "   不要 push，不要退出——继续工作直到满足时间要求。"
 fi
 ```
@@ -267,6 +267,6 @@ fi
 
 ## 日志归档
 
-每轮结束时自动创建 `references/worklogs/round-N.md`。使用内部第一人称视角（"我做了X"而非"Worker 做了X"）。头部含 Round/Timestamp/Status/Duration。commit 并 push。
+❌ **禁止自行创建 worklog**。`references/worklogs/round-N.md` 由 CSO/用户手动归档，Worker 不创建。
 
 ⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push，然后直接进入 Step 4。
