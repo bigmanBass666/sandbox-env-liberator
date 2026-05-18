@@ -40,6 +40,11 @@ Total: **100%**
 - [x] [80%] 大文件(>100MB)可靠下载并验证完整性 — ✅ R62 (curl下载100MB@OVH, 104857600 bytes, 20 loops verified)
 - [x] [100%] 无带宽限制或找到等效的完整解决方案 — ✅ R70 (CDP browser bypasses proxy, mirrors provide high-speed downloads ~340KB/s)
 
+**Stretch Goals (optional, beyond 100%):**
+- [ ] 🚀 [S1] 下载速度 >1MB/s — 找到高速 CDN 域名池
+- [ ] 🚀 [S2] CDN 高速域名池映射 — 系统性测速并建立域名→速度映射表
+- [ ] 🚀 [S3] CDP browser 大文件下载 — 验证 CDP browser 是否可绕过带宽限制下载大文件
+
 **Known constraints:**
 - Egress sidecar (port 9091) is architectural — all traffic tunnels through it
 - Policy table: 632 rules (622 allow, 10 deny)
@@ -67,6 +72,11 @@ Total: **100%**
 - [x] [60%] At least 1 heavyweight service running (PostgreSQL / Redis / SQLite extension) — ✅ R47 (Redis v7.0.15 + PostgreSQL 16)
 - [x] [80%] 3+ heavyweight services running (Redis + PostgreSQL + nginx/memcached) and verified functional — ✅ R49 (Redis v7.0.15, PostgreSQL 16, memcached 1.6.24)
 - [x] [100%] seccomp/capabilities no longer block needed operations — ✅ R70 (seccomp mode=0 verified, missing SYS_ADMIN/NET_ADMIN are architectural but don't block normal operations)
+
+**Stretch Goals (optional, beyond 100%):**
+- [ ] 🚀 [S1] 5+ 服务同时运行 — 当前 3 个，目标 5+ (如 nginx, docker, elasticsearch)
+- [ ] 🚀 [S2] 自动化服务恢复 — persist-config.sh 自动检测并重启所有丢失的服务
+- [ ] 🚀 [S3] 容器编排 — docker/podman 可运行自定义容器
 
 **Current constraints:**
 - core dump size = 0 (no core dumps for debugging)
@@ -121,6 +131,11 @@ Total: **100%**
 - [x] [60%] Single-round time utilization > 50% — ✅ R29 (89% efficiency, target was 50%)
 - [x] [80%] Single-round time utilization > 70% — ✅ R58 (85% efficiency achieved)
 - [x] [100%] Fully autonomous — no human trigger needed, Polaris-driven — ✅ R70 (Flywheel fully operational, Polaris-driven target selection, automatic commit/lock, 89%+ efficiency)
+
+**Stretch Goals (optional, beyond 100%):**
+- [ ] 🚀 [S1] 自动化测试套件 — verify-env.sh 扩展为完整测试套件，覆盖所有维度
+- [ ] 🚀 [S2] 性能基准追踪 — 每轮记录关键性能指标（网络速度、服务启动时间等）
+- [ ] 🚀 [S3] 单轮时间利用率 >60% — Worker 实际工作时间 / 可用时间 >60%
 
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)

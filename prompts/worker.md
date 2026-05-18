@@ -100,10 +100,13 @@ cat references/polaris-score.md
 # 1.2 读取交接信息
 cat references/handoff.md
 
-# 1.3 读取最近 3 轮进化日志
+# 1.3 读取 Schedule 任务配置（含 CSO 指定任务）
+cat references/schedule-setup.md
+
+# 1.4 读取最近 3 轮进化日志
 tail -100 references/evolution-log.md
 
-# 1.4 查看最近的 commit（可能有其他轮次的工作）
+# 1.5 查看最近的 commit（可能有其他轮次的工作）
 git log --oneline -15 --all --graph
 ```
 
@@ -256,6 +259,24 @@ fi
 - 你在 `worker` 分支上工作，直推 worker
 - 不创建 PR，不需要 gh CLI
 - CSO 定期将 main 的工具层改进同步到 worker（选择性同步，不合并你的数据文件）
+
+### 🔄 深化模式（所有维度 ≥80% 时激活）
+
+**当 polaris-score.md 所有维度都 ≥80% 时**，你进入"深化模式"——不是停止，而是做更深的工作：
+
+**深化工作类型**（按优先级）：
+1. **验证与维护** — 重新验证已有能力是否仍然有效（服务是否还在运行？跨会话持久性是否还在？）
+2. **Stretch Goals** — 读 polaris-score.md 中 100% 之后的 Stretch Goals，尝试推进
+3. **新能力探索** — 安装/测试之前未尝试的工具或服务
+4. **脚本优化** — 改进 evolve.sh、verify-env.sh、persist-config.sh 的可靠性
+5. **测速与基准** — CDN 速度普查、网络带宽测试、服务性能基准
+6. **自动化** — 将手动操作自动化（写脚本、配置 cron、添加 custom command）
+
+**关键原则**：
+- ❌ **100% 不是终点，是深化的起点**
+- ❌ 禁止说"所有 Milestone 完成了，无事可做" — 上面的列表就是你的 TODO
+- ✅ 每轮至少做 2 项深化工作
+- ✅ 深化工作成果写入 worklog 和 evolution-log
 
 ### 评分原则
 - 新分数必须对应本轮实际执行的新增能力或可复现验证
