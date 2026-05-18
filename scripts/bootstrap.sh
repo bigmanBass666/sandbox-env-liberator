@@ -10,7 +10,7 @@ if [[ "$ROLE" == --role ]]; then
 fi
 
 REPO_URL="https://github.com/bigmanBass666/sandbox-env-liberator.git"
-PROJECT_DIR="/workspace/sandbox-env-setup"
+PROJECT_DIR="/workspace"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -128,7 +128,7 @@ fi
 
 log_step "Install essential npm packages"
 NODE_PATH_GLOBAL="$(npm root -g 2>/dev/null || echo "")"
-export NODE_PATH="${NODE_PATH}:${NODE_PATH_GLOBAL}"
+export NODE_PATH="${NODE_PATH:-}:${NODE_PATH_GLOBAL}"
 ESSENTIAL_PKGS="playwright"
 for pkg in $ESSENTIAL_PKGS; do
     if npm list -g "$pkg" &>/dev/null 2>&1; then

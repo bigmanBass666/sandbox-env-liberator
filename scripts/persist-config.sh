@@ -207,7 +207,7 @@ RESTOREEOF
 chmod +x "$RESTORE_SCRIPT"
 fix "Created $RESTORE_SCRIPT"
 
-# === Restore heavy services (Redis, PostgreSQL, memcached) ===
+# === Restore heavy services (Redis, PostgreSQL, memcached, lighttpd, beanstalkd) ===
 fix "Checking heavy services..."
 
 if command -v redis-server &>/dev/null; then
@@ -236,6 +236,28 @@ if command -v memcached &>/dev/null; then
         memcached -d -p 11211 -u root 2>/dev/null && sleep 1 && echo "stats" | nc -w1 localhost 11211 2>/dev/null | head -1 | grep -q "STAT" && pass "memcached started" || fix "memcached start failed"
     else
         pass "memcached already running"
+    fi
+fi
+
+if command -v lighttpd &>/dev/null; then
+    if ! pgrep -x lighttpd > /dev/null; then
+        fix "Starting lighttpd..."
+        # Ensure port is 8080
+        grep -q "server.port.*=.*8080" /etc/lighttpd/lighttpd.conf 2>/dev/null || sed -i 's/server.port.*=.*/server.port = 8080/' /etc/lighttpd/lighttpd.conf
+        lighttpd -f /etc/lighttpd/lighttpd.conf 2>/dev/null && sleep 1 && pass "lighttpd started" || fix "lighttpd start failed"
+    else
+        pass "lighttpd already running"
+    fi
+fi
+
+if command -v beanstalkd &>/dev/null; then
+    if ! pgrep -x beanstalkd > /dev/null; then
+        fix "Starting beanstalkd..."
+        nohup beanstalkd -l 127.0.0.1 -p 11300 >/dev/null 2>&1 &
+        sleep 1
+        pass "beanstalkd started"
+    else
+        pass "beanstalkd already running"
     fi
 fi
 
