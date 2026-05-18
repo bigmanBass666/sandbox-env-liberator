@@ -2,7 +2,15 @@
 set -uo pipefail
 
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPTS_DIR/lib/config.sh" 2>/dev/null || true
+# Source config with defaults if not available
+if [ -f "$SCRIPTS_DIR/lib/config.sh" ]; then
+    source "$SCRIPTS_DIR/lib/config.sh"
+else
+    # Fallback defaults
+    readonly NETWORK_TIMEOUT_SHORT=5
+    readonly NETWORK_TIMEOUT_MEDIUM=10
+    readonly NETWORK_TIMEOUT_LONG=30
+fi
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -15,8 +23,9 @@ PASSED=0
 FAILED=0
 
 check() {
+    local timeout="${3:-$NETWORK_TIMEOUT_MEDIUM}"
     TOTAL=$((TOTAL + 1))
-    if eval "$2" &>/dev/null; then
+    if timeout "$timeout" bash -c "$2" &>/dev/null; then
         echo -e "${GREEN}[✅]${NC} $1"
         PASSED=$((PASSED + 1))
     else
@@ -26,8 +35,9 @@ check() {
 }
 
 check_warn() {
+    local timeout="${3:-$NETWORK_TIMEOUT_MEDIUM}"
     TOTAL=$((TOTAL + 1))
-    if eval "$2" &>/dev/null; then
+    if timeout "$timeout" bash -c "$2" &>/dev/null; then
         echo -e "${GREEN}[✅]${NC} $1"
         PASSED=$((PASSED + 1))
     else
@@ -37,8 +47,9 @@ check_warn() {
 }
 
 check_perf() {
+    local timeout="${3:-$NETWORK_TIMEOUT_LONG}"
     TOTAL=$((TOTAL + 1))
-    RESULT=$(eval "$2" 2>/dev/null)
+    RESULT=$(timeout "$timeout" bash -c "$2" 2>/dev/null)
     if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
         echo -e "${CYAN}[📊]${NC} $1: ${RESULT}"
         PASSED=$((PASSED + 1))
