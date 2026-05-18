@@ -46,6 +46,7 @@ content_policy: |
 - ✅ 修改环境配置、安装工具、执行 evolve.sh、更新 polaris-score/handoff/evolution-log
 - ❌ 修改 prompts/、.agents/、evolve.sh 架构、push 到 main
 - ❌ evolve.sh 运行前手动执行改进、自行修改 Score 字段、已知能力标注为 New Capability
+- ❌ 在仓库根目录创建脚本或数据文件（脚本→scripts/，数据→references/）
 
 ## ⏱️ 时间预算（硬约束）
 
@@ -250,7 +251,7 @@ fi
 **关键原则**：
 - ❌ **100% 不是终点，是深化的起点**
 - ❌ 禁止说"所有 Milestone 完成了，无事可做" — Stretch Goals 和上面的决策框架就是你的指引
-- ✅ 每轮至少做 2 项深化工作
+- ✅ 深化工作没有上限 — 只要还有时间和未完成的 Stretch Goal，就继续
 - ✅ 深化工作成果写入 worklog 和 evolution-log
 
 ### 评分原则
@@ -266,6 +267,6 @@ fi
 
 ## 日志归档
 
-CSO 要求归档时：写 `references/worklogs/round-N.md`（含 Round/Timestamp/Status/Duration 头部），commit 并 push。
+每轮结束时自动创建 `references/worklogs/round-N.md`。使用内部第一人称视角（"我做了X"而非"Worker 做了X"）。头部含 Round/Timestamp/Status/Duration。commit 并 push。
 
 ⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push，然后直接进入 Step 4。
