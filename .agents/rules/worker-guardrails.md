@@ -18,7 +18,9 @@ These checks run BEFORE any commit is pushed. If any CRITICAL check fails, the c
 | No prompts/ changes | `git diff --name-only HEAD~1 \| grep '^prompts/'` | Revert prompts/ changes |
 | Prompt body size OK | `awk '/<!--/,0' prompts/worker.md \| wc -c` < 15000 | Trim before commit |
 | No hardcoded ops in prompt | `grep -cE '(Round [0-9]|R[0-9]{2}|Total: \*\*[0-9]+%\*\*|D[1-6]: [0-9]+%)' prompts/worker.md` = 0 | Remove hardcoded data, use polaris-score.md refs instead |
+| No concrete next-steps in prompt | `grep -Pn '(?<!必须先运行)(?<!重新运行)(?<!手动执行)(安装|配置|启动) +(nginx|docker|elasticsearch|CDN|cron|restic|seccomp)' prompts/worker.md` = 0 | Replace with decision framework, move specifics to polaris-score.md |
 | HTML comment intact | `grep -c 'FILE NATURE DECLARATION\|META-PROMPT' prompts/worker.md` ≥ 1 | Restore comment block before commit |
+| TEST 2 in comment | `grep -c "what to do.*or.*how to decide" prompts/worker.md` ≥ 1 | Restore TEST 2 self-check line |
 
 ## WARNING (should pass)
 

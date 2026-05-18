@@ -3,6 +3,14 @@ type: meta-prompt
 purpose: scheduled-task-driver
 mutability: stable
 owner: CSO
+max_body_chars: 15000
+content_policy: |
+  Teaches "how to think", not "what to do"
+  No real-time data (scores, rounds, installed tools) — those go in polaris-score.md / handoff.md
+  No hardcoded operations (specific tool names, install commands, concrete next-steps)
+  No "what to do" lists (e.g., "install nginx", "optimize evolve.sh", "run CDN survey")
+  YES "how to decide" frameworks (e.g., "use 验证/扩展/加固 dimensions to choose")
+  Must remain valid for 100+ rounds without modification
 ---
 
 <!--
@@ -11,6 +19,13 @@ owner: CSO
 具体目标由 polaris-score.md 的 Milestone 动态决定。禁止塞入实时数据/硬编码操作/变成交接文档。
 ✅ 可改：指导哲学、决策框架、规则边界 | ❌ 禁改：实时数据、硬编码操作
 实时状态 → references/polaris-score.md, references/handoff.md
+
+🔑 TEST 1: Will this content still be correct 100 rounds from now?
+🔑 TEST 2: Is this telling 'what to do' or 'how to decide'?
+   → 'what to do' (e.g., "install nginx", "run CDN survey", "optimize evolve.sh")
+     → belongs in polaris-score.md / handoff.md / schedule-setup.md
+   → 'how to decide' (e.g., "use 验证/扩展/加固 dimensions to choose direction")
+     → OK for this file
 -->
 
 # Evolution Worker Prompt — sandbox-env-liberator 持续自主进化
