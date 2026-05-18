@@ -43,6 +43,24 @@ Total: **100%**
 **Stretch Goals (optional, beyond 100%):**
 - [ ] 🚀 [S1] 下载速度 >1MB/s — 找到高速 CDN 域名池
 - [ ] 🚀 [S2] CDN 高速域名池映射 — 系统性测速并建立域名→速度映射表
+  验证方法: 通过 egress proxy (127.0.0.1:18080) 对以下域名逐一测速，结果写入 references/cdn-speed-survey.md：
+  | # | URL | 类型 |
+  |---|-----|------|
+  | 1 | https://dl.google.com/android/repository/repository2-3.xml | Google CDN |
+  | 2 | https://storage.googleapis.com | Google Cloud |
+  | 3 | https://github.com | GitHub |
+  | 4 | https://objects.githubusercontent.com | GitHub Storage |
+  | 5 | https://registry.npmjs.org | npm |
+  | 6 | https://npmmirror.com/mirrors/npm/index.json | npm 镜像 |
+  | 7 | https://crates.io/api/v1/summary | Rust/Cargo |
+  | 8 | https://rsproxy.cn/api/v1/crates | Rust 镜像 |
+  | 9 | https://files.pythonhosted.org/packages/PyYAML-6.0.1.tar.gz | PyPI |
+  |10 | https://pypi.tuna.tsinghua.edu.cn/simple | PyPI 镜像 |
+  |11 | https://dl-cdn.alpinelinux.com/alpine/v3.19/main/x86_64/APKINDEX.tar.gz | Alpine |
+  |12 | https://httpbin.org/get | 国际基准 |
+  测速命令: curl -x http://127.0.0.1:18080 -I --connect-timeout 10 -w '耗时:%{time_total}s 速度:%{speed_download}B/s HTTP/%{http_code}\n' '<URL>' 2>&1
+  输出表格: 域名|类型|HTTP状态|耗时(s)|速度(B/s)|Content-Length
+  分类: 高速(>100KB/s) / 中速(10-100KB/s) / 低速(<10KB/s) / TIMEOUT / FAIL
 - [ ] 🚀 [S3] CDP browser 大文件下载 — 验证 CDP browser 是否可绕过带宽限制下载大文件
 
 **Known constraints:**

@@ -115,7 +115,7 @@ cat references/polaris-score.md
 # 1.2 读取交接信息
 cat references/handoff.md
 
-# 1.3 读取 Schedule 任务配置（含 CSO 指定任务）
+# 1.3 读取 Schedule 任务配置
 cat references/schedule-setup.md
 
 # 1.4 读取最近 3 轮进化日志
@@ -160,17 +160,6 @@ bash scripts/evolve.sh
 > ╚══════════════════════════════════════════════════════════════╝
 
 ### Step 4: 实质性工作阶段（核心！应占会话 70%+ 时间）
-
-### 📋 CSO 指定任务（优先于 Milestone 自选）
-
-**检查来源**: 读 `references/schedule-setup.md` 和 `references/handoff.md`
-
-如果其中包含「📋 CSO 指定任务」或「CSO Designated Task」区块 → **必须先执行**
-→ 这是 CSO 明确要求的本轮任务，优先级高于自选 Milestone
-→ 执行完后可以继续做 Milestone 自选工作
-→ 如果没有 CSO 指定任务 → 正常走下面的最小工作量门槛 + Milestone 自选流程
-
-**为什么存在这个机制**: CSO 可能通过 schedule-setup.md 注入具体的、多步骤的、自然耗时较长的任务（如 CDN 速度普查），确保每轮都有实质性工作可做。
 
 evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的时刻——做脚本做不到的事：分析、判断、创造性地解决问题。
 

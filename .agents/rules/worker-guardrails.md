@@ -21,6 +21,8 @@ These checks run BEFORE any commit is pushed. If any CRITICAL check fails, the c
 | No concrete next-steps in prompt | `grep -Pn '(?<!必须先运行)(?<!重新运行)(?<!手动执行)(安装|配置|启动) +(nginx|docker|elasticsearch|CDN|cron|restic|seccomp)' prompts/worker.md` = 0 | Replace with decision framework, move specifics to polaris-score.md |
 | HTML comment intact | `grep -c 'FILE NATURE DECLARATION\|META-PROMPT' prompts/worker.md` ≥ 1 | Restore comment block before commit |
 | TEST 2 in comment | `grep -c "what to do.*or.*how to decide" prompts/worker.md` ≥ 1 | Restore TEST 2 self-check line |
+| No CSO dependency in prompt | `grep -c 'CSO 指定任务\|CSO Designated Task\|本轮必做' prompts/worker.md` = 0 | Remove CSO dependency, use Polaris-driven Stretch Goals instead |
+| No task injection in Schedule msg | `grep -c 'dl.google.com\|cdn-speed-survey' references/schedule-setup.md` = 0 | Move specific tasks to polaris-score.md Stretch Goals |
 
 ## WARNING (should pass)
 

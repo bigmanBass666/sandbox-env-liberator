@@ -39,6 +39,34 @@ bash scripts/verify-env.sh          # Confirm everything works
 
 Bootstrap: `bash scripts/bootstrap.sh [--role worker|reviewer|cso]`
 
+## Polaris Autonomy Principle
+
+> **Polaris 系统必须完全自主独立自治。Worker 的所有行为由 Polaris 系统文件驱动，不被任何外部实体（包括 CSO）直接指导。**
+
+CSO 是系统构建的临时产物，最终交付物是一个完全自主独立自治的 Polaris 系统。CSO 退出后，Worker 必须仍能正常工作。
+
+### 合法的 CSO 改动（增强 Polaris 系统自身）
+
+- 修改 polaris-score.md 的 Milestone/Stretch Goals（增加目标）
+- 修改 worker.md 的决策框架（教 Worker 如何自己判断）
+- 修改系统约束（release-lock.sh 时间门槛、evolve.sh 参数）
+- 修改 AGENTS.md 的规则和原则
+
+### 非法的 CSO 改动（制造外部依赖）
+
+- 在 worker.md 中添加"CSO 指定任务"或"本轮必做"的具体任务
+- 在 Schedule message 中注入具体操作指令（如域名列表、curl 命令）
+- 创建 CSO→Worker 的直接指导文件（如 cso-directives.md）
+- 任何让 Worker 依赖 CSO 输入才能正常工作的改动
+
+### 自治性检查（每次改动前必须回答）
+
+1. 这个改动是否让 Worker 更依赖外部实体（CSO/人类）？
+2. 如果 CSO 永久退出，Worker 是否仍能正常工作？
+3. 这个改动是"教 Worker 如何自己判断"还是"替 Worker 做判断"？
+
+如果问题 1 答案为"是"、问题 2 答案为"否"、问题 3 答案为"替 Worker 做判断"，则这个改动是错误的。
+
 ## Multi-Agent Roles
 
 | Role | Branch | Trigger | Key Boundary |
