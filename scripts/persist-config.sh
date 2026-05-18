@@ -210,6 +210,24 @@ fix "Created $RESTORE_SCRIPT"
 # === Restore heavy services (Redis, PostgreSQL, memcached, lighttpd, beanstalkd) ===
 fix "Checking heavy services..."
 
+ensure_apt_updated() {
+    if [ ! -f /tmp/.sandbox-apt-updated-$(date +%Y%m%d) ]; then
+        apt-get update -qq 2>/dev/null
+        touch /tmp/.sandbox-apt-updated-$(date +%Y%m%d)
+    fi
+}
+
+install_if_missing() {
+    local cmd="$1"
+    local pkg="$2"
+    if ! command -v "$cmd" &>/dev/null; then
+        fix "Installing $pkg (command '$cmd' not found)..."
+        ensure_apt_updated
+        apt-get install -y "$pkg" 2>/dev/null && pass "$pkg installed" || fix "$pkg install failed"
+    fi
+}
+
+install_if_missing redis-server redis-server
 if command -v redis-server &>/dev/null; then
     if ! pgrep -x redis-server > /dev/null; then
         fix "Starting Redis..."
@@ -219,9 +237,14 @@ if command -v redis-server &>/dev/null; then
     fi
 fi
 
-if command -v pg_ctl &>/dev/null || command -v postgres &>/dev/null; then
+install_if_missing pg_isready postgresql-16
+if command -v pg_isready &>/dev/null || command -v psql &>/dev/null; then
     if ! pgrep -f "postgres.*main" > /dev/null; then
         fix "Starting PostgreSQL..."
+        if [ ! -d /var/lib/postgresql/16/main ]; then
+            fix "Initializing PostgreSQL cluster..."
+            pg_ctlcluster 16 main init 2>/dev/null || true
+        fi
         service postgresql start 2>/dev/null || pg_ctlcluster 16 main start 2>/dev/null || pg_ctlcluster 15 main start 2>/dev/null
         sleep 2
         pg_isready -h localhost -p 5432 > /dev/null 2>&1 && pass "PostgreSQL started" || fix "PostgreSQL start failed"
@@ -230,6 +253,7 @@ if command -v pg_ctl &>/dev/null || command -v postgres &>/dev/null; then
     fi
 fi
 
+install_if_missing memcached memcached
 if command -v memcached &>/dev/null; then
     if ! pgrep -x memcached > /dev/null; then
         fix "Starting memcached..."
@@ -239,10 +263,10 @@ if command -v memcached &>/dev/null; then
     fi
 fi
 
+install_if_missing lighttpd lighttpd
 if command -v lighttpd &>/dev/null; then
     if ! pgrep -x lighttpd > /dev/null; then
         fix "Starting lighttpd..."
-        # Ensure port is 8080
         grep -q "server.port.*=.*8080" /etc/lighttpd/lighttpd.conf 2>/dev/null || sed -i 's/server.port.*=.*/server.port = 8080/' /etc/lighttpd/lighttpd.conf
         lighttpd -f /etc/lighttpd/lighttpd.conf 2>/dev/null && sleep 1 && pass "lighttpd started" || fix "lighttpd start failed"
     else
@@ -250,6 +274,7 @@ if command -v lighttpd &>/dev/null; then
     fi
 fi
 
+install_if_missing beanstalkd beanstalkd
 if command -v beanstalkd &>/dev/null; then
     if ! pgrep -x beanstalkd > /dev/null; then
         fix "Starting beanstalkd..."

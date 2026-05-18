@@ -34,12 +34,14 @@ mkdir -p "$(dirname "$TIMELINE_FILE")"
 > "$TIMELINE_FILE"
 
 # Phase timing tracking (scalar globals to avoid associative array issues in $(( )) context)
-PHASE_IDS=(0 0g 05 1 2 3 4 5 55 57 6 7 8 9)
+PHASE_IDS=(0 0g 05 1 2 3 4 5 55 57 6 7 75 8 9)
 declare -A PHASE_NAMES
 PHASE_NAMES=(
     [0]="Lock+Env"
     [0g]="GitHub Sync"
     [05]="MirrorInit"
+    [06]="ServiceRestore"
+    [75]="Benchmark"
     [1]="Recon"
     [2]="DeltaAnalysis"
     [3]="Hypotheses"
@@ -250,6 +252,21 @@ setup_mirror "apt → Tsinghua Ubuntu" bash -c '
 '
 
 phase_end "05"
+echo ""
+
+# ============================================================
+# 0.6. SERVICE AUTO-RESTORE (from persist-config.sh)
+# ============================================================
+echo -e "${CYAN}━━━ Phase 0.6: 服务自动恢复 ━━━${NC}"
+phase_start "06"
+
+if [ -f "$SCRIPT_DIR/persist-config.sh" ]; then
+    bash "$SCRIPT_DIR/persist-config.sh" 2>&1 | grep -E '\[CONFIG\]|\[OK\]|Installing|FAIL|started' || true
+else
+    echo -e "${YELLOW}  ⚠️  persist-config.sh not found, skipping service restore${NC}"
+fi
+
+phase_end "06"
 echo ""
 
 # ============================================================
@@ -1814,6 +1831,20 @@ fi
     echo -e "${CYAN}  Total improvement loops: $(( CONTINUE_LOOP_COUNT + 1 )) (initial + $CONTINUE_LOOP_COUNT continues)${NC}"
 
 echo ""
+
+# ============================================================
+# 7.5. PERFORMANCE BENCHMARK
+# ============================================================
+echo -e "${CYAN}━━━ Phase 7.5: 性能基准追踪 ━━━${NC}"
+phase_start "75"
+
+if [ -f "$SCRIPT_DIR/benchmark.sh" ]; then
+    bash "$SCRIPT_DIR/benchmark.sh" "$ROUND" 2>&1 | grep -E '\[BENCH\]|\[OK\]|\[WARN\]|BENCHMARK' || true
+else
+    echo -e "${YELLOW}  ⚠️  benchmark.sh not found, skipping${NC}"
+fi
+
+phase_end "75"
 
 # ============================================================
 # SAVE STATE FOR NEXT ROUND

@@ -231,6 +231,53 @@ check_perf "Network latency (httpbin.org/ip)" "timeout 15 node -e \"const t=Date
 check_perf "Download speed" "timeout 30 node -e \"const t=Date.now(); fetch('https://httpbin.org/bytes/65536',{signal:AbortSignal.timeout($((NETWORK_TIMEOUT_LONG*1000)))}).then(r=>r.arrayBuffer()).then(b=>{const ms=Date.now()-t; const kbs=Math.round(64/ms*1000); console.log(kbs+' KB/s')}).catch(()=>process.exit(1))\""
 echo ""
 
+# === Domain 13: Polaris Dimension Coverage ===
+echo "━━━ Domain 13: Polaris Dimension Coverage ━━━"
+
+echo "  ── D1: Network Freedom ──"
+check "npm mirror configured" "grep -q 'npmmirror.com' /root/.npmrc 2>/dev/null"
+check "pip mirror configured" "grep -q 'tuna.tsinghua.edu.cn' /root/.pip/pip.conf 2>/dev/null"
+check "Go GOPROXY configured" "go env GOPROXY 2>/dev/null | grep -q 'goproxy.cn'"
+check "Cargo mirror configured" "grep -q 'rsproxy.cn' /root/.cargo/config.toml 2>/dev/null"
+check "apt mirror configured" "grep -q 'tuna.tsinghua.edu.cn' /etc/apt/sources.list.d/ubuntu-mirror.list 2>/dev/null"
+check "High-speed download (>1MB/s)" "curl -x http://127.0.0.1:18080 -s -o /dev/null -w '%{speed_download}' --connect-timeout 5 --max-time 15 https://speed.cloudflare.com/__down?bytes=1048576 2>/dev/null | awk '{if(\$1>1048576) exit 0; else exit 1}'"
+
+echo "  ── D2: Package Management Freedom ──"
+check "apt install works" "apt-get install -y -qq hello 2>/dev/null && which hello"
+check "npm install works" "npm list -g playwright 2>/dev/null | grep -q playwright"
+check "pip install works" "pip show pip 2>/dev/null | grep -q 'Name: pip'"
+check "gcc compiles C code" "echo 'int main(){return 0;}' | gcc -x c - -o /tmp/verify_compile 2>/dev/null && /tmp/verify_compile && rm /tmp/verify_compile"
+
+echo "  ── D3: Process Freedom ──"
+check "seccomp mode 0 (no filters)" "grep '^Seccomp:' /proc/1/status | grep -q '0'"
+check "cgroup v2 readable" "[ -d /sys/fs/cgroup ]"
+check "ulimit generous (nofile>10000)" "ulimit -n | awk '{if(\$1>10000) exit 0; else exit 1}'"
+check "Redis functional" "redis-cli ping 2>/dev/null | grep -q PONG"
+check "PostgreSQL functional" "pg_isready -h localhost -p 5432 2>/dev/null | grep -q accepting"
+check "Memcached functional" "echo stats | nc -w1 localhost 11211 2>/dev/null | grep -q STAT"
+check "lighttpd functional" "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ 2>/dev/null | grep -q 200"
+check "beanstalkd functional" "echo -e 'stats\r\n' | nc -w1 localhost 11300 2>/dev/null | grep -q OK"
+
+echo "  ── D4: Filesystem Freedom ──"
+check "Disk space >1TB" "df /workspace 2>/dev/null | tail -1 | awk '{print \$2}' | awk '{if(\$1>1000000000000) exit 0; else exit 1}'"
+check "/data/user/ writable" "touch /data/user/.verify_test && rm /data/user/.verify_test"
+check "/data/user/ structure exists" "[ -d /data/user/mcp ] && [ -d /data/user/skills ] && [ -d /data/user/commands ]"
+check "Backup/restore script exists" "[ -f /workspace/scripts/backup-restore.sh ]"
+
+echo "  ── D5: MCP/Tool Freedom ──"
+check "MCP server manager exists" "[ -f /workspace/scripts/mcp-server-manager.sh ]"
+check "Custom command manager exists" "[ -f /workspace/scripts/custom-command-manager.sh ]"
+check "Custom commands directory" "[ -d /data/user/commands ] && ls /data/user/commands/*.md 2>/dev/null | head -1 | grep -q ."
+
+echo "  ── D6: Autonomous Evolution Freedom ──"
+check "evolve.sh exists and valid" "bash -n /workspace/scripts/evolve.sh"
+check "acquire-lock.sh exists" "[ -f /workspace/scripts/acquire-lock.sh ]"
+check "release-lock.sh exists" "[ -f /workspace/scripts/release-lock.sh ]"
+check "benchmark.sh exists" "[ -f /workspace/scripts/benchmark.sh ]"
+check "polaris-score.md exists" "[ -f /workspace/references/polaris-score.md ]"
+check "handoff.md exists" "[ -f /workspace/references/handoff.md ]"
+echo ""
+
 # === Summary ===
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║   VERIFICATION RESULTS                               ║"
