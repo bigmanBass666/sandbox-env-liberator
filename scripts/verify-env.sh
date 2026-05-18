@@ -240,7 +240,7 @@ check "pip mirror configured" "grep -q 'tuna.tsinghua.edu.cn' /root/.pip/pip.con
 check "Go GOPROXY configured" "go env GOPROXY 2>/dev/null | grep -q 'goproxy.cn'"
 check "Cargo mirror configured" "grep -q 'rsproxy.cn' /root/.cargo/config.toml 2>/dev/null"
 check "apt mirror configured" "grep -q 'tuna.tsinghua.edu.cn' /etc/apt/sources.list.d/ubuntu-mirror.list 2>/dev/null"
-check "High-speed download (>1MB/s)" "curl -x http://127.0.0.1:18080 -s -o /dev/null -w '%{speed_download}' --connect-timeout 5 --max-time 15 https://speed.cloudflare.com/__down?bytes=1048576 2>/dev/null | awk '{if(\$1>1048576) exit 0; else exit 1}'"
+check "High-speed download (>1MB/s)" "curl -x http://127.0.0.1:18080 -s -o /dev/null -w '%{speed_download}' --connect-timeout 5 --max-time 20 https://speed.cloudflare.com/__down?bytes=10485760 2>/dev/null | awk '{if(\$1>1048576) exit 0; else exit 1}'"
 
 echo "  ── D2: Package Management Freedom ──"
 check "apt install works" "apt-get install -y -qq hello 2>/dev/null && which hello"
@@ -259,7 +259,7 @@ check "lighttpd functional" "curl -s -o /dev/null -w '%{http_code}' http://local
 check "beanstalkd functional" "echo -e 'stats\r\n' | nc -w1 localhost 11300 2>/dev/null | grep -q OK"
 
 echo "  ── D4: Filesystem Freedom ──"
-check "Disk space >1TB" "df /workspace 2>/dev/null | tail -1 | awk '{print \$2}' | awk '{if(\$1>1000000000000) exit 0; else exit 1}'"
+check "Disk space >1TB" "df /workspace 2>/dev/null | tail -1 | awk '{print \$2}' | grep -qE '^[0-9]+$' && df /workspace 2>/dev/null | tail -1 | awk '{if(\$2+0>1000000000000) exit 0; else exit 1}'"
 check "/data/user/ writable" "touch /data/user/.verify_test && rm /data/user/.verify_test"
 check "/data/user/ structure exists" "[ -d /data/user/mcp ] && [ -d /data/user/skills ] && [ -d /data/user/commands ]"
 check "Backup/restore script exists" "[ -f /workspace/scripts/backup-restore.sh ]"

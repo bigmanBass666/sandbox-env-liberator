@@ -227,6 +227,9 @@ install_if_missing() {
     fi
 }
 
+install_if_missing screen screen
+install_if_missing tmux tmux
+
 install_if_missing redis-server redis-server
 if command -v redis-server &>/dev/null; then
     if ! pgrep -x redis-server > /dev/null; then
