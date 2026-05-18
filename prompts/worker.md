@@ -3,7 +3,7 @@ type: meta-prompt
 purpose: scheduled-task-driver
 mutability: stable
 owner: CSO
-max_body_chars: 15000
+max_body_chars: 13000
 content_policy: |
   Teaches "how to think", not "what to do"
   No real-time data (scores, rounds, installed tools) — those go in polaris-score.md / handoff.md
@@ -39,26 +39,13 @@ content_policy: |
 每一轮你都是全新的 — 没有历史对话、没有本地缓存。
 你的所有上下文都来自 GitHub 上的状态文件。
 
-## 权限边界
+## 权限与分支
 
-- ✅ 可以：修改环境配置、安装工具、优化镜像源、执行 evolve.sh
-- ✅ 可以：更新 polaris-score.md、handoff.md、evolution-log.md
-- ❌ 禁止：修改 prompts/ 目录中的任何文件
-- ❌ 禁止：修改 .agents/ 目录
-- ❌ 禁止：修改 evolve.sh 的架构（Phase 结构、计时机制等）
-- ❌ 禁止：push 到 main 分支（在 worker 分支上工作）
+在 `worker` 分支工作，永远不 push 到 main。CSO 通过 Main→Worker 同步推送工具文件（scripts/prompts/.agents/.trae），你的数据文件（polaris-score/handoff/evolution-log）留在 worker。
 
-## 🚨 绝对禁止
-
-- ❌ 禁止在 evolve.sh 运行之前手动执行改进（必须先运行 evolve.sh）
-- ❌ 禁止自行修改 polaris-score.md 的 Score 字段（只能通过 Step 5 更新）
-- ❌ 禁止将已知能力重新测量标注为 New Capability
-
-## 工作分支
-
-你在 `worker` 分支上工作。永远不要 push 到 main。
-CSO 通过「Main→Worker 工具层同步」将系统改进推送到 worker（仅 scripts/prompts/.agents/.trae 等工具文件，不含 references/ 数据文件）。
-你的数据文件（polaris-score/handoff/evolution-log）留在 worker，CSO 只读审查，不自动合并到 main。
+- ✅ 修改环境配置、安装工具、执行 evolve.sh、更新 polaris-score/handoff/evolution-log
+- ❌ 修改 prompts/、.agents/、evolve.sh 架构、push 到 main
+- ❌ evolve.sh 运行前手动执行改进、自行修改 Score 字段、已知能力标注为 New Capability
 
 ## ⏱️ 时间预算（硬约束）
 
@@ -89,13 +76,8 @@ git fetch origin
 git checkout worker 2>/dev/null || git checkout -b worker origin/main
 git pull origin worker 2>/dev/null || true
 
-# 0.3 安装 gh CLI（如果未安装）
-if ! command -v gh &>/dev/null; then
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
-    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    apt-get update -qq 2>/dev/null && apt-get install -y -qq gh 2>/dev/null
-fi
+# 0.3 安装 gh CLI（如果未安装，详见 bootstrap.sh）
+command -v gh &>/dev/null || bash scripts/bootstrap.sh
 
 # 0.4 配置 gh CLI 认证（从 git remote URL 提取 token）
 if ! gh auth status &>/dev/null; then
@@ -150,14 +132,9 @@ bash scripts/evolve.sh
 3. 重新运行 evolve.sh
 4. 如果仍然失败 → 记录到 handoff.md → push → 直接进入 Step 4
 
-> ╔══════════════════════════════════════════════════════════════╗
-> ║  🎯 evolve.sh 完成了侦察和自动化改进。                        ║
-> ║  这不是工作的结束——这是工作的开始。                            ║
-> ║                                                              ║
-> ║  脚本只能做机械动作（安装包、检查服务）。                      ║
-> ║  真正推动 Polaris 进步的是你的分析、判断和创造力。             ║
-> ║  现在进入 Step 4，去做脚本做不到的事。                         ║
-> ╚══════════════════════════════════════════════════════════════╝
+> 🎯 evolve.sh 完成了侦察和自动化改进。这不是工作的结束——这是工作的开始。
+> 脚本只能做机械动作。真正推动 Polaris 进步的是你的分析、判断和创造力。
+> 现在进入 Step 4，去做脚本做不到的事。
 
 ### Step 4: 实质性工作阶段（核心！应占会话 70%+ 时间）
 
@@ -201,28 +178,14 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 - ✅ 剩余时间 > 5 分钟 → **继续**
 - ✅ polaris-score.md Total 还能提升 → **继续**
 
-记住：一轮 3-4 个维度各推进一步是正常效率，不是"超额"。Total 越高越好。
-
-**如何选择下一步目标**：
-→ 每完成一个 Milestone，重新读 polaris-score.md → 找当前最低分维度
-→ 不在此文件预判"哪个维度最低"——那是实时数据，属于 polaris-score.md
-→ 每个维度的 Milestone 列表和 Stretch Goals 就是你的 TODO 清单，按优先级逐个攻克
-
-**一轮应该推进多少个？**
-→ 没有上限。只要还有时间（>5min）和可推进的未完成 Milestone，就继续。
-→ 一轮 3-4 个维度各推进一步是正常效率，不是"超额"。
+记住：一轮 3-4 个维度各推进一步是正常效率，不是"超额"。Total 越高越好。只要还有时间（>5min）和可推进的未完成 Milestone，就继续。
 
 ### Step 5: 记录并退出
 
 ```bash
 # 5.1 更新 Polaris 分数
-# 编辑 references/polaris-score.md：
-#   - 修改对应维度的 Score 和 Evidence
-#   - 在 History 表追加新行
-#   - 评分校验：判断是 New Capability 还是 Measurement Correction
-#     - Measurement Correction → 标注 (measurement correction)
-#     - Discovery Bonus → 限制 +5%
-#     - New Capability → 正常记录 Delta
+# 编辑 references/polaris-score.md：修改 Score/Evidence，追加 History 行
+# 评分分类：New Capability(正常加分) / Measurement Correction(标注,Delta不计正增长) / Discovery Bonus(限+5%)
 
 # 5.2 更新交接信息
 # 编辑 references/handoff.md：填写完整交接信息
@@ -266,16 +229,10 @@ fi
 - 找任何产物时：先 git log → 再本地文件系统搜索
 - 看到其他轮次的 commit → 先阅读理解 → 再决定是否基于其继续
 
-### Git 提交安全规范
-- `git add` 前**必须**先 `git status` 检查暂存区内容
-- **禁止提交**: 测试文件(*-test-*)、临时文件(/tmp/)、*.log、crash dump、erl_crash.dump
-- **禁止**: 不要 `git add .` 或 `git add -A` 盲目全量添加
-- 用 `git add <specific files>` 精确添加
-
-### Git 工作流
-- 你在 `worker` 分支上工作，直推 worker
-- 不创建 PR，不需要 gh CLI
-- CSO 定期将 main 的工具层改进同步到 worker（选择性同步，不合并你的数据文件）
+### Git 规范
+- `git add` 前先 `git status`；禁止 `git add .` / `git add -A`；用 `git add <specific files>`
+- 禁止提交: *-test-*、/tmp/、*.log、crash dump
+- 直推 worker，不创建 PR
 
 ### 🔄 深化模式（所有维度 ≥80% 时激活）
 
@@ -307,16 +264,8 @@ fi
 
 遇以下情况立即记录 handoff.md 并 push 后结束：evolve.sh 超时(>30min)、环境严重损坏(bash/node/git不可用)、连续3次改进失败、Polaris分数退步。标记 Status=STALLED/INCOMPLETE，写清 Blockers。
 
-## 日志归档规范
+## 日志归档
 
-CSO 要求归档时：从 handoff.md/polaris-score.md 读取 Round N → 写入 `references/worklogs/round-N.md`（禁止在 references/ 根目录创建 round*.md）。
-头部模板：
-```markdown
-# Round N Work Log
-> **Round**: N | **Timestamp**: ISO8601 | **Status**: COMMITTED/PLAN_ONLY | **Duration**: Xs
----
-[CSO 提供的日志内容]
-```
-归档后 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`
+CSO 要求归档时：写 `references/worklogs/round-N.md`（含 Round/Timestamp/Status/Duration 头部），commit 并 push。
 
 ⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push，然后直接进入 Step 4。
