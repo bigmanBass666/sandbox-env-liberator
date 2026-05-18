@@ -42,7 +42,7 @@ Total: **100%**
 
 **Stretch Goals (optional, beyond 100%):**
 - [ ] 🚀 [S1] 下载速度 >1MB/s — 找到高速 CDN 域名池
-- [ ] 🚀 [S2] CDN 高速域名池映射 — 系统性测速并建立域名→速度映射表
+- [x] 🚀 [S2] CDN 高速域名池映射 — 系统性测速并建立域名→速度映射表 ✅ R74
   验证方法: 通过 egress proxy (127.0.0.1:18080) 对以下域名逐一测速，结果写入 references/cdn-speed-survey.md：
   | # | URL | 类型 |
   |---|-----|------|
@@ -92,7 +92,7 @@ Total: **100%**
 - [x] [100%] seccomp/capabilities no longer block needed operations — ✅ R70 (seccomp mode=0 verified, missing SYS_ADMIN/NET_ADMIN are architectural but don't block normal operations)
 
 **Stretch Goals (optional, beyond 100%):**
-- [ ] 🚀 [S1] 5+ 服务同时运行 — 当前 3 个，目标 5+ (如 nginx, docker, elasticsearch)
+- [x] 🚀 [S1] 5+ 服务同时运行 — 当前 5 个，目标 5+ (Redis, Memcached, PostgreSQL, lighttpd, beanstalkd) ✅ R74
 - [ ] 🚀 [S2] 自动化服务恢复 — persist-config.sh 自动检测并重启所有丢失的服务
 - [ ] 🚀 [S3] 容器编排 — docker/podman 可运行自定义容器
 
