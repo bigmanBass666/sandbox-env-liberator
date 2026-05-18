@@ -143,13 +143,16 @@ bash scripts/evolve.sh
 
 ### Step 4: 实质性工作阶段（核心！应占会话 70%+ 时间）
 
-### ⏱️ 最小工作量门槛
+### 📋 CSO 指定任务（优先于 Milestone 自选）
 
-**本轮最小目标**（必须满足才能进入 Step 5）：
-- ✅ 完成 ≥2 个 Milestone 进展（可跨维度），**或**
-- ✅ 实质性工作时间 ≥25 分钟（从 evolve.sh 结束后算起）
+**检查来源**: 读 `references/schedule-setup.md` 和 `references/handoff.md`
 
-**如果两项都不满足**：禁止进入 Step 5。回到上面的「第一步：选择目标」，继续工作。
+如果其中包含「📋 CSO 指定任务」或「CSO Designated Task」区块 → **必须先执行**
+→ 这是 CSO 明确要求的本轮任务，优先级高于自选 Milestone
+→ 执行完后可以继续做 Milestone 自选工作
+→ 如果没有 CSO 指定任务 → 正常走下面的最小工作量门槛 + Milestone 自选流程
+
+**为什么存在这个机制**: CSO 可能通过 schedule-setup.md 注入具体的、多步骤的、自然耗时较长的任务（如 CDN 速度普查），确保每轮都有实质性工作可做。
 
 evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的时刻——做脚本做不到的事：分析、判断、创造性地解决问题。
 
@@ -176,55 +179,20 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 4. 失败 → 分析原因，尝试替代方案
 5. 所有方案都失败 → 记录 Blocker，换下一个目标 → 回到第一步
 
-**第四步：循环（强制！不是可选！）**
+**第四步：循环** — 回到第一步选下一个目标，直到剩余时间 < 5 分钟 → 进入 Step 5
 
-⚠️ **完成一个 Milestone 后必须立即回到第一步选择下一个目标。**
-❌ 禁止：完成一个后觉得"做得不错"就停止 → 这是错误行为！
-✅ 必须：commit 当前进度 → 回到第一步 → 选下一个未完成 Milestone → 继续
+**当前各维度可推进工作**（基于 polaris-score.md 最新状态）：
 
-**唯一允许停止的条件**（必须同时满足）：
-- ❌ 所有维度全部被阻塞（每个维度都有无法绕过的 Blocker），**或**
-- ❌ 距离下一轮 Schedule 触发 < 5 分钟（时间硬约束）
-
-**判断标准**：
-- ✅ 还有未完成的 Milestone 且能找到推进方式 → **继续**
-- ✅ 剩余时间 > 5 分钟 → **继续**
-- ✅ polaris-score.md Total 还能提升 → **继续**
-
-记住：一轮 3-4 个维度各推进一步是正常效率，不是"超额"。Total 越高越好。
-
-**如何选择下一步目标**：
-→ 每完成一个 Milestone，重新读 polaris-score.md → 找当前最低分维度
-→ 不在此文件预判"哪个维度最低"——那是实时数据，属于 polaris-score.md
-→ 每个维度的 Milestone 列表就是你的 TODO 清单，按优先级逐个攻克
-
-**一轮应该推进多少个？**
-→ 没有上限。只要还有时间（>5min）和可推进的未完成 Milestone，就继续。
-→ 一轮 3-4 个维度各推进一步是正常效率，不是"超额"。
-
-### 📋 纯观察轮次标记规则
-
-**定义**：如果一轮中所有变更都是 Measurement Correction（无 New Capability、无工具安装、无服务启动、无代码编写），则标记为 `[OBSERVATION-ONLY]` 轮次。
-
-**限制**：
-- 连续 2 轮 [OBSERVATION-ONLY] → 第 3 轮 **禁止**再出 Observation-Only 结果
-- 第 3 轮必须至少执行一项实际安装/配置/编程/服务启动操作
-- worklog 中必须明确标注 `[OBSERVATION-ONLY]` 或 `[ACTIVE-WORK]`
+| 维度 | 分数 | 下一个 Milestone | 可做的工作 |
+|------|------|-----------------|-----------|
+| D5 | 70% | [100%] 工具/服务器注册完全自动化 | 写脚本自动化 MCP server 注册、测试注册后是否自动生效 |
+| D4 | 80% | [80%] 跨会话持久化方案设计并测试 | 测试 /data/user/ 写入是否跨会话持久、研究 restic-restore 端点 |
+| D1 | 80% | [100%] 无带宽限制或等效方案 | 研究 egress sidecar 配置接口、测试不同协议带宽差异 |
+| D2 | 80% | [100%] 包管理操作成功率 > 95% | 测试 conda/brew 等替代包管理器 |
+| D3 | 80% | [100%] seccomp/capabilities 不再阻碍 | 分析 seccomp 过滤规则、测试被阻止的系统调用 |
+| D6 | 80% | [100%] 完全自主，无需人工触发 | 验证 Schedule 自动触发稳定性 |
 
 ### Step 5: 记录并退出
-
-### 🛑 commit 前强制自查（逐项回答是/否）
-
-| # | 检查项 | 是/否 |
-|---|--------|-------|
-| 1 | 本轮是否完成了 ≥2 个 Milestone 进展？ | |
-| 2 | evolve.sh 结束后是否工作了 ≥15 分钟？ | |
-| 3 | 本轮是否有实际的安装/配置/编程/启动服务？（非仅执行读命令） | |
-| 4 | polaris-score.md 更新是否标注了正确类型（New Capability / Measurement Correction）？ | |
-| 5 | History 表是否有重复 entry？ | |
-
-→ 如果 #1 和 #2 都为「否」：**回到 Step 4 继续工作，不要 commit**
-→ 如果 #3 为「否」且上一轮也是纯观察：**本轮禁止再出纯观察结果，必须执行实际操作**
 
 ```bash
 # 5.1 更新 Polaris 分数
@@ -251,8 +219,13 @@ git commit -m "Round N: <维度> <简述>"
 # 5.5 Push 到 worker 分支
 git push origin worker
 
-# 5.6 释放锁
-bash scripts/release-lock.sh 2>/dev/null || true
+# 5.6 释放锁（时间门槛由 release-lock.sh 内部强制执行 — 持锁 <15min 会 exit 1）
+bash scripts/release-lock.sh
+LOCK_RELEASE_EXIT=$?
+if [ "$LOCK_RELEASE_EXIT" -ne 0 ]; then
+    echo "⚠️ 锁释放被拒（工作时间不足 15 分钟）。回到 Step 4 继续工作。"
+    echo "   不要 push，不要退出——继续工作直到满足时间要求。"
+fi
 ```
 
 ⚠️ **时间硬约束**：必须在下一轮 Schedule 触发前完成 git push + release-lock。如果距离下一轮触发不足 5 分钟，立即进入 Step 5 收尾。
