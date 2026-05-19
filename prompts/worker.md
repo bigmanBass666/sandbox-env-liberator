@@ -172,7 +172,9 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 
 **唯一允许停止的条件**（满足任一即可）：
 - ⏰ 距离下一轮 Schedule 触发 < 5 分钟（时间硬约束）
-- 🔒 自主探索后确实未发现新限制（需在 handoff.md 记录探索过程和结论）
+- 🔒 自主探索后确实未发现新限制 → 在 handoff.md 标记 `Status: EXHAUSTIVE`（release-lock 将提前放行）
+
+❌ **禁止用 sleep/wait 凑时间**——时间门槛是"做得不够多就继续找事做"，不是"必须待够 X 分钟"
 
 **判断标准**：
 - ✅ 还有未完成的 Milestone 或 Stretch Goal 且能找到推进方式 → **继续**
@@ -205,11 +207,12 @@ git commit -m "Round N: <维度> <简述>"
 git push origin worker
 
 # 5.6 释放锁（时间门槛由 release-lock.sh 内部强制执行 — 持锁 <35min 会 exit 1）
+# ❌ 禁止用 sleep/wait 凑时间！时间门槛的含义是"做得不够多就回去继续找事做"，不是"必须待够 X 分钟"
 bash scripts/release-lock.sh
 LOCK_RELEASE_EXIT=$?
 if [ "$LOCK_RELEASE_EXIT" -ne 0 ]; then
     echo "⚠️ 锁释放被拒（工作时间不足 35 分钟）。回到 Step 4 继续工作。"
-    echo "   不要 push，不要退出——继续工作直到满足时间要求。"
+    echo "   不要 push，不要退出——继续找事做，不要 sleep 等待！"
 fi
 ```
 

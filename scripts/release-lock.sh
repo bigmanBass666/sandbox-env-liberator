@@ -62,6 +62,22 @@ async function run() {
 
     const newBody = currentBody + '\\nRELEASED_AT: ' + now + '\\nLOCK_STATUS: released';
 
+    const fs = require('fs');
+    const path = require('path');
+    const handoffPath = path.resolve('${LOCK_PROJECT_DIR}', 'references', 'handoff.md');
+    try {
+        const handoffContent = fs.readFileSync(handoffPath, 'utf8');
+        if (handoffContent.includes('Status: EXHAUSTIVE')) {
+            console.log(JSON.stringify({
+                status: 'released',
+                reason: 'exhaustive_exploration',
+                message: '自主探索完成，提前释放'
+            }));
+            return;
+        }
+    } catch (e) {
+    }
+
     // Time gate check
     const lockTimeMatch = currentBody.match(/LOCK_ACQUIRED_AT:\s*(\S+)/);
     if (lockTimeMatch) {
@@ -122,6 +138,11 @@ case "$STATUS" in
         exit 1
         ;;
     released)
+        REASON=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.reason||'');" 2>/dev/null || echo "")
+        if [ "$REASON" = "exhaustive_exploration" ]; then
+            echo -e "${GREEN}✅ 自主探索完成，提前释放锁${NC}"
+            exit 0
+        fi
         echo -e "${GREEN}✅ 锁已成功释放${NC}"
         exit 0
         ;;
