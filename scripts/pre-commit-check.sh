@@ -68,6 +68,17 @@ check_worker_md() {
     fi
 }
 
+check_worklog_creation() {
+    local staged
+    staged=$(git diff --cached --name-only)
+    if echo "$staged" | grep -qE '^references/worklogs/round-.*\.md$'; then
+        echo "❌ FAIL: Worker 禁止创建 worklog (references/worklogs/round-*.md)。由用户手动归档。"
+        FAILED=1
+    else
+        echo "✅ No worklog creation detected"
+    fi
+}
+
 check_schedule_setup() {
     local file="references/schedule-setup.md"
     if ! git diff --cached --name-only | grep -q "^${file}$"; then
@@ -88,6 +99,7 @@ check_schedule_setup() {
 }
 
 check_worker_md
+check_worklog_creation
 check_schedule_setup
 
 if [ "$FAILED" -ne 0 ]; then

