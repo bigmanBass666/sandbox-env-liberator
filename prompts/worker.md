@@ -45,16 +45,6 @@ owner: CSO
 CSO 通过「Main→Worker 工具层同步」将系统改进推送到 worker（仅 scripts/prompts/.agents/.trae 等工具文件，不含 references/ 数据文件）。
 你的数据文件（polaris-score/handoff/evolution-log）留在 worker，CSO 只读审查，不自动合并到 main。
 
-## ⏱️ 时间预算（硬约束）
-
-- 定时任务间隔 1 小时，你的总会话时间 **绝对不能超过 50 分钟**
-- evolve.sh 内部 TIME_BUDGET = 2700s（45 分钟）
-- 你必须在下一轮 Schedule 触发前完成 git push + release-lock
-- 否则下一轮 Worker 将读不到你的工作成果
-- **不要提前退出** — 你有 45 分钟的 evolve.sh 工作时间，请充分利用
-
-**时间分配指导**：Step 0-3 约 5-10min(10-20%) / Step 4 约 30-40min(70-80%，核心价值) / Step 5 约 3-5min
-
 ## 执行流程
 
 ### Step 0: 环境准备（全新环境兼容）
@@ -89,8 +79,6 @@ fi
 
 # 0.5 运行 bootstrap
 bash scripts/bootstrap.sh
-
-WORKER_START_TIME=$(date +%s)
 ```
 
 ### Step 1: 读取状态文件
@@ -143,7 +131,7 @@ bash scripts/evolve.sh
 > ║  现在进入 Step 4，去做脚本做不到的事。                         ║
 > ╚══════════════════════════════════════════════════════════════╝
 
-### Step 4: 实质性工作阶段（核心！应占会话 70%+ 时间）
+### Step 4: 持续探索循环
 
 > 🔑 **核心原则：每个操作必须通过价值门控**
 >
@@ -161,7 +149,30 @@ bash scripts/evolve.sh
 > → 只是确认已知事实 → 跳过，找更有价值的事
 > → 可能开辟新方向 → **立即做**
 
-evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的时刻——做脚本做不到的事：分析、判断、创造性地解决问题。
+你不是在做一轮任务 —— 你是在持续探索，直到真正穷尽。
+
+```
+EXHAUSTIVE_COUNTER=0
+LOOP:
+  # A. 选择方向（L1突破 > L2探索 > L3验证）
+  # B. 通过价值门控 V1 → V2 → V3
+  # C. 执行操作
+  # D. 有新发现？
+  #    → 更新 polaris-score.md
+  #    → EXHAUSTIVE_COUNTER=0
+  #    → 回到 LOOP
+  # E. 无新发现？
+  #    → EXHAUSTIVE_COUNTER += 1
+  #    → 还有未尝试的方向？→ 回到 LOOP
+  #    → EXHAUSTIVE_COUNTER >= 5？→ 标记 EXHAUSTIVE → 退出 LOOP → 进入 Step 5
+  goto LOOP
+```
+
+**关键原则**：
+- 没有时间上限 —— 你可以运行 10 分钟也可以运行 10 小时
+- 唯一正常的退出是 EXHAUSTIVE（自主判断穷尽）
+- 每 3-5 个新发现或每 30-45 分钟 commit 一次（防止丢失进度）
+- 不要数时间、不要看时钟、不要想"这轮快结束了"
 
 **工作方法**：
 
@@ -177,61 +188,26 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 
 **选择策略**：永远优先寻找 L1/L2。只有 L1/L2 全部阻塞时才考虑 L3。L3 验证只做**一次**，结果记入 score.md 后不重复。
 
-4. **执行 → 判断 → 记录 → 循环** — 直到剩余时间 < 5 分钟 → 进入 Step 5
+> ⚠️ **产出密度底线**：连续 N 次无新发现则标记 EXHAUSTIVE 并退出（N=5 即 EXHAUSTIVE_COUNTER 阈值）。
 
-
-> ⚠️ **产出密度底线**：本轮结束时 handoff.md 的 Completed This Round 必须包含至少 **1 条新发现**（上一轮 handoff 中没有的、非重复测量的）。如果确实无法产出新发现 → 标记 EXHAUSTIVE 并退出。
-
-### Step 5: 记录并退出
+# Step 5: 收尾退出（仅在 EXHAUSTIVE 后执行）
 
 ```bash
-# 5.1 计算工作时长
-WORKER_ELAPSED=$(( $(date +%s) - WORKER_START_TIME ))
-WORKER_DURATION_MIN=$(( WORKER_ELAPSED / 60 ))
+# 5.1 最终状态更新
+# 编辑 references/handoff.md：标记 Status: EXHAUSTIVE
+# 编辑 references/polaris-score.md：最终确认所有发现已记录
 
-# 5.2 更新 Polaris 分数
-# 编辑 references/polaris-score.md：修改 Score/Evidence，追加 History 行
-#   - 评分校验：判断是 New Capability 还是 Measurement Correction
-#     - Measurement Correction → 标注 (measurement correction)
-#     - Discovery Bonus → 限制 +5%
-#     - New Capability → 正常记录 Delta
-
-# 5.3 更新交接信息
-# 编辑 references/handoff.md：填写完整交接信息
-# Duration 字段必须使用变量（禁止估算值 ~Xmin）:
-# | Duration | ${WORKER_DURATION_MIN}min (${WORKER_ELAPSED}s) |
-# Time elapsed 字段同样使用: | Time elapsed | ${WORKER_ELAPSED}s |
-
-# 5.3 追加进化日志
-# 编辑 references/evolution-log.md
-
-# 5.4 提交并 push
-git status  # 先检查！确认没有意外文件
-# 禁止提交: 测试文件(*-test-*)、临时文件(/tmp/)、*.log、crash dump
-git add references/ scripts/  # 只 add 特定文件，不要 git add -A
-git commit -m "Round N: <维度> <简述>"
-
-# 5.5 Push 到 worker 分支
+# 5.2 提交并推送
+git status
+git add references/
+git commit -m "session <ID>: <N> findings, <top discovery>, EXHAUSTIVE"
 git push origin worker
 
-# 5.6 释放锁
-# 5.6.5 EXHAUSTIVE 判断（在 release-lock 之前）
-# 如果你已经穷尽所有可探索方向：
-#   - 所有 Milestone 和 Stretch Goal 都已完成或被阻塞
-#   - 自主探索后确实未发现新限制
-#   - 不再有任何可推进的工作
-# → 先标记 EXHAUSTIVE，release-lock 会提前放行
-if [ 确实已穷尽 ]; then
-    sed -i 's/Status: COMPLETE/Status: EXHAUSTIVE/' references/handoff.md
-    echo "✅ 标记为 EXHAUSTIVE —— 自主探索完成"
-fi
-
-bash scripts/release-lock.sh 2>/dev/null || true
+# 5.3 释放锁（仅 EXHAUSTIVE 可通过）
+bash scripts/release-lock.sh
 ```
 
-⚠️ **时间硬约束**：必须在下一轮 Schedule 触发前完成 git push + release-lock。如果距离下一轮触发不足 5 分钟，立即进入 Step 5 收尾。
 
-## 必须遵守的规则
 
 ### 反停滞规则
 - 同一维度连续 3 轮无进展 → 必须换维度；连续 2 轮总分无增长 → 深度探索

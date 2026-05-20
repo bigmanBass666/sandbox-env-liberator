@@ -33,6 +33,20 @@ fi
 
 echo -e "${CYAN}🔓 分布式锁释放 - ${OWNER}/${REPO}${NC}"
 
+HANDOFF_FILE="${LOCK_PROJECT_DIR}/handoff.md"
+if [ ! -f "$HANDOFF_FILE" ]; then
+    echo -e "${RED}❌ 锁未被释放 — handoff.md 不存在${NC}"
+    exit 1
+fi
+
+EXHAUSTIVE_CHECK=$(grep -i "Status:.*EXHAUSTIVE" "$HANDOFF_FILE" 2>/dev/null || true)
+if [ -z "$EXHAUSTIVE_CHECK" ]; then
+    echo -e "${RED}❌ 锁未被释放 — handoff.md 未标记 EXHAUSTIVE。继续探索或标记 EXHAUSTIVE 后重试。${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ handoff.md 已标记 EXHAUSTIVE，继续释放锁${NC}"
+
 RELEASE_RESULT=$(node -e "
 const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 const owner = '${OWNER}';
