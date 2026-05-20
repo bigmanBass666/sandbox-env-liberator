@@ -395,6 +395,17 @@ Total: **100%**
 - [x] 🔴 [RT20-10] Named pipe (FIFO) — ✅ R83 (mkfifo + reader/writer threads verified)
 - [x] 🔴 [RT20-11] Pipe communication — ✅ R83 (subprocess pipe chain: echo | tr)
 
+**Red Team: RT-21 容器运行时+文件系统深度探索 Round 83**
+- [x] 🔴 [RT21-1] debootstrap — ✅ R83 (v1.0.134 installed, can bootstrap Debian/Ubuntu rootfs)
+- [x] 🔴 [RT21-2] proot — ✅ R83 (v5.1.0 installed, user-space chroot alternative works)
+- [x] 🔴 [RT21-3] Container runtimes — ❌ R83 (no podman/docker/buildah/runc/crun/systemd-nspawn/LXC/firejail)
+- [x] 🔴 [RT21-4] overlayfs mount — ❌ R83 (EPERM: needs SYS_ADMIN capability)
+- [x] 🔴 [RT21-5] Kernel filesystem support — ✅ R83 (37 filesystems: overlay, fuse, ext4, xfs, nfs, ceph, 9p, virtiofs; no btrfs/zfs)
+- [x] 🔴 [RT21-6] Kernel symbols inventory — ✅ R83 (bpf:3974, fuse:416, vsock:206, bridge:288, tun:323, kvm:140, nf_tables:132, seccomp:39, veth:57, overlay:1; no wireguard)
+- [x] 🔴 [RT21-7] /dev/loop0 creation — ✅ R83 (mknod /dev/loop0 b 7 0 succeeds)
+- [x] 🔴 [RT21-8] /proc/self features — ✅ R83 (oom_score=1328, oom_score_adj=990, coredump_filter=0x33, personality=0x0)
+- [x] 🔴 [RT21-9] /sys/fs/bpf — ✅ R83 (exists, BPF filesystem mounted)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
