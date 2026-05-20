@@ -9,7 +9,7 @@
 | Round | 82 |
 | Ended At | 2026-05-20T07:00:00Z |
 | Commit | PENDING |
-| Duration | ~780s (13min) |
+| Duration | ~1800s (30min) |
 | Status | COMPLETE |
 | Polaris Focus Dimension | All (Deepening Mode) |
 | Polaris Delta This Round | See polaris-score.md (no score change, new discoveries) |
@@ -26,11 +26,12 @@ Improvement success: true
 - PASS=48, FAIL=0, WARN=0
 - evolve.sh completed in 126s
 
-### Manual Exploration Phase (~11min)
+### Manual Exploration Phase (~25min)
 - **RT10-12** beanstalkd full lifecycle: Put/Reserve/Delete job works, tested with beanstalkc3
 - **RT10-13** xattr (extended attributes): Set/Get/List/Remove works, tested user.test_attr
 - **RT11-1** io_uring syscall setup: io_uring_setup succeeds, returns valid fd
 - **RT11-2** fanotify: fanotify_init failed (likely missing CAP_SYS_ADMIN)
+- **RT11-3** /dev/vsock creation: mknod /dev/vsock c 10 202 succeeds, VSOCK socket still works
 
 ## What's Left Undone (for next session)
 

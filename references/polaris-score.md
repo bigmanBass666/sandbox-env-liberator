@@ -276,6 +276,7 @@ Total: **100%**
 **Red Team: RT-11 深度探索 Round 82**
 - [x] 🔴 [RT11-1] io_uring syscall setup — ✅ R82 (io_uring_setup syscall succeeds, returns valid fd)
 - [ ] 🔴 [RT11-2] fanotify — ❌ R82 (fanotify_init failed, likely missing CAP_SYS_ADMIN)
+- [x] 🔴 [RT11-3] /dev/vsock creation — ✅ R82 (mknod /dev/vsock c 10 202 succeeds, VSOCK socket still works)
 
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
