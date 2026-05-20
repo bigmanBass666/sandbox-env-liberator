@@ -346,6 +346,42 @@ Total: **100%**
 - [x] 🔴 [RT16-17] tcpdump packet capture — ✅ R83 (captured 5 packets on lo, including loopback ICMP + TCP)
 - [x] 🔴 [RT16-18] SSH client — ✅ R83 (OpenSSH_9.6p1, OpenSSL 3.0.13)
 
+**Red Team: RT-17 SSH/VPN/网络服务深度探索 Round 83**
+- [x] 🔴 [RT17-1] SSH key generation — ✅ R83 (ed25519 + RSA 4096 keys generated)
+- [x] 🔴 [RT17-2] ssh-agent — ✅ R83 (agent started, PID confirmed)
+- [x] 🔴 [RT17-3] /dev/net/tun creation — ✅ R83 (mknod /dev/net/tun c 10 200 succeeds)
+- [x] 🔴 [RT17-4] OpenVPN — ✅ R83 (v2.6.19 installed, OpenSSL+LZO+LZ4+AEAD)
+- [x] 🔴 [RT17-5] iptables/nftables — ❌ R83 (installed but EPERM: needs CAP_NET_ADMIN)
+- [x] 🔴 [RT17-6] VPN tools — ❌ R83 (wireguard/openconnect/vpnc/strongswan not installed)
+- [x] 🔴 [RT17-7] IP routes — ✅ R83 (default via 10.16.0.1, eth0=10.18.67.160/12)
+- [x] 🔴 [RT17-8] aiohttp async HTTP server — ✅ R83 (aiohttp 3.13.5, server works on 19882)
+- [x] 🔴 [RT17-9] httpx async client — ✅ R83 (httpx 0.28.1 installed)
+- [x] 🔴 [RT17-10] Node.js HTTP server — ✅ R83 (http.createServer on 19881)
+- [x] 🔴 [RT17-11] Node.js worker threads — ✅ R83 (Worker class works, message passing verified)
+- [x] 🔴 [RT17-12] Node.js cluster — ✅ R83 (primary + worker fork works)
+
+**Red Team: RT-18 内核系统调用深度盘点 Round 83**
+- [x] 🔴 [RT18-1] Syscall inventory — ✅ R83 (38 available, 1 blocked [bpf EPERM], 5 not implemented [userfaultfd, landlock, futex_waitv, cachestat, fchmodat2])
+- [x] 🔴 [RT18-2] memfd_create with sealing — ✅ R83 (MFD_ALLOW_SEALING works, write/read verified)
+- [x] 🔴 [RT18-3] eventfd — ✅ R83 (eventfd2 created, write 42 / read 42 verified)
+- [x] 🔴 [RT18-4] timerfd — ✅ R83 (timerfd_create works)
+- [x] 🔴 [RT18-5] epoll — ✅ R83 (epoll_create1 works)
+- [x] 🔴 [RT18-6] inotify — ✅ R83 (inotify_init1 + inotify_add_watch on /tmp works)
+- [x] 🔴 [RT18-7] pidfd_open — ✅ R83 (pidfd_open(getpid()) works)
+- [x] 🔴 [RT18-8] pidfd_send_signal — ✅ R83 (syscall exists, EINVAL with bad args)
+- [x] 🔴 [RT18-9] process_mrelease — ✅ R83 (syscall exists, EBADF with bad fd)
+- [x] 🔴 [RT18-10] userfaultfd — ❌ R83 (ENOSYS: not implemented in this kernel)
+- [x] 🔴 [RT18-11] landlock — ❌ R83 (ENOSYS: not implemented in this kernel)
+- [x] 🔴 [RT18-12] BPF — 🔒 R83 (EPERM: syscall exists but blocked, unprivileged_bpf_disabled=1)
+
+**Red Team: RT-19 数据库高级特性验证 Round 83**
+- [x] 🔴 [RT19-1] Redis Lua complex script — ✅ R83 (SET+GET in single EVAL works)
+- [x] 🔴 [RT19-2] Redis modules — ✅ R83 (no modules loaded, but MODULE LIST command works)
+- [x] 🔴 [RT19-3] Redis config — ✅ R83 (maxmemory=0 unlimited, save policy configured)
+- [x] 🔴 [RT19-4] PostgreSQL extensions — ✅ R83 (plpgsql 1.0 installed, only extension available)
+- [x] 🔴 [RT19-5] beanstalkd stats — ✅ R83 (full stats output, all counters accessible)
+- [x] 🔴 [RT19-6] lighttpd config — ✅ R83 (v1.4.74, mod_indexfile+mod_access+mod_alias+mod_redirect loaded)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
