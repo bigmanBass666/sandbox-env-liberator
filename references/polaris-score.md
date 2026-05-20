@@ -406,6 +406,17 @@ Total: **100%**
 - [x] 🔴 [RT21-8] /proc/self features — ✅ R83 (oom_score=1328, oom_score_adj=990, coredump_filter=0x33, personality=0x0)
 - [x] 🔴 [RT21-9] /sys/fs/bpf — ✅ R83 (exists, BPF filesystem mounted)
 
+**Red Team: RT-22 性能基准+proot深度测试 Round 83**
+- [x] 🔴 [RT22-1] proot rootfs execution — ✅ R83 (bash runs inside proot rootfs, echo works)
+- [x] 🔴 [RT22-2] proot root simulation — ✅ R83 (proot -0 works, fake root UID in proot)
+- [x] 🔴 [RT22-3] debootstrap download — ✅ R83 (download-only mode fetches Ubuntu noble packages from Tsinghua mirror)
+- [x] 🔴 [RT22-4] CPU benchmark — ✅ R83 (sum(i^2 for i in 10M) = 1.193s)
+- [x] 🔴 [RT22-5] Memory benchmark — ✅ R83 (100MB write: 5.7 MB/s)
+- [x] 🔴 [RT22-6] Disk I/O benchmark — ✅ R83 (Write: 792.1 MB/s, Read: 5335.2 MB/s — likely RAM-backed filesystem)
+- [x] 🔴 [RT22-7] Network latency — ✅ R83 (loopback TCP connect: avg=0.037ms, min=0.026ms)
+- [x] 🔴 [RT22-8] Redis benchmark — ✅ R83 (SET: 99K req/s, GET: 116K req/s, p50=0.223ms)
+- [x] 🔴 [RT22-9] PostgreSQL 1M rows — ✅ R83 (generate_series 1M rows works)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
