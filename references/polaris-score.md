@@ -472,6 +472,23 @@ Total: **100%**
 - [x] 🔴 [RT26-12] FUSE mount — ❌ R83 (ENOENT: needs mount point + FUSE daemon)
 - [x] 🔴 [RT26-13] /proc/1 access — ❌ R83 (EPERM: cannot read /proc/1/environ or /proc/1/ns/*)
 
+**Red Team: RT-27 容器逃逸+权限提升探索 Round 83**
+- [x] 🔴 [RT27-1] PID 1 process — ✅ R83 (/usr/bin/tini -- /usr/bin/supervisord -c /app/supervisord.conf -n)
+- [x] 🔴 [RT27-2] Container type — ✅ R83 (container=docker, KUBERNETES_SERVICE_HOST=172.30.0.1, hostname=all-in-one-32-vci-bk4tz)
+- [x] 🔴 [RT27-3] Overlayfs mount — ✅ R83 (98 layers: lowerdir=94/fs:93/fs:...:49/fs, upperdir=snapshots/98/fs)
+- [x] 🔴 [RT27-4] Cgroup path — ✅ R83 (0::/ — root cgroup, cgroup v2)
+- [x] 🔴 [RT27-5] Kubernetes API — ✅ R83 (KUBERNETES_SERVICE_HOST=172.30.0.1:443 accessible)
+- [x] 🔴 [RT27-6] /dev/kmsg — ❌ R83 (not available)
+- [x] 🔴 [RT27-7] sysctl write — ❌ R83 (read-only /proc/sys, EROFS)
+- [x] 🔴 [RT27-8] /dev/fuse — ❌ R83 (not available, mknod needed but FUSE mount requires SYS_ADMIN)
+- [x] 🔴 [RT27-9] FUSE3 dev package — ✅ R83 (libfuse3-dev installed but no /dev/fuse device)
+
+**Red Team: RT-28 Kubernetes API 探索 Round 83**
+- [x] 🔴 [RT28-1] K8s API endpoint — ✅ R83 (https://172.30.0.1:443 reachable, but no auth token)
+- [x] 🔴 [RT28-2] K8s service account — ❌ R83 (no token at /var/run/secrets/)
+- [x] 🔴 [RT28-3] K8s DNS — ❌ R83 (kubernetes.default.svc.cluster.local not resolvable)
+- [x] 🔴 [RT28-4] K8s API version — ❌ R83 (curl returns empty, likely needs auth)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
