@@ -198,7 +198,9 @@ WORKER_DURATION_MIN=$(( WORKER_ELAPSED / 60 ))
 
 # 5.3 更新交接信息
 # 编辑 references/handoff.md：填写完整交接信息
-# Duration 字段使用: | Duration | ~${WORKER_DURATION_MIN}min (${WORKER_ELAPSED}s) |
+# Duration 字段必须使用变量（禁止估算值 ~Xmin）:
+# | Duration | ${WORKER_DURATION_MIN}min (${WORKER_ELAPSED}s) |
+# Time elapsed 字段同样使用: | Time elapsed | ${WORKER_ELAPSED}s |
 
 # 5.4 追加进化日志
 # 编辑 references/evolution-log.md
@@ -212,6 +214,17 @@ git commit -m "Round N: <维度> <简述>"
 
 # 5.6 Push 到 worker 分支
 git push origin worker
+
+# 5.6.5 EXHAUSTIVE 判断（在 release-lock 之前）
+# 如果你已经穷尽所有可探索方向：
+#   - 所有 Milestone 和 Stretch Goal 都已完成或被阻塞
+#   - 自主探索后确实未发现新限制
+#   - 不再有任何可推进的工作
+# → 先标记 EXHAUSTIVE，release-lock 会提前放行
+if [ 确实已穷尽 ]; then
+    sed -i 's/Status: COMPLETE/Status: EXHAUSTIVE/' references/handoff.md
+    echo "✅ 标记为 EXHAUSTIVE —— 自主探索完成"
+fi
 
 # 5.7 释放锁（时间门槛由 release-lock.sh 内部强制执行 — 持锁 <35min 会 exit 1）
 # ❌ 禁止凑时间！做完了标记 EXHAUSTIVE 退出，做不完继续找事做
