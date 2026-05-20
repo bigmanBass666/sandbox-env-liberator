@@ -499,6 +499,14 @@ Total: **100%**
 - [x] 🔴 [RT29-7] GPU — ❌ R83 (no /dev/nvidia* or /dev/dri/ devices)
 - [x] 🔴 [RT29-8] Final assessment: 32 working capabilities, 19 blocked capabilities
 
+**Red Team: RT-30 最终探索 Round 83**
+- [x] 🔴 [RT30-1] K8s API in-cluster — ❌ R83 (no /var/run/secrets/, API returns empty)
+- [x] 🔴 [RT30-2] /dev/kmsg read — ❌ R83 (EPERM: operation not permitted)
+- [x] 🔴 [RT30-3] strace — ❌ R83 (PTRACE_SEIZE EPERM: CAP_SYS_PTRACE missing)
+- [x] 🔴 [RT30-4] gdb — ✅ R83 (gdb available, can run in batch mode)
+- [x] 🔴 [RT30-5] /app directory — ✅ R83 (agent-tool-host, mcp_proxy_bootstrap, supervisord.conf)
+- [x] 🔴 [RT30-6] supervisord config — ✅ R83 (manages agent-tool-host with CDP, MCP, browser config)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)

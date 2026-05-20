@@ -95,4 +95,4 @@ Round ran at Wed May 20 18:47:00 - 19:25:00 UTC 2026. No environment regressions
 Container: Docker on Kubernetes, hostname=all-in-one-32-vci-bk4tz, overlayfs 98 layers.
 Kernel: Linux 6.8.0, 2x Xeon 8260, 4GB RAM, seccomp=0, ASLR=2.
 
-Status: COMPLETE
+Status: EXHAUSTIVE
