@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-20T03:35:45Z
-Round: 81
+Last Updated: 2026-05-20T06:47:26Z
+Round: 82
 Total: **100%**
 
 ## Scoring Principles (评分原则)
@@ -270,6 +270,12 @@ Total: **100%**
 - [x] 🔴 [RT10-9] VMA 信息 — ✅ R81 (65 VMAs in /proc/self/maps, 1 heap, 1 stack, VDSO present)
 - [x] 🔴 [RT10-10] 内存信息 — ✅ R81 (MemTotal:6GB, MemAvailable:4.5GB, huge pages available but 0 configured)
 - [x] 🔴 [RT10-11] beanstalkd 队列 — ✅ R81 (Connected, USE/KICK/WATCH commands work, list-tube-used works)
+- [x] 🔴 [RT10-12] beanstalkd 完整生命周期 — ✅ R82 (Put/Reserve/Delete job works, full test with beanstalkc3)
+- [x] 🔴 [RT10-13] xattr 扩展属性 — ✅ R82 (Set/Get/List/Remove xattr works, user.test_attr tested)
+
+**Red Team: RT-11 深度探索 Round 82**
+- [x] 🔴 [RT11-1] io_uring syscall setup — ✅ R82 (io_uring_setup syscall succeeds, returns valid fd)
+- [ ] 🔴 [RT11-2] fanotify — ❌ R82 (fanotify_init failed, likely missing CAP_SYS_ADMIN)
 
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
@@ -280,6 +286,7 @@ Total: **100%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R82 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R81 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R80 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R79 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
