@@ -2,8 +2,8 @@
 
 > **Polaris = 彻底解放自由** — 让这个 sandbox 不再是"受限环境"，而是"完整的工作空间"
 
-Last Updated: 2026-05-20T06:47:26Z
-Round: 82
+Last Updated: 2026-05-20T18:48:52Z
+Round: 83
 Total: **100%**
 
 ## Scoring Principles (评分原则)
@@ -278,6 +278,15 @@ Total: **100%**
 - [ ] 🔴 [RT11-2] fanotify — ❌ R82 (fanotify_init failed, likely missing CAP_SYS_ADMIN)
 - [x] 🔴 [RT11-3] /dev/vsock creation — ✅ R82 (mknod /dev/vsock c 10 202 succeeds, VSOCK socket still works)
 
+**Red Team: RT-12 深度探索 Round 83**
+- [x] 🔴 [RT12-1] io_uring via raw syscall — ✅ R83 (syscall 425 succeeds, fd=3, features=0x7ff (all basic features))
+- [x] 🔴 [RT12-2] PostgreSQL database create — ✅ R83 (CREATE DATABASE test_round83 succeeds)
+- [x] 🔴 [RT12-3] /proc/kallsyms io_uring symbols — ✅ R83 (282 io_uring related symbols found)
+- [x] 🔴 [RT12-4] Redis Streams — ✅ R83 (XADD/XLEN/XREAD all work)
+- [x] 🔴 [RT12-5] Redis Lua Scripting — ✅ R83 (EVAL command works)
+- [x] 🔴 [RT12-6] Redis Transactions — ✅ R83 (MULTI/EXEC works)
+- [x] 🔴 [RT12-7] Memcached socket SET/GET — ✅ R83 (connected, SET mykey=hello, GET returns it)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
@@ -287,6 +296,7 @@ Total: **100%**
 ## History (Round History)
 
 | Round | Total | D1 | D2 | D3 | D4 | D5 | D6 | Notes |
+| R83 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R82 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R81 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
 | R80 | 100% | 100 | 100 | 100 | 100 | 100 | 100 | Polaris integration active |
