@@ -457,6 +457,21 @@ Total: **100%**
 - [x] 🔴 [RT25-7] Alpine rootfs in proot — ✅ R83 (alpine-minirootfs-3.21.3 runs in proot, cat /etc/alpine-release=3.21.3)
 - [x] 🔴 [RT25-8] QEMU user-mode — ❌ R83 (no qemu-aarch64/arm/riscv64/s390x installed)
 
+**Red Team: RT-26 服务组合+内核绕过探索 Round 83**
+- [x] 🔴 [RT26-1] lighttpd reverse proxy config — ✅ R83 (mod_proxy syntax OK)
+- [x] 🔴 [RT26-2] Python reverse proxy — ✅ R83 (proxies to lighttpd:8080, returns 200/3371 bytes)
+- [x] 🔴 [RT26-3] WebSocket server — ✅ R83 (websockets library, echo server works on 19888)
+- [x] 🔴 [RT26-4] SMTP — ❌ R83 (no local SMTP, gmail:25/587 timed out)
+- [x] 🔴 [RT26-5] DNS resolution — ✅ R83 (google.com, github.com, registry-1.docker.io, auth.docker.io, tuna all resolve)
+- [x] 🔴 [RT26-6] unshare(CLONE_NEWNS) — ❌ R83 (EPERM: needs CAP_SYS_ADMIN)
+- [x] 🔴 [RT26-7] unshare(CLONE_NEWNET) — ❌ R83 (EPERM: needs CAP_NET_ADMIN)
+- [x] 🔴 [RT26-8] unshare(CLONE_NEWUSER) — ✅ R83 (works! user namespace creation succeeds)
+- [x] 🔴 [RT26-9] unshare(CLONE_NEWPID) — ✅ R83 (works! PID namespace creation succeeds)
+- [x] 🔴 [RT26-10] pivot_root — ❌ R83 (EPERM: needs CAP_SYS_ADMIN)
+- [x] 🔴 [RT26-11] setns — ❌ R83 (EPERM: cannot access /proc/1/ns/*)
+- [x] 🔴 [RT26-12] FUSE mount — ❌ R83 (ENOENT: needs mount point + FUSE daemon)
+- [x] 🔴 [RT26-13] /proc/1 access — ❌ R83 (EPERM: cannot read /proc/1/environ or /proc/1/ns/*)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
