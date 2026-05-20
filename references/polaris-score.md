@@ -447,6 +447,16 @@ Total: **100%**
 - [x] 🔴 [RT24-12] perf_event_paranoid=2 (perf limited to self only)
 - [x] 🔴 [RT24-13] randomize_va_space=2 (full ASLR enabled)
 
+**Red Team: RT-25 服务组合+容器镜像探索 Round 83**
+- [x] 🔴 [RT25-1] Python WSGI server — ✅ R83 (wsgiref.simple_server on 19884, JSON response with env vars)
+- [x] 🔴 [RT25-2] Node.js HTTP server with routing — ✅ R83 (3 routes: /, /health, /env, Node v24.15.0)
+- [x] 🔴 [RT25-3] Redis as session store — ✅ R83 (SET/GET/EXPIRE/TTL all work)
+- [x] 🔴 [RT25-4] PostgreSQL as JSONB data store — ✅ R83 (INSERT ON CONFLICT, JSONB query works)
+- [x] 🔴 [RT25-5] Beanstalkd as job queue — ✅ R83 (put + reserve on test_tube)
+- [x] 🔴 [RT25-6] Docker Hub API — ❌ R83 (auth token request failed via egress proxy)
+- [x] 🔴 [RT25-7] Alpine rootfs in proot — ✅ R83 (alpine-minirootfs-3.21.3 runs in proot, cat /etc/alpine-release=3.21.3)
+- [x] 🔴 [RT25-8] QEMU user-mode — ❌ R83 (no qemu-aarch64/arm/riscv64/s390x installed)
+
 **Time data (R29):**
 - evolve.sh native execution: 189s (3m09s)
 - TIME_BUDGET: 1800s (30min)
