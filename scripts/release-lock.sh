@@ -33,6 +33,20 @@ fi
 
 echo -e "${CYAN}🔓 分布式锁释放 - ${OWNER}/${REPO}${NC}"
 
+HANDOFF_FILE="${LOCK_PROJECT_DIR}/handoff.md"
+if [ ! -f "$HANDOFF_FILE" ]; then
+    echo -e "${RED}❌ 锁未被释放 — handoff.md 不存在${NC}"
+    exit 1
+fi
+
+EXHAUSTIVE_CHECK=$(grep -i "Status:.*EXHAUSTIVE" "$HANDOFF_FILE" 2>/dev/null || true)
+if [ -z "$EXHAUSTIVE_CHECK" ]; then
+    echo -e "${RED}❌ 锁未被释放 — handoff.md 未标记 EXHAUSTIVE。继续探索或标记 EXHAUSTIVE 后重试。${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ handoff.md 已标记 EXHAUSTIVE，继续释放锁${NC}"
+
 RELEASE_RESULT=$(node -e "
 const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 const owner = '${OWNER}';
@@ -61,39 +75,6 @@ async function run() {
     }
 
     const newBody = currentBody + '\\nRELEASED_AT: ' + now + '\\nLOCK_STATUS: released';
-
-    const fs = require('fs');
-    const path = require('path');
-    const handoffPath = path.resolve('${LOCK_PROJECT_DIR}', 'references', 'handoff.md');
-    try {
-        const handoffContent = fs.readFileSync(handoffPath, 'utf8');
-        if (handoffContent.includes('Status: EXHAUSTIVE')) {
-            console.log(JSON.stringify({
-                status: 'released',
-                reason: 'exhaustive_exploration',
-                message: '自主探索完成，提前释放'
-            }));
-            return;
-        }
-    } catch (e) {
-    }
-
-    // Time gate check
-    const lockTimeMatch = currentBody.match(/LOCK_ACQUIRED_AT:\s*(\S+)/);
-    if (lockTimeMatch) {
-        const lockTime = new Date(lockTimeMatch[1]);
-        const elapsedSec = Math.round((Date.now() - lockTime.getTime()) / 1000);
-        if (elapsedSec < 2100) {
-            console.log(JSON.stringify({
-                status: 'rejected',
-                reason: 'minimum_time_not_met',
-                elapsed_seconds: elapsedSec,
-                minimum_seconds: 2100,
-                message: 'Round duration ' + elapsedSec + 's < minimum 2100s (35min). Continue working before releasing lock.'
-            }));
-            return;
-        }
-    }
 
     try {
         const updateRes = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/issues/1', {
@@ -130,19 +111,7 @@ fi
 STATUS=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.status);" 2>/dev/null || echo "parse_error")
 
 case "$STATUS" in
-    rejected)
-        ELAPSED_SEC=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(String(j.elapsed_seconds||0));" 2>/dev/null || echo "0")
-        echo -e "${RED}❌ 锁释放被拒绝：工作时间不足 35 分钟${NC}"
-        echo -e "${RED}   已用时: ${ELAPSED_SEC}s (${ELAPSED_SEC} 秒)，最低要求: 2100s (35 分钟)${NC}"
-        echo -e "${BOLD}   → 请回到 Step 4 继续工作，满足最低时间要求后再释放锁${NC}"
-        exit 1
-        ;;
     released)
-        REASON=$(echo "$RELEASE_RESULT" | node -e "const d=require('fs').readFileSync(0,'utf8');const j=JSON.parse(d);process.stdout.write(j.reason||'');" 2>/dev/null || echo "")
-        if [ "$REASON" = "exhaustive_exploration" ]; then
-            echo -e "${GREEN}✅ 自主探索完成，提前释放锁${NC}"
-            exit 0
-        fi
         echo -e "${GREEN}✅ 锁已成功释放${NC}"
         exit 0
         ;;
