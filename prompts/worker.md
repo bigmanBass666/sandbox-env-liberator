@@ -89,6 +89,8 @@ fi
 
 # 0.5 运行 bootstrap
 bash scripts/bootstrap.sh
+
+WORKER_START_TIME=$(date +%s)
 ```
 
 ### Step 1: 读取状态文件
@@ -184,17 +186,22 @@ evolve.sh 完成了侦察和自动化改进。现在是你发挥核心价值的�
 ### Step 5: 记录并退出
 
 ```bash
-# 5.1 更新 Polaris 分数
-# 编辑 references/polaris-score.md：
-#   - 修改对应维度的 Score 和 Evidence
-#   - 在 History 表追加新行
+# 5.1 计算工作时长
+WORKER_ELAPSED=$(( $(date +%s) - WORKER_START_TIME ))
+WORKER_DURATION_MIN=$(( WORKER_ELAPSED / 60 ))
+
+# 5.2 更新 Polaris 分数
+# 编辑 references/polaris-score.md：修改 Score/Evidence，追加 History 行
 #   - 评分校验：判断是 New Capability 还是 Measurement Correction
 #     - Measurement Correction → 标注 (measurement correction)
 #     - Discovery Bonus → 限制 +5%
 #     - New Capability → 正常记录 Delta
 
-# 5.2 更新交接信息
+# 5.3 更新交接信息
 # 编辑 references/handoff.md：填写完整交接信息
+# Duration 字段必须使用变量（禁止估算值 ~Xmin）:
+# | Duration | ${WORKER_DURATION_MIN}min (${WORKER_ELAPSED}s) |
+# Time elapsed 字段同样使用: | Time elapsed | ${WORKER_ELAPSED}s |
 
 # 5.3 追加进化日志
 # 编辑 references/evolution-log.md
@@ -209,6 +216,17 @@ git commit -m "Round N: <维度> <简述>"
 git push origin worker
 
 # 5.6 释放锁
+# 5.6.5 EXHAUSTIVE 判断（在 release-lock 之前）
+# 如果你已经穷尽所有可探索方向：
+#   - 所有 Milestone 和 Stretch Goal 都已完成或被阻塞
+#   - 自主探索后确实未发现新限制
+#   - 不再有任何可推进的工作
+# → 先标记 EXHAUSTIVE，release-lock 会提前放行
+if [ 确实已穷尽 ]; then
+    sed -i 's/Status: COMPLETE/Status: EXHAUSTIVE/' references/handoff.md
+    echo "✅ 标记为 EXHAUSTIVE —— 自主探索完成"
+fi
+
 bash scripts/release-lock.sh 2>/dev/null || true
 ```
 
