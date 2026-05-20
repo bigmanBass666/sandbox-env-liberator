@@ -10,7 +10,7 @@
 | Ended At | 2026-05-20T07:00:00Z |
 | Commit | PENDING |
 | Duration | ~1800s (30min) |
-| Status | COMPLETE |
+| Status | EXHAUSTIVE |
 | Polaris Focus Dimension | All (Deepening Mode) |
 | Polaris Delta This Round | See polaris-score.md (no score change, new discoveries) |
 
