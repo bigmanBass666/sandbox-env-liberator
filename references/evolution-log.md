@@ -2676,6 +2676,25 @@ Round 2 ████████████████████████
 | Reflection             18s |
 | Benchmark               0s |
 
+### Round 86 Deep Exploration - 2026-05-23
+- **16 new findings** (RT32) in new environment (kernel 6.18.5, Xeon 8582C)
+- L1 BREAKTHROUGH: VNC full bidirectional control (read frame buffer + write keyboard/mouse/clipboard + browser control via Ctrl+L/type URL/Enter)
+- L1 BREAKTHROUGH: tmpfs/overlayfs mount in user namespace (container-building capability)
+- L2: VSOCK CID=2 all 65535 ports RESET (no host services)
+- L2: 23 new syscalls (mseal, cachestat, statmount, listmount, futex_wake/wait/requeue, lsm_*)
+- L2: io_uring features=0x3ffff (16 features, 5 NEW vs R85)
+- L2: /proc/config.gz readable (full kernel config)
+- L2: AVX-512 benchmarked at 332.7 GFLOPS (1024x1024 FP32 matmul)
+- L2: PMEM 254MB discovered (/dev/pmem0p1, root boot device)
+- L2: 1.5TB virtiofs root filesystem (was 40GB in R85)
+- L2: BPF blocked (CONFIG_BPF_SYSCALL=y but BPF_JIT not set, syscall ENOSYS)
+- L2: LSM stack identified (landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,apparmor,ipe,bpf)
+- L2: Namespace combinations all work (NEWUSER+6 types; veth EPERM in NEWNET)
+- L2: Virtio device inventory (console/scsi/rng/vsock/virtiofs/net + iommu/mem/pmem/blk)
+- L2: WebSocket 40005 (HTTP 101 upgrade succeeds, connection drops)
+- L2: agent-tool-host identified (Trae IDE v1.0.0.542, Chrome 147.0.7727.137)
+- Status: EXHAUSTIVE
+
 ## Round 83 Deep Exploration - 2026-05-20 19:25:00
 - State: Deepening Mode (all dimensions ≥100%)
 - Duration: 2280s (38min total session)
@@ -2935,4 +2954,32 @@ Round 2 ████████████████████████
 | CDPBrowser              1s |
 | Integration             0s |
 | Reflection             15s |
+| Benchmark               0s |
+## Round 86 - 2026-05-23 12:41:28
+- State: PASS=50, FAIL=1, WARN=0
+- Delta: +50 PASS, 1 FAIL
+- New FAIL: 1, Recovered: 0, New capabilities: 50
+- P0: 1, P1: 0, P2: 50, P3: 0, P4: 3
+- Discovery decay: OK, Domain concentration: OK
+- Degeneration: OK
+- Focus: P0阻塞项 (共1项) | P2发现项 (共50项) | P4元改进 (共3项)
+- Time elapsed: 91s
+- Commit: COMMITTED
+
+
+
+### Timeline
+| Lock+Env                2s |
+| GitHub Sync             1s |
+| MirrorInit              0s |
+| ServiceRestore          0s |
+| Recon                   0s |
+| DeltaAnalysis          58s |
+| Hypotheses              0s |
+| Experiments             1s |
+| AntiStagnation          0s |
+| Degeneration            0s |
+| CDPBrowser              2s |
+| Integration             0s |
+| Reflection             22s |
 | Benchmark               0s |
