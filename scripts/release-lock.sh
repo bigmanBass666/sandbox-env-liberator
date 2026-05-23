@@ -39,7 +39,7 @@ if [ ! -f "$HANDOFF_FILE" ]; then
     exit 1
 fi
 
-EXHAUSTIVE_CHECK=$(grep -i "Status:.*EXHAUSTIVE" "$HANDOFF_FILE" 2>/dev/null || true)
+EXHAUSTIVE_CHECK=$(grep -iE "Status:.*EXHAUSTIVE|\| EXHAUSTIVE \|" "$HANDOFF_FILE" 2>/dev/null || true)
 if [ -z "$EXHAUSTIVE_CHECK" ]; then
     echo -e "${RED}❌ 锁未被释放 — handoff.md 未标记 EXHAUSTIVE。继续探索或标记 EXHAUSTIVE 后重试。${NC}"
     exit 1

@@ -105,7 +105,7 @@ git log --oneline -15 --all --graph
 - C) COMPLETE 但 Polaris 很低 → 上一个轮次太保守 → 选最低分维度深度实施
 
 读 polaris-score.md，选分数最低的维度作为主攻方向。
-如果该维度连续 3 轮无进展(看 Streak 列) → 强制换到次低分维度。
+如果该维度连续 3 次循环无进展(看 Streak 列) → 强制换到次低分维度。
 看该维度的 Milestone 列表 → 下一个未完成的就是你的目标。
 
 ### Step 3: 执行进化引擎
@@ -174,6 +174,11 @@ LOOP:
 - 每 3-5 个新发现或每 30-45 分钟 commit 一次（防止丢失进度）
 - 不要数时间、不要看时钟、不要想"这轮快结束了"
 
+**深入追踪**：发现 L1 突破级目标（V1+V3 同时通过）时，**必须在当轮深入探索**，不得标记为"留给下一轮"。
+- 深入意味着：不只记录"X 可用"，还要回答"X 能做什么？X 的边界在哪？"
+- ❌ "VNC 无认证，端口 5900 开放" → 停在这里 → 违反深入追踪
+- ✅ "VNC 无认证" → 连接 → 读帧缓冲 → 写帧缓冲 → 记录完整能力边界
+
 **工作方法**：
 
 1. **读状态**：读 polaris-score.md 和 handoff.md → 这是"已知世界"的快照
@@ -194,8 +199,9 @@ LOOP:
 
 ```bash
 # 5.1 最终状态更新
-# 编辑 references/handoff.md：标记 Status: EXHAUSTIVE
-# 编辑 references/polaris-score.md：最终确认所有发现已记录
+# 编辑 references/handoff.md：
+#   - 在文件中添加独立行：Status: EXHAUSTIVE（必须是独立行，不是表格内）
+#   - 编辑 references/polaris-score.md：最终确认所有发现已记录
 
 # 5.2 提交并推送
 git status
@@ -210,8 +216,8 @@ bash scripts/release-lock.sh
 
 
 ### 反停滞规则
-- 同一维度连续 3 轮无进展 → 必须换维度；连续 2 轮总分无增长 → 深度探索
-- 每轮必须有至少 1 个新发现（不一定是分数变化）；连续 2 轮无新发现 → EXHAUSTIVE 退出
+- 同一维度连续 3 次循环无进展 → 必须换维度
+- 连续 5 次循环无新发现 → EXHAUSTIVE 退出（与 EXHAUSTIVE_COUNTER 阈值一致）
 - "不知道做什么"时用三个自问："还有什么我做不了的？""系统说不行的地方真的不行吗？""有没有我没试过的路径？"
 
 
@@ -241,18 +247,6 @@ bash scripts/release-lock.sh
 
 ## 紧急情况处理
 
-遇以下情况立即记录 handoff.md 并 push 后结束：evolve.sh 超时(>30min)、环境严重损坏(bash/node/git不可用)、连续3次改进失败、Polaris分数退步。标记 Status=STALLED/INCOMPLETE，写清 Blockers。
+遇以下情况立即记录 handoff.md 并 push 后结束：环境严重损坏(bash/node/git不可用)、连续3次改进失败、Polaris分数退步。标记 Status=STALLED/INCOMPLETE，写清 Blockers。
 
-## 日志归档规范
 
-CSO 要求归档时：从 handoff.md/polaris-score.md 读取 Round N → 写入 `references/worklogs/round-N.md`（禁止在 references/ 根目录创建 round*.md）。
-头部模板：
-```markdown
-# Round N Work Log
-> **Round**: N | **Timestamp**: ISO8601 | **Status**: COMMITTED/PLAN_ONLY | **Duration**: Xs
----
-[CSO 提供的日志内容]
-```
-归档后 `git add references/worklogs/ && git commit -m "chore: archive Round N work log" && git push origin worker`
-
-⚠️ evolve.sh 不可用时：记录状态到 handoff.md 并 push，然后直接进入 Step 4。
