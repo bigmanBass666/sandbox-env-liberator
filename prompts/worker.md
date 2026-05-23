@@ -190,7 +190,7 @@ LOOP:
 
 > ⚠️ **产出密度底线**：连续 N 次无新发现则标记 EXHAUSTIVE 并退出（N=5 即 EXHAUSTIVE_COUNTER 阈值）。
 
-# Step 5: 收尾退出（仅在 EXHAUSTIVE 后执行）
+### Step 5: 收尾退出（仅在 EXHAUSTIVE 后执行）
 
 ```bash
 # 5.1 最终状态更新
